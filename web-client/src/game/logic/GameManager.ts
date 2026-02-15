@@ -14,12 +14,31 @@ export class GameManager {
     public elixir: number = 5;
     public maxElixir: number = 10;
 
+    // Game state
+    public playerCrowns: number = 0;
+    public opponentCrowns: number = 0;
+    public matchDuration: number = 180000; // 3 minutes in ms
+    public elapsedTime: number = 0;
+    public gameEnded: boolean = false;
+    public winner: string | null = null;
+
     constructor(_user: IUser) {
         // user param kept for compatibility/extension
         this.entities = [];
     }
 
     public update(time: number, delta: number) {
+        if (this.gameEnded) return;
+
+        // Track elapsed time
+        this.elapsedTime += delta;
+
+        // Check for time-based victory
+        if (this.elapsedTime >= this.matchDuration) {
+            this.endGame();
+            return;
+        }
+
         // Update elixir (approx 1 per 2.8s)
         if (this.elixir < this.maxElixir) {
             this.elixir += (delta / 2800);
@@ -58,22 +77,17 @@ export class GameManager {
             case 'BabyDragon': cost = 4; break;
         }
 
-        if (ownerId === 'player' || ownerId.startsWith('Player')) {
+        // Normalize ownerId
+        ownerId = ownerId.toLowerCase();
+
+        if (ownerId === 'player' || ownerId.startsWith('player')) {
             if (this.elixir < cost) return null;
             this.elixir -= cost;
         }
 
         if (cardId === 'Archers') {
-            // Spawn two archers? Or just one entity representing the card?
-            // The request says "deploy archers... archer walk...". 
-            // In Clash Royale, "Archers" spawns 2 units. 
-            // For simplicity in this port, let's spawn ONE Archer for now, 
-            // or we could spawn two. Let's spawn ONE to start to minimize complexity,
-            // but the class is valid for multiple.
-
-            // To match the user request "deploy archers... archer walk", 
-            // one is enough to demonstrate the logic.
             const id = `archer_${Date.now()}_${Math.random()}`;
+            entity = new Archer(id, position.x, position.y, ownerId);
         } else if (cardId === 'Giant') {
             const id = `giant_${Date.now()}_${Math.random()}`;
             entity = new Giant(id, position.x, position.y, ownerId);
@@ -100,5 +114,48 @@ export class GameManager {
 
     public addEntity(entity: Entity) {
         this.entities.push(entity);
+    }
+
+    public onTowerDestroyed(isKing: boolean, ownerId: string) {
+        if (this.gameEnded) return;
+
+        // Award crowns
+        const crownCount = isKing ? 3 : 1;
+
+        if (ownerId === 'player') {
+            // Player tower destroyed, opponent gets crowns
+            this.opponentCrowns += crownCount;
+        } else {
+            // Opponent tower destroyed, player gets crowns
+            this.playerCrowns += crownCount;
+        }
+
+        // Cap at 3 crowns
+        this.playerCrowns = Math.min(3, this.playerCrowns);
+        this.opponentCrowns = Math.min(3, this.opponentCrowns);
+
+        // Check for 3-crown victory
+        if (this.playerCrowns >= 3 || this.opponentCrowns >= 3) {
+            this.endGame();
+        }
+    }
+
+    public getRemainingTime(): number {
+        return Math.max(0, this.matchDuration - this.elapsedTime);
+    }
+
+    private endGame() {
+        if (this.gameEnded) return;
+
+        this.gameEnded = true;
+
+        // Determine winner
+        if (this.playerCrowns > this.opponentCrowns) {
+            this.winner = 'player';
+        } else if (this.opponentCrowns > this.playerCrowns) {
+            this.winner = 'opponent';
+        } else {
+            this.winner = 'draw';
+        }
     }
 }

@@ -44,7 +44,6 @@ export class Tower extends Phaser.GameObjects.Sprite {
     }
 
 
-
     public updateHealthBar() {
         this.healthBar.clear();
 

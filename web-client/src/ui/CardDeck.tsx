@@ -25,7 +25,7 @@ const getRandomDeck = () => {
 
 export const CardDeck: React.FC = () => {
     // Initialize with a random set of 4 cards
-    const [currentDeck, setCurrentDeck] = useState<CardItem[]>(getRandomDeck());
+    const [currentDeck] = useState<CardItem[]>(getRandomDeck());
     const [selectedCard, setSelectedCard] = useState<string | null>(null);
 
     const handleCardClick = (cardId: string) => {

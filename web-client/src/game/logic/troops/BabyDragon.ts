@@ -21,6 +21,7 @@ export class BabyDragon extends Troop {
         let minDistance = Infinity;
 
         for (const enemy of enemies) {
+            if (enemy.ownerId === this.ownerId) continue;
             const dist = this.getDistanceTo(enemy);
             if (dist < minDistance) {
                 minDistance = dist;

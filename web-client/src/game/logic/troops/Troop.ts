@@ -32,7 +32,12 @@ export abstract class Troop extends Entity {
     }
 
     public isInRange(target: Entity): boolean {
-        return this.getDistanceTo(target) <= this.range;
+        // Distance is center-to-center
+        const dist = this.getDistanceTo(target);
+        // Effective range = Attack Range + Target Radius + My Radius
+        // We subtract radii from distance to get edge-to-edge distance
+        // simplified: dist <= range + target.radius
+        return dist <= this.range + (target.radius || 20) + (this.radius || 20);
     }
 
     public moveTowards(target: Entity | { x: number, y: number }, delta: number) {

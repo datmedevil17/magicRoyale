@@ -7,16 +7,17 @@ export class TowerEntity extends Entity {
     public lastAttackTime: number = 0;
     public maxHealth: number;
     public isShooting: boolean = false;
+    public destroyed: boolean = false;
     private shootingTimer: number = 0;
 
     constructor(id: string, x: number, y: number, ownerId: string, isKing: boolean) {
         super(id, x, y, ownerId, EntityType.BUILDING);
-        this.maxHealth = isKing ? 4000 : 2500; // Example values
+        this.maxHealth = isKing ? 4000 : 2500;
         this.health = this.maxHealth;
-        this.radius = 1.0; // Hitbox radius
+        this.radius = 50; // Towers are big
     }
 
-    public update(time: number, delta: number, targets: Entity[]): void {
+    public update(time: number, _delta: number, targets: Entity[]): void {
         // Reset shooting state if enough time passed (e.g. 500ms animation)
         if (this.isShooting && time - this.shootingTimer > 500) {
             this.isShooting = false;

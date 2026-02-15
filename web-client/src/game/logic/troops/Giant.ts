@@ -34,6 +34,7 @@ export class Giant extends Troop {
         const targets = buildings.length > 0 ? buildings : enemies;
 
         for (const enemy of targets) {
+            if (enemy.ownerId === this.ownerId) continue;
             const dist = this.getDistanceTo(enemy);
             if (dist < minDistance) {
                 minDistance = dist;

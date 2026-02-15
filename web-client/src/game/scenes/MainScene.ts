@@ -81,6 +81,7 @@ export class MainScene extends Scene {
         // Input listener for deploying troops
         this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
             if (this.selectedCardId) {
+                // Ensure unique ID for every deployment to prevent React key issues or logic dupes
                 const entity = this.gameManager.deployCard(this.selectedCardId, { x: pointer.x, y: pointer.y }, 'player');
 
                 if (entity) {
@@ -103,6 +104,22 @@ export class MainScene extends Scene {
 
         // Emit elixir update (throttled logic ideally, but every frame is ok for now)
         EventBus.emit(EVENTS.ELIXIR_UPDATE, this.gameManager.elixir);
+
+        // Emit crown updates
+        EventBus.emit(EVENTS.CROWN_UPDATE, {
+            playerCrowns: this.gameManager.playerCrowns,
+            opponentCrowns: this.gameManager.opponentCrowns,
+            remainingTime: this.gameManager.getRemainingTime()
+        });
+
+        // Check for game end
+        if (this.gameManager.gameEnded) {
+            EventBus.emit(EVENTS.GAME_END, {
+                winner: this.gameManager.winner,
+                playerCrowns: this.gameManager.playerCrowns,
+                opponentCrowns: this.gameManager.opponentCrowns
+            });
+        }
 
         // Synchronize Sprites
         const entities = this.gameManager.getEntities();
@@ -135,9 +152,18 @@ export class MainScene extends Scene {
                         const isKing = entity.maxHealth > 3000;
                         towerCallback.setShooting(entity.isShooting, entity.ownerId, isKing);
 
-                        if (entity.health <= 0) {
+                        if (entity.health <= 0 && !entity.destroyed) {
+                            entity.destroyed = true;
                             towerCallback.destroy();
                             this.towerSprites.delete(entity.id);
+
+                            // Notify GameManager of tower destruction
+                            this.gameManager.onTowerDestroyed(isKing, entity.ownerId);
+                            EventBus.emit(EVENTS.TOWER_DESTROYED, {
+                                towerId: entity.id,
+                                isKing,
+                                ownerId: entity.ownerId
+                            });
                         }
                     }
                 }

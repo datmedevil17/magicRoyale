@@ -46,11 +46,6 @@ export class Archer extends Troop {
         } else {
             this.state = TroopState.WALK;
             // No enemies? Move to opponent side
-            // Assuming player is at bottom (y > 400 say), opponent at top
-            // Better: use ownerId to determine direction
-            // For now, let's assume 'player' moves UP, 'opponent' moves DOWN
-            // This needs Global Game State to know which "side" we are on
-            // but for now let's pass direction or target position
             this.moveForward(delta);
         }
     }

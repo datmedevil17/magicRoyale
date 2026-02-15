@@ -1,5 +1,4 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { SplashScreen } from './ui/SplashScreen';
 import { WaitingScreen } from './ui/WaitingScreen';
 import { GameWrapper } from './GameWrapper';
 import { TestGifComponent } from './ui/TestGifComponent';
