@@ -25,7 +25,10 @@ export const LoginPage: React.FC = () => {
                     setMessage('Registration successful! Please login.');
                     setIsRegistering(false);
                 } else {
-                    localStorage.setItem('username', data.username);
+                    localStorage.setItem('token', data.token || '');
+                    // API returns user object or username depending on route
+                    const user = data.user || data; 
+                    localStorage.setItem('username', user.username || username);
                     navigate('/menu');
                 }
             } else {
@@ -33,7 +36,7 @@ export const LoginPage: React.FC = () => {
             }
         } catch (error) {
             console.error(error);
-            setMessage('Network error. Check server.');
+            setMessage('Network error. Is the server running?');
         }
     };
 

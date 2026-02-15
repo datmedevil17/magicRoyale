@@ -1,5 +1,5 @@
 import { io, Socket } from 'socket.io-client';
-import { EventBus } from '../EventBus';
+import { EventBus, EVENTS } from '../EventBus';
 
 export class Network {
     private socket: Socket;
@@ -10,18 +10,18 @@ export class Network {
 
         this.socket.on('connect', () => {
             console.log('Connected to Game Server:', this.socket.id);
+            // Request matchmaking immediately upon connection
+            this.socket.emit('find-match');
         });
 
         this.socket.on('connect_ack', (data) => {
             console.log('Server acknowledged connection, ID:', data.id);
         });
 
-        // Listen for game start (if connected late or reconnecting)
+        // Listen for game start
         this.socket.on('game-start', (data) => {
             console.log('Network: Game Started', data);
-            // We might want to emit an event to MainScene to set player role etc.
-            // But MainScene is created AFTER game start usually.
-            // If MainScene is active, we can notify it.
+            EventBus.emit(EVENTS.GAME_START, data);
         });
 
         this.socket.on('opponent-card-played', (data: { cardId: string, position: { x: number, y: number } }) => {

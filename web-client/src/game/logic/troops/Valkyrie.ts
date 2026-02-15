@@ -3,7 +3,7 @@ import { Entity } from '../Entity';
 
 export class Valkyrie extends Troop {
     public name = 'Valkyrie';
-    public speed = 60; // Medium
+    public speed = 30; // Halved from 60
     public range = 1.5; // Melee (AOE technically, but single target for now)
     public hitSpeed = 1.5;
     public damage = 120;

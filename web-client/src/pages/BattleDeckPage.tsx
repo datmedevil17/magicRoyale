@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 // Mock Data
 const BATTLE_DECK = [
     'ArchersCard', 'ArrowsCard', 'FireballCard', 'GiantCard',
-    'MiniPEKKACard', 'BabyDragonCard', 'InfernoTowerCard', 'ValkyrieCard'
+    'MiniPEKKACard', 'BabyDragonCard', 'InfernoTowerCard', 'ValkyrieCard',
+    'BarbariansCard'
 ];
 
 const COLLECTION = [

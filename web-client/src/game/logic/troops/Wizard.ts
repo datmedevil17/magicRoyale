@@ -3,7 +3,7 @@ import { Entity } from '../Entity';
 
 export class Wizard extends Troop {
     public name = 'Wizard';
-    public speed = 60; // Medium
+    public speed = 30; // Halved from 60
     public range = 150; // Ranged (approx 5 tiles * 30px)
     public hitSpeed = 1.4;
     public damage = 130;

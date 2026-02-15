@@ -9,5 +9,6 @@ export const EVENTS = {
     NETWORK_OPPONENT_DEPLOY: 'network-opponent-deploy',
     CROWN_UPDATE: 'crown-update',
     GAME_END: 'game-end',
-    TOWER_DESTROYED: 'tower-destroyed'
+    TOWER_DESTROYED: 'tower-destroyed',
+    GAME_START: 'game-start'
 };

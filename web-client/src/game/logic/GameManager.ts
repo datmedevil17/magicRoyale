@@ -1,4 +1,4 @@
-import { Entity } from './Entity';
+import { Barbarian } from './troops/Barbarian';
 import { Troop } from './troops/Troop';
 import { Archer } from './troops/Archer';
 import { Giant } from './troops/Giant';
@@ -39,9 +39,14 @@ export class GameManager {
             return;
         }
 
-        // Update elixir (approx 1 per 2.8s)
+        // Update elixir (Slower: approx 1 per 5s? User said "increase elixir formation" .. wait)
+        // User said: "increase eleixir formation" -> FASTER elixir?
+        // "decrese troops walk and attack speed by half" -> SLOWER troops.
+        // "increase elixir formation" usually means get elixir faster.
+        // Original: delta / 2800 -> 1 per 2.8s.
+        // If I make it delta / 1400 -> 1 per 1.4s (Double speed).
         if (this.elixir < this.maxElixir) {
-            this.elixir += (delta / 2800);
+            this.elixir += (delta / 1400);
             if (this.elixir > this.maxElixir) this.elixir = this.maxElixir;
         }
 
@@ -103,6 +108,13 @@ export class GameManager {
         } else if (cardId === 'BabyDragon') {
             const id = `babydragon_${Date.now()}_${Math.random()}`;
             entity = new BabyDragon(id, position.x, position.y, ownerId);
+        } else if (cardId === 'Barbarians') {
+            // Spawn 4 Barbarians
+            this.addEntity(new Barbarian(`barb_${Date.now()}_1`, position.x - 20, position.y - 20, ownerId));
+            this.addEntity(new Barbarian(`barb_${Date.now()}_2`, position.x + 20, position.y - 20, ownerId));
+            this.addEntity(new Barbarian(`barb_${Date.now()}_3`, position.x - 20, position.y + 20, ownerId));
+            // Return one as main entity
+            entity = new Barbarian(`barb_${Date.now()}_4`, position.x + 20, position.y + 20, ownerId);
         }
 
         if (entity) {

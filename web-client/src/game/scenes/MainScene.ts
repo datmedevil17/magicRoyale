@@ -48,6 +48,7 @@ export class MainScene extends Scene {
         const debugText = this.add.text(10, 50, 'Debug: Init... Waiting for Card', { fontSize: '16px', color: '#ffff00', backgroundColor: '#000000' });
 
         const centerX = this.scale.width / 2;
+        const centerY = this.scale.height / 2;
 
         // King Towers
         this.createTower('player_king', centerX, this.scale.height - 100, 'tower_king_blue', true, 'player');
@@ -76,6 +77,19 @@ export class MainScene extends Scene {
 
             this.gameManager.deployCard(data.cardId, { x: mirroredX, y: mirroredY }, 'opponent');
             debugText.setText(`Opponent: ${data.cardId} at ${Math.floor(mirroredX)},${Math.floor(mirroredY)}`);
+        });
+
+        // Waiting State
+        const waitingText = this.add.text(centerX, centerY, 'Searching for Opponent...', { fontSize: '24px', color: '#ffffff', backgroundColor: '#000000', padding: { x: 10, y: 10 } }).setOrigin(0.5);
+        this.input.enabled = false; // Disable input while waiting
+
+        EventBus.on(EVENTS.GAME_START, (data: any) => {
+            console.log('MainScene: Game Started!', data);
+            waitingText.destroy();
+            this.input.enabled = true;
+            this.add.text(centerX, centerY - 100, 'Game Start!', { fontSize: '32px', color: '#00ff00' }).setOrigin(0.5).setAlpha(0).setDepth(100)
+                .setScale(0.5);
+            // We could animate "Game Start" text here
         });
 
         // Input listener for deploying troops
@@ -175,14 +189,17 @@ export class MainScene extends Scene {
         // Create Visual Sprite
         const maxHealth = isKing ? 4000 : 2500;
         const towerSprite = new Tower(this, x, y, texture, maxHealth);
-        // Scale is handled inside Tower or here? Previous code did it here.
-        // Tower class doesn't set scale by default.
-        const scale = isKing ? 0.5 : 0.4;
+
+        // Scale and Size
+        // King: 3x3 grids (approx 66px width) -> Radius ~33
+        // Princess: 2x2 grids (approx 44px width) -> Radius ~22
+        const scale = isKing ? 0.6 : 0.45; // Adjusted scale slightly for visual size
         towerSprite.setScale(scale);
         this.towerSprites.set(id, towerSprite);
 
-        // Create Logical Entity
-        const towerEntity = new TowerEntity(id, x, y, ownerId, isKing);
+        // Create Logical Entity with correct radius
+        const radius = isKing ? 33 : 22;
+        const towerEntity = new TowerEntity(id, x, y, ownerId, isKing, radius);
         this.gameManager.addEntity(towerEntity);
     }
 }

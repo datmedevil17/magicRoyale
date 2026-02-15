@@ -4,7 +4,7 @@ import { Entity } from '../Entity';
 
 export class Archer extends Troop {
     public name: string = 'Archer';
-    public speed: number = 50; // Adjust for Phaser pixel scale
+    public speed: number = 25; // Halved from 50
     public range: number = 150; // Pixel range
     public hitSpeed: number = 1000; // ms
     public damage: number = 50;

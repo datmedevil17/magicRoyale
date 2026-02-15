@@ -3,7 +3,7 @@ import { Entity } from '../Entity';
 
 export class BabyDragon extends Troop {
     public name = 'BabyDragon';
-    public speed = 90; // Fast
+    public speed = 45; // Halved from 90
     public range = 120; // Ranged
     public hitSpeed = 1.6;
     public damage = 100;
@@ -22,6 +22,9 @@ export class BabyDragon extends Troop {
 
         for (const enemy of enemies) {
             if (enemy.ownerId === this.ownerId) continue;
+            // Baby Dragon hits BOTH, so no filter needed for Ground/Air
+            // But we might want to respect future constraints.
+
             const dist = this.getDistanceTo(enemy);
             if (dist < minDistance) {
                 minDistance = dist;
