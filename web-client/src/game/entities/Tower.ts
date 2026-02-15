@@ -43,37 +43,7 @@ export class Tower extends Phaser.GameObjects.Sprite {
         }
     }
 
-    public setShooting(isShooting: boolean, owner: string, isKing: boolean) {
-        // e.g. Tower_fight_player
-        // owner: 'player' or 'opponent'
-        // isKing: if true, maybe 'Shot_fight_'? Java uses different logic. 
-        // Java: King -> Shot_fight, Queen -> Tower_fight
 
-        const suffix = owner === 'player' || owner.startsWith('Player') ? 'player' : 'opponent';
-        const animKey = isKing ? `Shot_fight_${suffix}` : `Tower_fight_${suffix}`;
-        // Note: 'Shot_fight' assets need to be checked if they are for King.
-        // Based on Java code: kingKey="Shot_fight_...", queenKey="Tower_fight_..."
-
-        if (isShooting) {
-            if (this.scene.anims.exists(animKey)) {
-                if (this.anims.currentAnim?.key !== animKey) {
-                    this.play(animKey);
-                }
-            }
-        } else {
-            this.stop();
-            // Reset to default texture? 
-            // We need to store original texture key or infer it.
-            // For now, let's assume valid default texture is set on init.
-            // If we stop, it stays on last frame? or we should setTexture.
-            // Ideally setTexture to default.
-            if (this.anims.isPlaying) {
-                this.stop();
-            }
-            // How to restore default? 
-            // Maybe store defaultTextureKey in constructor.
-        }
-    }
 
     public updateHealthBar() {
         this.healthBar.clear();

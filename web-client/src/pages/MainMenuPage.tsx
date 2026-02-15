@@ -39,7 +39,7 @@ export const MainMenuPage: React.FC = () => {
                 <div className="flex gap-6 mt-8">
                     <div
                         className="relative w-40 h-24 flex justify-center items-center cursor-pointer transition-transform active:scale-95 hover:brightness-110"
-                        onClick={() => navigate('/game')}
+                        onClick={() => navigate('/waiting')}
                     >
                         <img src="/assets/button_yellow.png" alt="Battle" className="absolute w-full h-full drop-shadow-xl" />
                         <span className="relative z-10 text-xl text-white drop-shadow-[2px_2px_0_rgba(0,0,0,0.5)]">Battle</span>

@@ -1,33 +1,26 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 
 export const WaitingScreen: React.FC = () => {
     const navigate = useNavigate();
+    const [status, setStatus] = useState('Connecting to server...');
 
     useEffect(() => {
-        // We need a singleton socket connection ideally, but for now let's reuse logic or create new.
-        // The Network class is inside Phaser.
-        // We should probably lift the socket connection to a Context or external module 
-        // that both React and Phaser can access.
-        // For simplicity in this step, let's just use a socket here to listen for start.
-        // BUT, if we use a new socket here, the ID might differ from what Phaser uses later?
-        // Actually, the requirement says "when second player join both go to game".
-        // The server needs to match them.
-
         const socket = io('http://localhost:3000');
 
         socket.on('connect', () => {
             console.log('Connected to server, requesting match...');
+            setStatus('Searching for opponent...');
             socket.emit('find-match');
         });
 
         socket.on('game-start', (data) => {
             console.log('Game starting!', data);
-            // Verify we are part of the game?
-            // Data could contain 'opponentId' etc.
-            // Pass this info to the Game via state or params?
-            navigate('/game');
+            setStatus('Opponent found! Starting game...');
+            setTimeout(() => {
+                navigate('/game');
+            }, 1000); // Short delay to see the message
         });
 
         return () => {
@@ -36,32 +29,27 @@ export const WaitingScreen: React.FC = () => {
     }, [navigate]);
 
     return (
-        <div style={{
-            width: '100vw',
-            height: '100vh',
-            backgroundColor: '#333',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white'
-        }}>
-            <h2>Searching for Opponent...</h2>
-            <div className="loader" style={{
-                border: '8px solid #f3f3f3',
-                borderTop: '8px solid #3498db',
-                borderRadius: '50%',
-                width: '60px',
-                height: '60px',
-                animation: 'spin 2s linear infinite',
-                margin: '20px'
-            }}></div>
-            <style>{`
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                }
-            `}</style>
+        <div className="w-screen h-screen bg-[#222] flex justify-center items-center font-[Supercell-Magic] text-white overflow-hidden">
+            {/* Mobile Container */}
+            <div className="relative h-full max-h-[946px] w-full max-w-[528px] bg-black shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col items-center justify-end pb-32 border-x-4 border-black">
+
+                {/* Background Image - Contained within mobile view */}
+                <div className="absolute top-0 left-0 w-full h-full z-0">
+                    <img src="/assets/splash_screen.png" alt="Loading" className="w-full h-full object-cover" />
+                </div>
+
+                {/* Overlay Content */}
+                <div className="relative z-10 flex flex-col items-center gap-4 bg-black/60 p-6 rounded-xl border border-white/10 backdrop-blur-sm mx-4">
+                    <h2 className="text-xl text-shadow-md text-[#fbce47] text-center leading-normal">{status}</h2>
+                    <div className="w-12 h-12 border-4 border-[#fff] border-t-transparent rounded-full animate-spin"></div>
+                    <button
+                        onClick={() => navigate('/menu')}
+                        className="mt-4 px-6 py-2 bg-red-600 text-white rounded-lg border-2 border-red-800 hover:bg-red-500 active:scale-95 transition-all text-sm shadow-lg"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </div>
         </div>
     );
 };
