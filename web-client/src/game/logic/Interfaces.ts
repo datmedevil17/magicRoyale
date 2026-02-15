@@ -11,3 +11,9 @@ export interface AttackAble {
     getPosition(): Point2D;
     isDead(): boolean;
 }
+
+export interface ArenaLayout {
+    mapStartX: number;
+    mapStartY: number;
+    tileSize: number;
+}

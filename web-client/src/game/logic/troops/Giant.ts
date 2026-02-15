@@ -1,18 +1,20 @@
+import { TroopStats } from '../TroopStats';
 import { Troop, TroopState } from './Troop';
 import { Entity, EntityType } from '../Entity';
+import type { ArenaLayout } from '../Interfaces';
 
 export class Giant extends Troop {
-    public name = 'Giant';
-    public speed = 45; // Slow
-    public range = 2; // Melee but slight range
-    public hitSpeed = 1.5;
-    public damage = 211;
-    public attackType: 'GROUND' | 'AIR' | 'BOTH' = 'GROUND';
-    public movementType: 'GROUND' | 'AIR' = 'GROUND';
+    public name = TroopStats.Giant.name;
+    public speed = TroopStats.Giant.speed;
+    public range = TroopStats.Giant.range;
+    public hitSpeed = TroopStats.Giant.hitSpeed;
+    public damage = TroopStats.Giant.damage;
+    public attackType = TroopStats.Giant.attackType;
+    public movementType = TroopStats.Giant.movementType;
 
     constructor(id: string, x: number, y: number, ownerId: string) {
         super(id, x, y, ownerId);
-        this.maxHealth = 2000;
+        this.maxHealth = TroopStats.Giant.health;
         this.health = this.maxHealth;
         // Giants target buildings only in real game, but for now simple target
         // Actually let's try to mimic that they ignore troops? 
@@ -20,7 +22,7 @@ export class Giant extends Troop {
         // Let's stick to standard behavior for now to avoid complex targeting logic updates.
     }
 
-    update(time: number, delta: number, enemies: Entity[]) {
+    update(time: number, delta: number, enemies: Entity[], layout: ArenaLayout) {
         // Simple AI: Move to nearest enemy, attack if in range
 
         // Find nearest enemy
@@ -53,12 +55,12 @@ export class Giant extends Troop {
                 }
             } else {
                 this.state = TroopState.WALK;
-                this.moveTowards(this.target, delta);
+                this.moveTowards(this.target, delta, layout);
             }
         } else {
             this.state = TroopState.WALK;
             // Move forward if no target
-            this.moveForward(delta);
+            this.moveForward(delta, layout);
         }
     }
 

@@ -1,23 +1,26 @@
 import Phaser from 'phaser';
 import { Troop, TroopState } from './Troop';
 import { Entity } from '../Entity';
+import type { ArenaLayout } from '../Interfaces';
+
+import { TroopStats } from '../TroopStats';
 
 export class Archer extends Troop {
-    public name: string = 'Archer';
-    public speed: number = 25; // Halved from 50
-    public range: number = 150; // Pixel range
-    public hitSpeed: number = 1000; // ms
-    public damage: number = 50;
-    public attackType: 'GROUND' | 'AIR' | 'BOTH' = 'BOTH';
-    public movementType: 'GROUND' | 'AIR' = 'GROUND';
+    public name = TroopStats.Archer.name;
+    public speed = TroopStats.Archer.speed;
+    public range = TroopStats.Archer.range;
+    public hitSpeed = TroopStats.Archer.hitSpeed;
+    public damage = TroopStats.Archer.damage;
+    public attackType = TroopStats.Archer.attackType;
+    public movementType = TroopStats.Archer.movementType;
 
     constructor(id: string, x: number, y: number, ownerId: string) {
         super(id, x, y, ownerId);
-        this.health = 200;
-        this.maxHealth = 200;
+        this.maxHealth = TroopStats.Archer.health;
+        this.health = this.maxHealth;
     }
 
-    update(time: number, delta: number, enemies: Entity[]) {
+    update(time: number, delta: number, enemies: Entity[], layout: ArenaLayout) {
         // Simple AI:
         // 1. Check for enemies in range
         // 2. If target exists and in range -> Attack
@@ -35,18 +38,18 @@ export class Archer extends Troop {
         if (this.target) {
             if (this.isInRange(this.target)) {
                 this.state = TroopState.FIGHT;
-                if (time - this.lastAttackTime > this.hitSpeed) {
+                if (time - this.lastAttackTime > this.hitSpeed * 1000) {
                     this.attack(this.target);
                     this.lastAttackTime = time;
                 }
             } else {
                 this.state = TroopState.WALK;
-                this.moveTowards(this.target, delta);
+                this.moveTowards(this.target, delta, layout);
             }
         } else {
             this.state = TroopState.WALK;
             // No enemies? Move to opponent side
-            this.moveForward(delta);
+            this.moveForward(delta, layout);
         }
     }
 

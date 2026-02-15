@@ -1,22 +1,24 @@
+import { TroopStats } from '../TroopStats';
 import { Troop, TroopState } from './Troop';
 import { Entity } from '../Entity';
+import type { ArenaLayout } from '../Interfaces';
 
 export class Valkyrie extends Troop {
-    public name = 'Valkyrie';
-    public speed = 30; // Halved from 60
-    public range = 1.5; // Melee (AOE technically, but single target for now)
-    public hitSpeed = 1.5;
-    public damage = 120;
-    public attackType: 'GROUND' | 'AIR' | 'BOTH' = 'GROUND';
-    public movementType: 'GROUND' | 'AIR' = 'GROUND';
+    public name = TroopStats.Valkyrie.name;
+    public speed = TroopStats.Valkyrie.speed;
+    public range = TroopStats.Valkyrie.range;
+    public hitSpeed = TroopStats.Valkyrie.hitSpeed;
+    public damage = TroopStats.Valkyrie.damage;
+    public attackType = TroopStats.Valkyrie.attackType;
+    public movementType = TroopStats.Valkyrie.movementType;
 
     constructor(id: string, x: number, y: number, ownerId: string) {
         super(id, x, y, ownerId);
-        this.maxHealth = 900;
+        this.maxHealth = TroopStats.Valkyrie.health;
         this.health = this.maxHealth;
     }
 
-    update(time: number, delta: number, enemies: Entity[]) {
+    update(time: number, delta: number, enemies: Entity[], layout: ArenaLayout) {
         let closest: Entity | null = null;
         let minDistance = Infinity;
 
@@ -44,11 +46,11 @@ export class Valkyrie extends Troop {
                 }
             } else {
                 this.state = TroopState.WALK;
-                this.moveTowards(this.target, delta);
+                this.moveTowards(this.target, delta, layout);
             }
         } else {
             this.state = TroopState.WALK;
-            this.moveForward(delta);
+            this.moveForward(delta, layout);
         }
     }
 

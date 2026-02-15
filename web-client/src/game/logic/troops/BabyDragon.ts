@@ -1,22 +1,24 @@
+import { TroopStats } from '../TroopStats';
 import { Troop, TroopState } from './Troop';
 import { Entity } from '../Entity';
+import type { ArenaLayout } from '../Interfaces';
 
 export class BabyDragon extends Troop {
-    public name = 'BabyDragon';
-    public speed = 45; // Halved from 90
-    public range = 120; // Ranged
-    public hitSpeed = 1.6;
-    public damage = 100;
-    public attackType: 'GROUND' | 'AIR' | 'BOTH' = 'BOTH';
-    public movementType: 'GROUND' | 'AIR' = 'AIR';
+    public name = TroopStats.BabyDragon.name;
+    public speed = TroopStats.BabyDragon.speed;
+    public range = TroopStats.BabyDragon.range;
+    public hitSpeed = TroopStats.BabyDragon.hitSpeed;
+    public damage = TroopStats.BabyDragon.damage;
+    public attackType = TroopStats.BabyDragon.attackType;
+    public movementType = TroopStats.BabyDragon.movementType;
 
     constructor(id: string, x: number, y: number, ownerId: string) {
         super(id, x, y, ownerId);
-        this.maxHealth = 800;
+        this.maxHealth = TroopStats.BabyDragon.health;
         this.health = this.maxHealth;
     }
 
-    update(time: number, delta: number, enemies: Entity[]) {
+    update(time: number, delta: number, enemies: Entity[], layout: ArenaLayout) {
         let closest: Entity | null = null;
         let minDistance = Infinity;
 
@@ -43,11 +45,11 @@ export class BabyDragon extends Troop {
                 }
             } else {
                 this.state = TroopState.WALK;
-                this.moveTowards(this.target, delta);
+                this.moveTowards(this.target, delta, layout);
             }
         } else {
             this.state = TroopState.WALK;
-            this.moveForward(delta);
+            this.moveForward(delta, layout);
         }
     }
 

@@ -8,6 +8,7 @@ import { Scene } from 'phaser';
 // OR better, make BootScene async.
 
 import { loadGif } from '../utils/GifLoader';
+import { TroopStats } from '../logic/TroopStats';
 
 export class BootScene extends Scene {
     constructor() {
@@ -91,8 +92,44 @@ export class BootScene extends Scene {
             'BabyDragon_fight_player', 'BabyDragon_fight_opponent'
         ];
 
+        const troops = Object.keys(TroopStats);
+
+        for (const troopName of troops) {
+            const stats = TroopStats[troopName as keyof typeof TroopStats];
+            if (stats && stats.animSpeed) {
+                // Determine keys
+                // Current naming convention in BootScene: Name_action_owner
+                // TroopStats key: Archer, Giant, etc.
+
+                // We need to map TroopStats key to file names if they differ, or rely on convention.
+                // The current array `gifs` had specific names. 
+                // Let's iterate the `gifs` array and find matching stats.
+            }
+        }
+
+        // Actually, better to iterate the known GIF list and look up stats.
         for (const key of gifs) {
-            await loadGif(this, key, `${gifPath}${key}.gif`);
+            let frameRate: number | undefined = undefined;
+
+            // Try to find matching troop stats
+            // Key format: Name_action_owner (e.g. Archer_walk_player)
+            const parts = key.split('_');
+            const name = parts[0]; // Archer
+            const action = parts[1]; // walk or fight
+
+            // Check if name exists in TroopStats
+            // Handle edge cases like "BabyDragon" vs "BabyDragon" (Match)
+            // "MiniPekka" vs "MiniPekka" (Match)
+
+            if (name in TroopStats) {
+                const stats = TroopStats[name as keyof typeof TroopStats];
+                if (stats.animSpeed) {
+                    if (action === 'walk') frameRate = stats.animSpeed.walk;
+                    else if (action === 'fight') frameRate = stats.animSpeed.fight;
+                }
+            }
+
+            await loadGif(this, key, `${gifPath}${key}.gif`, frameRate);
         }
 
         console.log('BootScene: GIFs Loaded');

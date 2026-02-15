@@ -1,22 +1,24 @@
+import { TroopStats } from '../TroopStats';
 import { Troop, TroopState } from './Troop';
 import { Entity } from '../Entity';
+import type { ArenaLayout } from '../Interfaces';
 
 export class Barbarian extends Troop {
-    public name = 'Barbarians';
-    public speed = 45; // Medium (90/2)
-    public range = 50; // Melee
-    public hitSpeed = 1.5;
-    public damage = 75;
-    public attackType: 'GROUND' | 'AIR' | 'BOTH' = 'GROUND';
-    public movementType: 'GROUND' | 'AIR' = 'GROUND';
+    public name = TroopStats.Barbarian.name;
+    public speed = TroopStats.Barbarian.speed;
+    public range = TroopStats.Barbarian.range;
+    public hitSpeed = TroopStats.Barbarian.hitSpeed;
+    public damage = TroopStats.Barbarian.damage;
+    public attackType = TroopStats.Barbarian.attackType;
+    public movementType = TroopStats.Barbarian.movementType;
 
     constructor(id: string, x: number, y: number, ownerId: string) {
         super(id, x, y, ownerId);
-        this.maxHealth = 350;
+        this.maxHealth = TroopStats.Barbarian.health;
         this.health = this.maxHealth;
     }
 
-    update(time: number, delta: number, enemies: Entity[]) {
+    update(time: number, delta: number, enemies: Entity[], layout: ArenaLayout) {
         let closest: Entity | null = null;
         let minDistance = Infinity;
 
@@ -44,11 +46,11 @@ export class Barbarian extends Troop {
                 }
             } else {
                 this.state = TroopState.WALK;
-                this.moveTowards(this.target, delta);
+                this.moveTowards(this.target, delta, layout);
             }
         } else {
             this.state = TroopState.WALK;
-            this.moveForward(delta);
+            this.moveForward(delta, layout);
         }
     }
 

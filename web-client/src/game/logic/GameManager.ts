@@ -1,3 +1,4 @@
+import { Entity } from './Entity';
 import { Barbarian } from './troops/Barbarian';
 import { Troop } from './troops/Troop';
 import { Archer } from './troops/Archer';
@@ -6,7 +7,7 @@ import { MiniPekka } from './troops/MiniPekka';
 import { Valkyrie } from './troops/Valkyrie';
 import { Wizard } from './troops/Wizard';
 import { BabyDragon } from './troops/BabyDragon';
-import type { Point2D } from './Interfaces';
+import type { Point2D, ArenaLayout } from './Interfaces';
 import type { IUser } from './User';
 
 export class GameManager {
@@ -14,12 +15,20 @@ export class GameManager {
     public elixir: number = 5;
     public maxElixir: number = 10;
 
+    // Layout logic
+    public layout: ArenaLayout = {
+        mapStartX: 0,
+        mapStartY: 0,
+        tileSize: 22 // Default fallback
+    };
+
     // Game state
     public playerCrowns: number = 0;
     public opponentCrowns: number = 0;
     public matchDuration: number = 180000; // 3 minutes in ms
     public elapsedTime: number = 0;
     public gameEnded: boolean = false;
+    public gameStarted: boolean = false;
     public winner: string | null = null;
 
     constructor(_user: IUser) {
@@ -27,8 +36,16 @@ export class GameManager {
         this.entities = [];
     }
 
+    public setLayout(layout: ArenaLayout) {
+        this.layout = layout;
+    }
+
+    public startGame() {
+        this.gameStarted = true;
+    }
+
     public update(time: number, delta: number) {
-        if (this.gameEnded) return;
+        if (!this.gameStarted || this.gameEnded) return;
 
         // Track elapsed time
         this.elapsedTime += delta;
@@ -53,7 +70,8 @@ export class GameManager {
         // Update all entities
         for (const entity of this.entities) {
             if (entity instanceof Troop) {
-                entity.update(time, delta, this.entities);
+                entity.updateBase(this.layout);
+                entity.update(time, delta, this.entities, this.layout);
             }
         }
 

@@ -1,22 +1,24 @@
+import { TroopStats } from '../TroopStats';
 import { Troop, TroopState } from './Troop';
 import { Entity } from '../Entity';
+import type { ArenaLayout } from '../Interfaces';
 
 export class Wizard extends Troop {
-    public name = 'Wizard';
-    public speed = 30; // Halved from 60
-    public range = 150; // Ranged (approx 5 tiles * 30px)
-    public hitSpeed = 1.4;
-    public damage = 130;
-    public attackType: 'GROUND' | 'AIR' | 'BOTH' = 'BOTH';
-    public movementType: 'GROUND' | 'AIR' = 'GROUND';
+    public name = TroopStats.Wizard.name;
+    public speed = TroopStats.Wizard.speed;
+    public range = TroopStats.Wizard.range;
+    public hitSpeed = TroopStats.Wizard.hitSpeed;
+    public damage = TroopStats.Wizard.damage;
+    public attackType = TroopStats.Wizard.attackType;
+    public movementType = TroopStats.Wizard.movementType;
 
     constructor(id: string, x: number, y: number, ownerId: string) {
         super(id, x, y, ownerId);
-        this.maxHealth = 340;
+        this.maxHealth = TroopStats.Wizard.health;
         this.health = this.maxHealth;
     }
 
-    update(time: number, delta: number, enemies: Entity[]) {
+    update(time: number, delta: number, enemies: Entity[], layout: ArenaLayout) {
         let closest: Entity | null = null;
         let minDistance = Infinity;
 
@@ -40,11 +42,11 @@ export class Wizard extends Troop {
                 }
             } else {
                 this.state = TroopState.WALK;
-                this.moveTowards(this.target, delta);
+                this.moveTowards(this.target, delta, layout);
             }
         } else {
             this.state = TroopState.WALK;
-            this.moveForward(delta);
+            this.moveForward(delta, layout);
         }
     }
 

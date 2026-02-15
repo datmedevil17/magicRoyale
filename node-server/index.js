@@ -100,23 +100,53 @@ io.on('connection', (socket) => {
             const player1 = waitingPlayers.shift();
             const player2 = waitingPlayers.shift();
 
-            console.log(`Match found: ${player1} vs ${player2}`);
+            const roomId = `room_${player1}_${player2}`;
+            console.log(`Match found: ${player1} vs ${player2} in ${roomId}`);
 
-            // Notify both players
-            io.to(player1).emit('game-start', { opponentId: player2, role: 'player1' });
-            io.to(player2).emit('game-start', { opponentId: player1, role: 'player2' });
+            // Make both sockets join the room
+            // Note: io.sockets.sockets is a Map in Socket.IO v4
+            const s1 = io.sockets.sockets.get(player1);
+            const s2 = io.sockets.sockets.get(player2);
+
+            if (s1 && s2) {
+                s1.join(roomId);
+                s2.join(roomId);
+
+                // Store room ID on socket for easy access later logic? 
+                // Alternatively, client sends room ID, or we track it.
+                // For now, let's just use the fact they are in a room. 
+                // Actually, 'card-played' needs to know WHICH room to broadcast to.
+                // `socket.rooms` contains room IDs.
+
+                // Notify both players
+                io.to(player1).emit('game-start', { opponentId: player2, role: 'player1', roomId });
+                io.to(player2).emit('game-start', { opponentId: player1, role: 'player2', roomId });
+            }
         }
     });
 
     // Relay Card Placement
     socket.on('card-played', (data) => {
         console.log('Card played by', socket.id, data);
-        // Broadcast to everyone else (opponent) - In a real game we would target specific room
-        socket.broadcast.emit('opponent-card-played', {
-            id: socket.id,
-            cardId: data.cardId,
-            position: data.position
-        });
+
+        // Find the game room this socket is in (excluding their own ID)
+        // socket.rooms is a Set. It contains socket.id and any joined rooms.
+        let gameRoom = null;
+        for (const room of socket.rooms) {
+            if (room !== socket.id) {
+                gameRoom = room;
+                break;
+            }
+        }
+
+        if (gameRoom) {
+            // Broadcast to everyone in the room EXCEPT sender
+            socket.to(gameRoom).emit('opponent-card-played', {
+                id: socket.id,
+                cardId: data.cardId,
+                position: data.position
+            });
+        }
     });
 
     socket.on('disconnect', () => {

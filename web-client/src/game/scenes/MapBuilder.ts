@@ -1,20 +1,23 @@
 
 import { Scene } from 'phaser';
 
+import MapData from './MapData.json';
+
 export class MapBuilder {
     private scene: Scene;
     private readonly COLS = 24;
-    private readonly ROWS = 43;
-    private readonly TILE_SIZE = 22; // From FXML
+    private readonly ROWS = 45;
+    private readonly TILE_SIZE: number;
 
     // Offset to center the map if needed, or we can just return a Container
     private startX: number;
     private startY: number;
 
-    constructor(scene: Scene, x: number, y: number) {
+    constructor(scene: Scene, x: number, y: number, tileSize: number) {
         this.scene = scene;
         this.startX = x;
         this.startY = y;
+        this.TILE_SIZE = tileSize;
     }
 
     public build() {
@@ -24,28 +27,18 @@ export class MapBuilder {
     }
 
     private createGroundLayer() {
-        const colors = [0x8dab3b, 0xa4be43, 0x98b646];
+        const grid = MapData.grid;
 
         for (let row = 0; row < this.ROWS; row++) {
-            if (row === 19) {
-                // River row background (water color)
-                this.drawRow(row, 0x00add2);
-            } else {
-                // Grass pattern
+            if (row < grid.length) {
                 for (let col = 0; col < this.COLS; col++) {
-                    // Simple pattern replication: cycle colors
-                    // The FXML pattern is a bit complex, but a simple noise or cycle is fine for now
-                    // Let's use a pseudo-random consistent pattern based on indices
-                    const colorIndex = (col + row) % 3;
-                    this.drawTile(col, row, colors[colorIndex]);
+                    if (col < grid[row].length) {
+                        const hexColor = grid[row][col];
+                        const color = parseInt(hexColor.replace('#', '0x'));
+                        this.drawTile(col, row, color);
+                    }
                 }
             }
-        }
-    }
-
-    private drawRow(row: number, color: number) {
-        for (let col = 0; col < this.COLS; col++) {
-            this.drawTile(col, row, color);
         }
     }
 
@@ -61,94 +54,107 @@ export class MapBuilder {
     }
 
     private createRiverAndBridges() {
-        const row = 19;
-        // Bridges
-        // Left Bridge (around col 6)
-        this.addImage(6, row, 'bridge', 0.5);
-        // Right Bridge (around col 17)
-        this.addImage(17, row, 'bridge', 0.5);
+        // River and Bridges are now drawn by createGroundLayer via MapData colors
+        // We can add specific textures ON TOP if needed, but for now the colors match the FXML.
+        // The FXML uses colored rects for everything.
+        // If we want detailed sprites, we can overlay them based on row/col.
 
-        // River segments - simplified logic
-        // We can just rely on the blue background tile for the water, 
-        // and place bridge images on top. 
-        // If we want the specific river sprites:
-        // side_river at col 3 and 20? 
-        this.addImage(3, row, 'side_river', 0.5);
-        this.addImage(20, row, 'side_river', 0.5);
-
-        // middle_river usually spans the center. 
-        // For simplicity, let's place one in the center and scale it if needed
-        // or just let the blue tiles do the work for the "water" look.
+        // Example: Add bridge sprites if we want texture instead of just flat color
+        // Row 18 & 20 have bridge segments? No, Row 18 and 20 (index) in FXML had bridge colors.
+        // Let's stick to the FXML colored rectangles for exact fidelity to Java client "look" if that's what's wanted,
+        // OR add sprites. User said "assets placed look very bad". 
+        // PROBABLY refers to the fact I was using "bridge.png" which didn't match the background.
+        // Let's rely on the MapData colors first.
     }
 
     private createObstacles() {
-        // Static obstacles mappings from FXML observation or just aesthetic placement
-        // Walls
-        this.addImage(6, 35, 'wall1', 0.5);
-        this.addImage(17, 35, 'wall2', 0.5);
+        // Define obstacles for the BOTTOM half (Rows 22 to 44)
+        // We will automatically mirror them to the TOP half (Rows 22 to 0)
 
-        // Stones
-        this.addImage(3, 35, 'stone1', 0.5);
-        this.addImage(2, 20, 'stone3', 0.5);
-        this.addImage(2, 18, 'stone3', 0.5);
-        this.addImage(23, 20, 'stone4', 0.5);
-        this.addImage(6, 19, 'stone2', 0.5); // Near bridge?
+        const obstacles: { col: number, row: number, key: string, scale?: number }[] = [
+            // Walls (Level 1)
+            { col: 6, row: 38, key: 'wall1' },
+            { col: 17, row: 38, key: 'wall2' },
 
-        // Trees
-        this.addImage(0, 33, 'tree1', 0.5);
-        this.addImage(0, 25, 'tree2', 0.5);
-        this.addImage(0, 29, 'tree2', 0.5);
-        this.addImage(0, 20, 'tree3', 0.5);
+            // Stones
+            { col: 3, row: 38, key: 'stone1' },
+            { col: 2, row: 23, key: 'stone3' }, // Near river
+            { col: 23, row: 23, key: 'stone4' }, // Near river
+            { col: 21, row: 23, key: 'stone3' },
 
-        this.addImage(23, 20, 'tree3', 0.5); // Symmetric-ish
+            // Trees
+            { col: 0, row: 36, key: 'tree1' },
+            { col: 0, row: 28, key: 'tree2' },
+            { col: 0, row: 32, key: 'tree2' },
+            { col: 0, row: 23, key: 'tree3' }, // Near river
 
-        // Large tree groups
-        // 'trees3' at (0, 16)
-        this.addImage(0, 16, 'trees3', 0.5);
+            // Right Side Trees
+            { col: 23, row: 36, key: 'tree1' },
+            { col: 23, row: 28, key: 'tree2' },
+            { col: 23, row: 32, key: 'tree2' },
 
-        // Missing assets from FXML analysis
-        this.addImage(6, 3, 'wall3', 0.5);
-        this.addImage(17, 3, 'wall4', 0.5);
+            // Deep corners
+            { col: 0, row: 44, key: 'trees2' },
+            { col: 23, row: 44, key: 'trees1' },
 
-        this.addImage(23, 5, 'tree4', 0.5);
-        this.addImage(23, 14, 'trees4', 0.5);
-        this.addImage(23, 0, 'trees5', 0.5); // valignment TOP, likely row 0
+            // Near King
+            { col: 11, row: 37, key: 'level_place' },
+        ];
 
-        this.addImage(23, 42, 'trees1', 0.5);
-        this.addImage(0, 42, 'trees2', 0.5);
+        // Draw and Mirror
+        obstacles.forEach(obs => {
+            // Draw Original (Bottom)
+            this.addImage(obs.col, obs.row, obs.key, obs.scale || 0.5);
 
-        this.addImage(2, 3, 'stone1', 0.5);
+            // Calculate Mirror (Top)
+            // Mirror Row: (ROWS - 1) - obs.row
+            // Mirror Col: (COLS - 1) - obs.col IF we want point reflection (rotate 180)
+            // OR just Mirror Row if we want vertical reflection (flip X-axis)
 
-        // More trees
-        this.addImage(22, 17, 'tree1', 0.5);
-        this.addImage(23, 33, 'tree1', 0.5);
-        this.addImage(23, 25, 'tree2', 0.5);
-        this.addImage(23, 29, 'tree2', 0.5);
+            // Clash Royale map is point reflection (180 degree rotation).
+            // Left becomes Right. Top becomes Bottom.
+            // So if I have a wall on Left-Bottom, Opponent sees it on Right-Top.
+            // BUT wait. 
+            // My "Left" is Col 0. My "Bottom" is Row 44.
+            // Opponent's "Left" is Col 23 (from my perspective). Opponent "Bottom" is Row 0.
 
-        // Stones
-        this.addImage(21, 20, 'stone3', 0.5);
-        this.addImage(21, 18, 'stone3', 0.5);
+            // If the map is symmetrical by point reflection:
+            // Obstacle at (6, 38) [Left-Bottom]
+            // Mirror at (23-6=17, 44-38=6) [Right-Top]
 
-        // Score places and UI markers
-        this.addImage(22, 15, 'score_place1', 0.5);
-        this.addImage(22, 22, 'score_place2', 0.5);
+            // Let's check the original code:
+            // Wall1: (6, 38). Wall3: (6, 3).
+            // Cols are SAME (6 and 6). This is vertical reflection (Flip Y).
+            // This means the map is distinct Left vs Right sides.
+            // Left Lane has specific decor, Right Lane has different decor.
+            // And Top/Bottom are mirrors.
 
-        this.addImage(1, 1, 'cup_icon', 0.5);
+            // So we mirror ROW, but Keep COL.
+            const mirrorRow = (this.ROWS - 1) - obs.row;
+            // Use same key? Or alternate key if available?
+            // Original used 'wall1' bottom, 'wall3' top.
+            // Let's stick to same keys for perfect symmetry or try to map if simple.
+            // For now, same key ensures visual parity.
+            this.addImage(obs.col, mirrorRow, obs.key, obs.scale || 0.5);
+        });
 
-        // Level places (Player and Opponent)
-        this.addImage(11, 0, 'level_place', 0.5); // Opponent
-        this.addImage(11, 34, 'level_place', 0.5); // Player
-
-        // Time place
-        this.addImage(23, 0, 'time_place', 0.5);
+        // Add River Specifics (Row 22) or Center items manually if needed
+        // this.addImage(6, 22, 'stone2', 0.5);
     }
 
-    private addImage(col: number, row: number, key: string, scale: number = 1) {
+    private addImage(col: number, row: number, key: string, scale: number = 0.5) {
         // Phaser images are centered by default
         const x = this.startX + col * this.TILE_SIZE + this.TILE_SIZE / 2;
         const y = this.startY + row * this.TILE_SIZE + this.TILE_SIZE / 2;
         const img = this.scene.add.image(x, y, key);
-        img.setScale(scale);
+
+        // Scale needs to adjust based on Tile Size vs Image Size ideally, 
+        // but for now we keep the relative scale passed in, maybe slightly adjusted for new tile size
+        // If the tiles are larger/smaller, we might want to scale images proportionally.
+        // Assuming original scale was tuned for TILE_SIZE=22.
+        const scaleFactor = this.TILE_SIZE / 22;
+        img.setScale(scale * scaleFactor);
+
         return img;
     }
 }
