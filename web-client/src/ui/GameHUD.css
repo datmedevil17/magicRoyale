@@ -1,0 +1,123 @@
+.game-hud {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    /* Let clicks pass through to game */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 10px;
+    box-sizing: border-box;
+    font-family: 'Supercell-Magic', sans-serif;
+    color: white;
+}
+
+.hud-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.player-info {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.player-info.opponent {
+    flex-direction: row;
+}
+
+.player-info.player {
+    flex-direction: row-reverse;
+}
+
+.level-badge {
+    position: relative;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.level-badge img {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+}
+
+.level-badge span {
+    position: relative;
+    z-index: 10;
+    font-size: 0.8rem;
+    text-shadow: 1px 1px 0 #000;
+}
+
+.player-name {
+    font-size: 0.9rem;
+    text-shadow: 1px 1px 0 #000;
+}
+
+.timer-container {
+    position: relative;
+    width: 60px;
+    height: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.timer-container img {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+}
+
+.timer-container span {
+    position: relative;
+    z-index: 10;
+    font-size: 0.9rem;
+    text-shadow: 1px 1px 0 #000;
+}
+
+.crowns-display {
+    position: relative;
+    width: 80px;
+    height: 35px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.score-bg {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+}
+
+.crown-icons {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    gap: 2px;
+}
+
+.crown-icon {
+    width: 15px;
+    height: auto;
+}
+
+.hud-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 230px;
+    /* Space for cards relative to bottom */
+}
