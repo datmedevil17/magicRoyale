@@ -48,14 +48,15 @@ export const MainMenuPage: React.FC = () => {
 
             {/* Bottom Navigation */}
             <div className="bottom-nav">
-                <div className="nav-item">
+                <div className="nav-item" onClick={() => navigate('/deck')}>
                     <img src="/assets/not_selected_option_background.png" className="nav-bg" />
                     <img src="/assets/cards_icon.png" className="nav-icon" />
-                    <span className="nav-text" onClick={() => navigate('/deck')}>Cards</span>
+                    <span className="nav-text">Cards</span>
                 </div>
-                <div className="nav-item">
+                <div className="nav-item" onClick={() => alert("Profile coming soon!")}>
                     <img src="/assets/not_selected_option_background.png" className="nav-bg" />
                     {/* Placeholder generic icon if profile not found or reuse existing */}
+                    <img src="/assets/profile_icon.png" className="nav-icon" onError={(e) => e.currentTarget.style.display = 'none'} />
                     <span className="nav-text">Profile</span>
                 </div>
                 <div className="nav-item active">
@@ -63,12 +64,12 @@ export const MainMenuPage: React.FC = () => {
                     <img src="/assets/battle_icon.png" className="nav-icon" />
                     <span className="nav-text">Battle</span>
                 </div>
-                <div className="nav-item">
+                <div className="nav-item" onClick={() => alert("Camp coming soon!")}>
                     <img src="/assets/not_selected_option_background.png" className="nav-bg" />
                     <img src="/assets/training_camp_icon.png" className="nav-icon" />
                     <span className="nav-text">Camp</span>
                 </div>
-                <div className="nav-item">
+                <div className="nav-item" onClick={() => alert("History coming soon!")}>
                     <img src="/assets/not_selected_option_background.png" className="nav-bg" />
                     <img src="/assets/history_icon.png" className="nav-icon" />
                     <span className="nav-text">History</span>

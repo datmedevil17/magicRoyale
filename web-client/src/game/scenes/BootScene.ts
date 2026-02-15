@@ -43,6 +43,13 @@ export class BootScene extends Scene {
         this.load.image('side_river', 'side_river.png');
         this.load.image('middle_river', 'middle_river.png');
 
+        // Misc UI/Map Assets
+        this.load.image('score_place1', 'score_place1.png');
+        this.load.image('score_place2', 'score_place2.png');
+        this.load.image('level_place', 'level_place.png');
+        this.load.image('time_place', 'time_place.png');
+        this.load.image('cup_icon', 'cup_icon.png');
+
         // Load indexed assets
         for (let i = 1; i <= 4; i++) {
             this.load.image(`wall${i}`, `wall${i}.png`);

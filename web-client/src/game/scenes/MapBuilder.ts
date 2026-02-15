@@ -102,9 +102,45 @@ export class MapBuilder {
 
         this.addImage(23, 20, 'tree3', 0.5); // Symmetric-ish
 
-        // Large tree groups?
+        // Large tree groups
         // 'trees3' at (0, 16)
         this.addImage(0, 16, 'trees3', 0.5);
+
+        // Missing assets from FXML analysis
+        this.addImage(6, 3, 'wall3', 0.5);
+        this.addImage(17, 3, 'wall4', 0.5);
+
+        this.addImage(23, 5, 'tree4', 0.5);
+        this.addImage(23, 14, 'trees4', 0.5);
+        this.addImage(23, 0, 'trees5', 0.5); // valignment TOP, likely row 0
+
+        this.addImage(23, 42, 'trees1', 0.5);
+        this.addImage(0, 42, 'trees2', 0.5);
+
+        this.addImage(2, 3, 'stone1', 0.5);
+
+        // More trees
+        this.addImage(22, 17, 'tree1', 0.5);
+        this.addImage(23, 33, 'tree1', 0.5);
+        this.addImage(23, 25, 'tree2', 0.5);
+        this.addImage(23, 29, 'tree2', 0.5);
+
+        // Stones
+        this.addImage(21, 20, 'stone3', 0.5);
+        this.addImage(21, 18, 'stone3', 0.5);
+
+        // Score places and UI markers
+        this.addImage(22, 15, 'score_place1', 0.5);
+        this.addImage(22, 22, 'score_place2', 0.5);
+
+        this.addImage(1, 1, 'cup_icon', 0.5);
+
+        // Level places (Player and Opponent)
+        this.addImage(11, 0, 'level_place', 0.5); // Opponent
+        this.addImage(11, 34, 'level_place', 0.5); // Player
+
+        // Time place
+        this.addImage(23, 0, 'time_place', 0.5);
     }
 
     private addImage(col: number, row: number, key: string, scale: number = 1) {

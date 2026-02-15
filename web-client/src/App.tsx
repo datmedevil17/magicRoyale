@@ -6,7 +6,6 @@ import { TestGifComponent } from './ui/TestGifComponent';
 import { LoginPage } from './pages/LoginPage';
 import { MainMenuPage } from './pages/MainMenuPage';
 import { BattleDeckPage } from './pages/BattleDeckPage';
-import './App.css';
 
 function App() {
   return (
