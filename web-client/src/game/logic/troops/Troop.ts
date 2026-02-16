@@ -1,3 +1,4 @@
+
 import Phaser from 'phaser';
 import { Entity, EntityType } from '../Entity';
 import type { ArenaLayout } from '../Interfaces';
@@ -14,16 +15,17 @@ export type TroopState = typeof TroopState[keyof typeof TroopState];
 export abstract class Troop extends Entity {
     public state: TroopState = TroopState.WALK;
     public abstract name: string; // e.g. 'Archer'
-    public abstract speed: number; // Pixels per second (or frame)
-    public abstract range: number;
-    public abstract hitSpeed: number;
-    public abstract damage: number;
-    public abstract attackType: 'GROUND' | 'AIR' | 'BOTH';
-    public abstract movementType: 'GROUND' | 'AIR';
+    public speed: number = 0;
+    public range: number = 0;
+    public hitSpeed: number = 0;
+    public damage: number = 0;
+    public attackType: 'GROUND' | 'AIR' | 'BOTH' = 'GROUND';
+    public movementType: 'GROUND' | 'AIR' = 'GROUND';
+
     public target: Entity | null = null;
     public lastAttackTime: number = 0;
 
-    constructor(id: string, x: number, y: number, ownerId: string) {
+    constructor(id: string, x: number, y: number, ownerId: string, cardId: string) {
         super(id, x, y, ownerId, EntityType.TROOP);
     }
 
@@ -53,7 +55,7 @@ export abstract class Troop extends Entity {
         let targetX = target.x;
         let targetY = target.y;
 
-        // Simple Pathfinding for Bridge Crossing (Ground Troops)
+        // Simple Pathfinding for Bridge Crossing (Ground Troops only)
         if (this.movementType === 'GROUND') {
             const riverRowY = layout.mapStartY + ArenaConstants.RIVER_ROW * layout.tileSize;
 
@@ -103,9 +105,6 @@ export abstract class Troop extends Entity {
 
     public moveForward(delta: number, layout: ArenaLayout) {
         // Move towards opponent side
-        // Player (bottom) -> moves UP (y decreases)
-        // Opponent (top) -> moves DOWN (y increases)
-
         let targetY = 0;
         if (this.ownerId.includes('player')) {
             targetY = layout.mapStartY; // Top of arena

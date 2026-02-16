@@ -7,7 +7,7 @@ import { MiniPekka } from './troops/MiniPekka';
 import { Valkyrie } from './troops/Valkyrie';
 import { Wizard } from './troops/Wizard';
 import { BabyDragon } from './troops/BabyDragon';
-import type { Point2D, ArenaLayout } from './Interfaces';
+import type { Point2D } from './Interfaces';
 import type { IUser } from './User';
 
 export class GameManager {
@@ -31,8 +31,11 @@ export class GameManager {
     public gameStarted: boolean = false;
     public winner: string | null = null;
 
-    constructor(_user: IUser) {
+    public isTestMode: boolean = false;
+
+    constructor(_user: IUser, isTestMode: boolean = false) {
         // user param kept for compatibility/extension
+        this.isTestMode = isTestMode;
         this.entities = [];
     }
 
@@ -62,7 +65,10 @@ export class GameManager {
         // "increase elixir formation" usually means get elixir faster.
         // Original: delta / 2800 -> 1 per 2.8s.
         // If I make it delta / 1400 -> 1 per 1.4s (Double speed).
-        if (this.elixir < this.maxElixir) {
+        // Update elixir
+        if (this.isTestMode) {
+            this.elixir = this.maxElixir;
+        } else if (this.elixir < this.maxElixir) {
             this.elixir += (delta / 1400);
             if (this.elixir > this.maxElixir) this.elixir = this.maxElixir;
         }
@@ -90,15 +96,8 @@ export class GameManager {
         // In a real game, this would check the owner's elixir
         // For now, we assume implicit success or check GameManager.elixir if owner is player
 
-        let cost = 3; // Default
-        switch (cardId) {
-            case 'Archers': cost = 3; break;
-            case 'Giant': cost = 5; break;
-            case 'MiniPEKKA': cost = 4; break;
-            case 'Valkyrie': cost = 4; break;
-            case 'Wizard': cost = 5; break;
-            case 'BabyDragon': cost = 4; break;
-        }
+        const stats = getTroopStats(cardId);
+        let cost = stats.elixirCost;
 
         // Normalize ownerId
         ownerId = ownerId.toLowerCase();

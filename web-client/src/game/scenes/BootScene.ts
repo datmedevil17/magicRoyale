@@ -133,7 +133,8 @@ export class BootScene extends Scene {
         }
 
         console.log('BootScene: GIFs Loaded');
-        this.scene.start('MainScene');
+        const data = this.registry.get('data');
+        this.scene.start('MainScene', data);
     }
 }
 

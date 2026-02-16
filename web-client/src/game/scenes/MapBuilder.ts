@@ -23,7 +23,8 @@ export class MapBuilder {
     public build() {
         this.createGroundLayer();
         this.createRiverAndBridges();
-        this.createObstacles();
+        this.createDecorations();
+        this.createProps();
     }
 
     private createGroundLayer() {
@@ -43,14 +44,15 @@ export class MapBuilder {
     }
 
     private drawTile(col: number, row: number, color: number) {
-        const rect = this.scene.add.rectangle(
-            this.startX + col * this.TILE_SIZE + this.TILE_SIZE / 2,
-            this.startY + row * this.TILE_SIZE + this.TILE_SIZE / 2,
-            this.TILE_SIZE,
-            this.TILE_SIZE,
+        const x = this.startX + col * ArenaConfig.TILE_SIZE + ArenaConfig.TILE_SIZE / 2;
+        const y = this.startY + row * ArenaConfig.TILE_SIZE + ArenaConfig.TILE_SIZE / 2;
+
+        this.scene.add.rectangle(
+            x, y,
+            ArenaConfig.TILE_SIZE,
+            ArenaConfig.TILE_SIZE,
             color
-        );
-        rect.setStrokeStyle(0); // No border
+        ).setStrokeStyle(0);
     }
 
     private createRiverAndBridges() {

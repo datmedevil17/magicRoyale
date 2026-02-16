@@ -4,10 +4,11 @@ import { Troop } from '../logic/troops/Troop';
 import { UserLevelEnum } from '../logic/User';
 import { EventBus, EVENTS } from '../EventBus';
 import { Network } from '../network/Network';
-import { MapBuilder } from './MapBuilder'; // Import MapBuilder
+import { MapBuilder } from './MapBuilder';
 import { Tower } from '../entities/Tower';
 import { TowerEntity } from '../logic/TowerEntity';
 import { Unit } from '../entities/Unit';
+import { ArenaConfig } from '../config/ArenaConfig';
 
 export class MainScene extends Scene {
     private gameManager!: GameManager;
@@ -116,8 +117,7 @@ export class MainScene extends Scene {
         // Listen for card selection
         EventBus.on(EVENTS.CARD_SELECTED, (cardId: string | null) => {
             this.selectedCardId = cardId;
-            console.log('MainScene: Card selected', cardId);
-            debugText.setText(`Selected: ${cardId || 'None'} | Elixir: ${Math.floor(this.gameManager.elixir)}`);
+            // debugText.setText(`Selected: ${cardId || 'None'} | Elixir: ${Math.floor(this.gameManager.elixir)}`);
         });
 
         // Listen for opponent deployment
@@ -161,9 +161,12 @@ export class MainScene extends Scene {
             this.gameManager.startGame();
             debugText.setText('Debug: Game Start Event Received!'); // Update debug text
             this.input.enabled = true;
-            this.add.text(centerX, centerY - 100, 'Game Start!', { fontSize: '32px', color: '#00ff00' }).setOrigin(0.5).setAlpha(0).setDepth(100)
+            this.add.text(centerX, centerY - 100, 'Game Start!', { fontSize: '32px', color: '#00ff00' })
+                .setOrigin(0.5)
+                .setScrollFactor(0)
+                .setAlpha(0)
+                .setDepth(100)
                 .setScale(0.5);
-            // We could animate "Game Start" text here
         });
 
         // Input listener for deploying troops
@@ -214,18 +217,14 @@ export class MainScene extends Scene {
 
     update(time: number, delta: number) {
         this.gameManager.update(time, delta);
-
-        // Emit elixir update (throttled logic ideally, but every frame is ok for now)
         EventBus.emit(EVENTS.ELIXIR_UPDATE, this.gameManager.elixir);
 
-        // Emit crown updates
         EventBus.emit(EVENTS.CROWN_UPDATE, {
             playerCrowns: this.gameManager.playerCrowns,
             opponentCrowns: this.gameManager.opponentCrowns,
             remainingTime: this.gameManager.getRemainingTime()
         });
 
-        // Check for game end
         if (this.gameManager.gameEnded) {
             EventBus.emit(EVENTS.GAME_END, {
                 winner: this.gameManager.winner,
@@ -238,7 +237,7 @@ export class MainScene extends Scene {
         const entities = this.gameManager.getEntities();
         const activeIds = new Set(entities.map(e => e.id));
 
-        // 1. Remove dead sprites
+        // 1. Remove dead
         for (const [id, sprite] of this.spriteMap) {
             if (!activeIds.has(id)) {
                 sprite.destroy();
@@ -246,7 +245,7 @@ export class MainScene extends Scene {
             }
         }
 
-        // 2. Add/Update sprites
+        // 2. Add/Update
         for (const entity of entities) {
             if (entity instanceof Troop) {
                 let unit = this.spriteMap.get(entity.id) as Unit;
@@ -260,8 +259,6 @@ export class MainScene extends Scene {
                     const towerCallback = this.towerSprites.get(entity.id);
                     if (towerCallback) {
                         towerCallback.setHealth(entity.health);
-
-                        // Sync Shooting
                         const isKing = entity.maxHealth > 3000;
                         towerCallback.setShooting(entity.isShooting, entity.ownerId, isKing);
 
@@ -270,7 +267,6 @@ export class MainScene extends Scene {
                             towerCallback.destroy();
                             this.towerSprites.delete(entity.id);
 
-                            // Notify GameManager of tower destruction
                             this.gameManager.onTowerDestroyed(isKing, entity.ownerId);
                             EventBus.emit(EVENTS.TOWER_DESTROYED, {
                                 towerId: entity.id,
@@ -284,7 +280,7 @@ export class MainScene extends Scene {
         }
     }
 
-    private createTower(id: string, x: number, y: number, texture: string, isKing: boolean, ownerId: string) {
+    private createTower(id: string, x: number, y: number, texture: string, isKing: boolean, ownerId: string, pixelScale: number): TowerEntity {
         // Create Visual Sprite
         const maxHealth = isKing ? 4000 : 2500;
         const towerSprite = new Tower(this, x, y, texture, maxHealth);
@@ -307,5 +303,7 @@ export class MainScene extends Scene {
 
         const towerEntity = new TowerEntity(id, x, y, ownerId, isKing, radius, this.tileSize);
         this.gameManager.addEntity(towerEntity);
+
+        return towerEntity;
     }
 }
