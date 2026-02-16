@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+use anchor_spl::token::{self, Mint, Token, TokenAccount, MintTo};
 use crate::state::*;
 use crate::errors::*;
 use crate::constants::*;
@@ -98,6 +99,17 @@ pub struct DonateCards<'info> {
     )]
     pub request: Account<'info, DonationRequest>,
 
+    // Reward Logic
+    #[account(mut)]
+    pub mint: Account<'info, Mint>,
+    #[account(mut)]
+    pub donor_token_account: Account<'info, TokenAccount>,
+    /// CHECK: Seeds check
+    #[account(seeds = [b"mint_authority"], bump)]
+    pub mint_authority: AccountInfo<'info>,
+    
+    pub token_program: Program<'info, Token>,
+
     #[account(mut)]
     pub authority: Signer<'info>,
 }
@@ -189,11 +201,21 @@ pub fn donate_cards(ctx: Context<DonateCards>) -> Result<()> {
         }
     }
     
-    // Rewards
-    // Common: +5 Gold, +1 XP
-    // For now assume all are Common
-    donor.tokens += 5;
-    // todo: donor.xp += 1; (Need player XP field, using profile.mmr as proxy for now? No, just gold)
+    // Rewards - Mint SPL Tokens
+    // Common: +5 Tokens (scalled)
+    let bump = ctx.bumps.mint_authority;
+    let seeds = &[b"mint_authority".as_ref(), &[bump]];
+    let signer = &[&seeds[..]];
+
+    let cpi_accounts = MintTo {
+        mint: ctx.accounts.mint.to_account_info(),
+        to: ctx.accounts.donor_token_account.to_account_info(),
+        authority: ctx.accounts.mint_authority.to_account_info(),
+    };
+    let cpi_program = ctx.accounts.token_program.to_account_info();
+    let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer);
+
+    token::mint_to(cpi_ctx, 5 * 1_000_000)?; 
 
     req.amount_filled += amount_to_give as u8;
     if req.amount_filled >= req.amount_needed {

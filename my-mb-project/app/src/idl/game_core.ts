@@ -1,14 +1,20 @@
-{
-  "address": "J7spB3QtLK45MmsALsdKL255KeM3HfnQm13tbP7kvCMa",
+/**
+ * Program IDL in camelCase format in order to be used in JS/TS.
+ *
+ * Note that this is only a type helper and is not the actual IDL. The original
+ * IDL can be found at `target/idl/game_core.json`.
+ */
+export type GameCore = {
+  "address": "EVdyMusWRPqpz8S41KvCwMkpvQzQdzxzADpdyN9L3Yod",
   "metadata": {
-    "name": "counter",
+    "name": "gameCore",
     "version": "0.1.0",
     "spec": "0.1.0",
     "description": "Created with Anchor"
   },
   "instructions": [
     {
-      "name": "claim_rewards",
+      "name": "claimRewards",
       "discriminator": [
         4,
         144,
@@ -56,7 +62,7 @@
           "writable": true
         },
         {
-          "name": "mint_authority",
+          "name": "mintAuthority",
           "pda": {
             "seeds": [
               {
@@ -82,7 +88,7 @@
           }
         },
         {
-          "name": "token_program",
+          "name": "tokenProgram",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         },
         {
@@ -94,7 +100,7 @@
       "args": []
     },
     {
-      "name": "commit_battle",
+      "name": "commitBattle",
       "discriminator": [
         219,
         116,
@@ -116,11 +122,11 @@
           "writable": true
         },
         {
-          "name": "magic_program",
+          "name": "magicProgram",
           "address": "Magic11111111111111111111111111111111111111"
         },
         {
-          "name": "magic_context",
+          "name": "magicContext",
           "writable": true,
           "address": "MagicContext1111111111111111111111111111111"
         }
@@ -128,7 +134,7 @@
       "args": []
     },
     {
-      "name": "create_clan",
+      "name": "createClan",
       "discriminator": [
         89,
         254,
@@ -162,7 +168,7 @@
           }
         },
         {
-          "name": "clan_member",
+          "name": "clanMember",
           "writable": true,
           "pda": {
             "seeds": [
@@ -199,7 +205,7 @@
           "signer": true
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
       ],
@@ -228,7 +234,7 @@
           "signer": true
         },
         {
-          "name": "buffer_pda",
+          "name": "bufferPda",
           "writable": true,
           "pda": {
             "seeds": [
@@ -251,44 +257,44 @@
             "program": {
               "kind": "const",
               "value": [
-                254,
-                89,
-                158,
-                15,
-                21,
-                113,
-                253,
-                150,
-                240,
-                168,
-                92,
-                193,
-                137,
-                134,
-                48,
-                96,
-                52,
-                230,
-                104,
+                200,
+                125,
+                255,
+                44,
+                65,
+                159,
+                143,
+                132,
+                140,
+                127,
+                93,
+                45,
+                136,
+                229,
+                102,
+                213,
+                228,
+                239,
+                180,
+                16,
+                83,
+                40,
                 207,
-                87,
-                218,
-                179,
-                17,
-                101,
-                133,
-                95,
+                3,
+                193,
+                67,
+                253,
                 43,
-                218,
-                5,
-                152,
-                109
+                177,
+                16,
+                220,
+                172
               ]
             }
           }
         },
         {
-          "name": "delegation_record_pda",
+          "name": "delegationRecordPda",
           "writable": true,
           "pda": {
             "seeds": [
@@ -314,12 +320,12 @@
             ],
             "program": {
               "kind": "account",
-              "path": "delegation_program"
+              "path": "delegationProgram"
             }
           }
         },
         {
-          "name": "delegation_metadata_pda",
+          "name": "delegationMetadataPda",
           "writable": true,
           "pda": {
             "seeds": [
@@ -354,7 +360,7 @@
             ],
             "program": {
               "kind": "account",
-              "path": "delegation_program"
+              "path": "delegationProgram"
             }
           }
         },
@@ -364,6 +370,17 @@
           "pda": {
             "seeds": [
               {
+                "kind": "const",
+                "value": [
+                  112,
+                  108,
+                  97,
+                  121,
+                  101,
+                  114
+                ]
+              },
+              {
                 "kind": "account",
                 "path": "payer"
               }
@@ -371,22 +388,22 @@
           }
         },
         {
-          "name": "owner_program",
-          "address": "J7spB3QtLK45MmsALsdKL255KeM3HfnQm13tbP7kvCMa"
+          "name": "ownerProgram",
+          "address": "EVdyMusWRPqpz8S41KvCwMkpvQzQdzxzADpdyN9L3Yod"
         },
         {
-          "name": "delegation_program",
+          "name": "delegationProgram",
           "address": "DELeGGvXpWV2fqJUhqcF5ZSYMS4JTLjteaAMARRSaeSh"
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
       ],
       "args": []
     },
     {
-      "name": "deploy_troop",
+      "name": "deployTroop",
       "discriminator": [
         158,
         193,
@@ -407,7 +424,7 @@
           "writable": true
         },
         {
-          "name": "player_profile",
+          "name": "playerProfile",
           "pda": {
             "seeds": [
               {
@@ -434,13 +451,13 @@
           "signer": true
         },
         {
-          "name": "session_token",
+          "name": "sessionToken",
           "optional": true
         }
       ],
       "args": [
         {
-          "name": "card_idx",
+          "name": "cardIdx",
           "type": "u8"
         },
         {
@@ -454,7 +471,7 @@
       ]
     },
     {
-      "name": "donate_cards",
+      "name": "donateCards",
       "discriminator": [
         89,
         151,
@@ -471,7 +488,7 @@
           "writable": true
         },
         {
-          "name": "donor_profile",
+          "name": "donorProfile",
           "writable": true,
           "pda": {
             "seeds": [
@@ -494,7 +511,7 @@
           }
         },
         {
-          "name": "donor_member",
+          "name": "donorMember",
           "pda": {
             "seeds": [
               {
@@ -525,7 +542,7 @@
           }
         },
         {
-          "name": "requester_profile",
+          "name": "requesterProfile",
           "writable": true
         },
         {
@@ -552,7 +569,7 @@
               {
                 "kind": "account",
                 "path": "requester_profile.authority",
-                "account": "PlayerProfile"
+                "account": "playerProfile"
               }
             ]
           }
@@ -562,11 +579,11 @@
           "writable": true
         },
         {
-          "name": "donor_token_account",
+          "name": "donorTokenAccount",
           "writable": true
         },
         {
-          "name": "mint_authority",
+          "name": "mintAuthority",
           "pda": {
             "seeds": [
               {
@@ -592,7 +609,7 @@
           }
         },
         {
-          "name": "token_program",
+          "name": "tokenProgram",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         },
         {
@@ -604,7 +621,7 @@
       "args": []
     },
     {
-      "name": "export_nft",
+      "name": "exportNft",
       "discriminator": [
         158,
         245,
@@ -735,7 +752,7 @@
           }
         },
         {
-          "name": "card_mint_state",
+          "name": "cardMintState",
           "writable": true,
           "pda": {
             "seeds": [
@@ -765,7 +782,7 @@
           "writable": true
         },
         {
-          "name": "nft_authority",
+          "name": "nftAuthority",
           "pda": {
             "seeds": [
               {
@@ -790,18 +807,18 @@
           }
         },
         {
-          "name": "token_program",
+          "name": "tokenProgram",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         },
         {
-          "name": "associated_token_program",
+          "name": "associatedTokenProgram",
           "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
         },
         {
-          "name": "metadata_program"
+          "name": "metadataProgram"
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         },
         {
@@ -816,13 +833,13 @@
       ],
       "args": [
         {
-          "name": "card_id",
+          "name": "cardId",
           "type": "u8"
         }
       ]
     },
     {
-      "name": "export_resource",
+      "name": "exportResource",
       "discriminator": [
         141,
         59,
@@ -858,7 +875,7 @@
           }
         },
         {
-          "name": "resource_mint",
+          "name": "resourceMint",
           "writable": true
         },
         {
@@ -866,7 +883,7 @@
           "writable": true
         },
         {
-          "name": "resource_authority",
+          "name": "resourceAuthority",
           "pda": {
             "seeds": [
               {
@@ -896,7 +913,7 @@
           }
         },
         {
-          "name": "token_program",
+          "name": "tokenProgram",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         },
         {
@@ -907,7 +924,7 @@
       ],
       "args": [
         {
-          "name": "card_id",
+          "name": "cardId",
           "type": "u8"
         },
         {
@@ -917,7 +934,7 @@
       ]
     },
     {
-      "name": "import_resource",
+      "name": "importResource",
       "discriminator": [
         215,
         192,
@@ -953,7 +970,7 @@
           }
         },
         {
-          "name": "resource_mint",
+          "name": "resourceMint",
           "writable": true
         },
         {
@@ -961,7 +978,7 @@
           "writable": true
         },
         {
-          "name": "token_program",
+          "name": "tokenProgram",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         },
         {
@@ -972,7 +989,7 @@
       ],
       "args": [
         {
-          "name": "card_id",
+          "name": "cardId",
           "type": "u8"
         },
         {
@@ -982,7 +999,7 @@
       ]
     },
     {
-      "name": "initialize_player",
+      "name": "initializePlayer",
       "discriminator": [
         79,
         249,
@@ -1023,14 +1040,14 @@
           "signer": true
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
       ],
       "args": []
     },
     {
-      "name": "join_clan",
+      "name": "joinClan",
       "discriminator": [
         218,
         113,
@@ -1047,7 +1064,7 @@
           "writable": true
         },
         {
-          "name": "clan_member",
+          "name": "clanMember",
           "writable": true,
           "pda": {
             "seeds": [
@@ -1084,14 +1101,14 @@
           "signer": true
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
       ],
       "args": []
     },
     {
-      "name": "process_undelegation",
+      "name": "processUndelegation",
       "discriminator": [
         196,
         28,
@@ -1104,7 +1121,7 @@
       ],
       "accounts": [
         {
-          "name": "base_account",
+          "name": "baseAccount",
           "writable": true
         },
         {
@@ -1115,12 +1132,12 @@
           "writable": true
         },
         {
-          "name": "system_program"
+          "name": "systemProgram"
         }
       ],
       "args": [
         {
-          "name": "account_seeds",
+          "name": "accountSeeds",
           "type": {
             "vec": "bytes"
           }
@@ -1128,7 +1145,7 @@
       ]
     },
     {
-      "name": "request_cards",
+      "name": "requestCards",
       "discriminator": [
         7,
         238,
@@ -1144,7 +1161,7 @@
           "name": "clan"
         },
         {
-          "name": "clan_member",
+          "name": "clanMember",
           "writable": true,
           "pda": {
             "seeds": [
@@ -1209,19 +1226,19 @@
           "signer": true
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
         {
-          "name": "card_id",
+          "name": "cardId",
           "type": "u8"
         }
       ]
     },
     {
-      "name": "resolve_game",
+      "name": "resolveGame",
       "discriminator": [
         25,
         119,
@@ -1242,12 +1259,12 @@
           "writable": true
         },
         {
-          "name": "player_one",
+          "name": "playerOne",
           "writable": true,
           "signer": true
         },
         {
-          "name": "player_two",
+          "name": "playerTwo",
           "writable": true,
           "signer": true
         }
@@ -1255,7 +1272,7 @@
       "args": []
     },
     {
-      "name": "set_deck",
+      "name": "setDeck",
       "discriminator": [
         27,
         187,
@@ -1295,11 +1312,11 @@
           "writable": true
         },
         {
-          "name": "user_token_account",
+          "name": "userTokenAccount",
           "writable": true
         },
         {
-          "name": "token_program",
+          "name": "tokenProgram",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         },
         {
@@ -1309,7 +1326,7 @@
       ],
       "args": [
         {
-          "name": "new_deck",
+          "name": "newDeck",
           "type": {
             "array": [
               "u8",
@@ -1320,7 +1337,7 @@
       ]
     },
     {
-      "name": "start_game",
+      "name": "startGame",
       "discriminator": [
         249,
         47,
@@ -1343,24 +1360,24 @@
           "signer": true
         },
         {
-          "name": "player_one",
+          "name": "playerOne",
           "writable": true,
           "signer": true
         },
         {
-          "name": "player_two",
+          "name": "playerTwo",
           "writable": true,
           "signer": true
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
       ],
       "args": []
     },
     {
-      "name": "undelegate_battle",
+      "name": "undelegateBattle",
       "discriminator": [
         23,
         85,
@@ -1382,11 +1399,11 @@
           "writable": true
         },
         {
-          "name": "magic_program",
+          "name": "magicProgram",
           "address": "Magic11111111111111111111111111111111111111"
         },
         {
-          "name": "magic_context",
+          "name": "magicContext",
           "writable": true,
           "address": "MagicContext1111111111111111111111111111111"
         }
@@ -1394,7 +1411,7 @@
       "args": []
     },
     {
-      "name": "unlock_card",
+      "name": "unlockCard",
       "discriminator": [
         50,
         235,
@@ -1434,11 +1451,11 @@
           "writable": true
         },
         {
-          "name": "user_token_account",
+          "name": "userTokenAccount",
           "writable": true
         },
         {
-          "name": "token_program",
+          "name": "tokenProgram",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         },
         {
@@ -1448,13 +1465,13 @@
       ],
       "args": [
         {
-          "name": "card_id",
+          "name": "cardId",
           "type": "u8"
         }
       ]
     },
     {
-      "name": "upgrade_card",
+      "name": "upgradeCard",
       "discriminator": [
         192,
         16,
@@ -1494,11 +1511,11 @@
           "writable": true
         },
         {
-          "name": "user_token_account",
+          "name": "userTokenAccount",
           "writable": true
         },
         {
-          "name": "token_program",
+          "name": "tokenProgram",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         },
         {
@@ -1508,7 +1525,7 @@
       ],
       "args": [
         {
-          "name": "card_id",
+          "name": "cardId",
           "type": "u8"
         }
       ]
@@ -1516,7 +1533,7 @@
   ],
   "accounts": [
     {
-      "name": "BattleState",
+      "name": "battleState",
       "discriminator": [
         106,
         85,
@@ -1529,7 +1546,7 @@
       ]
     },
     {
-      "name": "CardMintState",
+      "name": "cardMintState",
       "discriminator": [
         251,
         17,
@@ -1542,7 +1559,7 @@
       ]
     },
     {
-      "name": "Clan",
+      "name": "clan",
       "discriminator": [
         179,
         33,
@@ -1555,7 +1572,7 @@
       ]
     },
     {
-      "name": "ClanMember",
+      "name": "clanMember",
       "discriminator": [
         40,
         179,
@@ -1568,7 +1585,7 @@
       ]
     },
     {
-      "name": "DonationRequest",
+      "name": "donationRequest",
       "discriminator": [
         93,
         127,
@@ -1581,7 +1598,7 @@
       ]
     },
     {
-      "name": "GameState",
+      "name": "gameState",
       "discriminator": [
         144,
         94,
@@ -1594,7 +1611,7 @@
       ]
     },
     {
-      "name": "PlayerProfile",
+      "name": "playerProfile",
       "discriminator": [
         82,
         226,
@@ -1607,7 +1624,7 @@
       ]
     },
     {
-      "name": "SessionToken",
+      "name": "sessionToken",
       "discriminator": [
         233,
         4,
@@ -1623,128 +1640,128 @@
   "errors": [
     {
       "code": 6000,
-      "name": "NotEnoughTokens",
+      "name": "notEnoughTokens",
       "msg": "Not enough currency"
     },
     {
       "code": 6001,
-      "name": "CardAlreadyUnlocked",
+      "name": "cardAlreadyUnlocked",
       "msg": "Card already unlocked"
     },
     {
       "code": 6002,
-      "name": "InventoryFull",
+      "name": "inventoryFull",
       "msg": "Inventory full"
     },
     {
       "code": 6003,
-      "name": "CardNotOwned",
+      "name": "cardNotOwned",
       "msg": "Card not owned"
     },
     {
       "code": 6004,
-      "name": "InvalidCardIdx",
+      "name": "invalidCardIdx",
       "msg": "Invalid card index"
     },
     {
       "code": 6005,
-      "name": "EmptyCardSlot",
+      "name": "emptyCardSlot",
       "msg": "Empty card slot"
     },
     {
       "code": 6006,
-      "name": "InvalidCardId",
+      "name": "invalidCardId",
       "msg": "Invalid card ID"
     },
     {
       "code": 6007,
-      "name": "NotEnoughElixir",
+      "name": "notEnoughElixir",
       "msg": "Not enough elixir"
     },
     {
       "code": 6008,
-      "name": "TooManyEntities",
+      "name": "tooManyEntities",
       "msg": "Too many entities"
     },
     {
       "code": 6009,
-      "name": "GameNotFinished",
+      "name": "gameNotFinished",
       "msg": "Game not finished"
     },
     {
       "code": 6010,
-      "name": "NotWinner",
+      "name": "notWinner",
       "msg": "Not winner"
     },
     {
       "code": 6011,
-      "name": "AlreadyClaimed",
+      "name": "alreadyClaimed",
       "msg": "Already claimed"
     },
     {
       "code": 6012,
-      "name": "InvalidAuth",
+      "name": "invalidAuth",
       "msg": "Invalid auth"
     },
     {
       "code": 6013,
-      "name": "MaxLevelReached",
+      "name": "maxLevelReached",
       "msg": "Max level reached"
     },
     {
       "code": 6014,
-      "name": "NotEnoughCards",
+      "name": "notEnoughCards",
       "msg": "Not enough cards"
     },
     {
       "code": 6015,
-      "name": "ClanFull",
+      "name": "clanFull",
       "msg": "Clan full"
     },
     {
       "code": 6016,
-      "name": "AlreadyInClan",
+      "name": "alreadyInClan",
       "msg": "Already in clan"
     },
     {
       "code": 6017,
-      "name": "ClanNameTooLong",
+      "name": "clanNameTooLong",
       "msg": "Clan name too long"
     },
     {
       "code": 6018,
-      "name": "RequestCooldown",
+      "name": "requestCooldown",
       "msg": "Request cooldown active"
     },
     {
       "code": 6019,
-      "name": "RequestNotActive",
+      "name": "requestNotActive",
       "msg": "Request not active"
     },
     {
       "code": 6020,
-      "name": "RequestFull",
+      "name": "requestFull",
       "msg": "Request full"
     },
     {
       "code": 6021,
-      "name": "CannotDonateToSelf",
+      "name": "cannotDonateToSelf",
       "msg": "Cannot donate to self"
     },
     {
       "code": 6022,
-      "name": "InvalidPlayer",
+      "name": "invalidPlayer",
       "msg": "Invalid player"
     }
   ],
   "types": [
     {
-      "name": "BattleState",
+      "name": "battleState",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "tick_count",
+            "name": "tickCount",
             "type": "u64"
           },
           {
@@ -1762,7 +1779,7 @@
               "array": [
                 {
                   "defined": {
-                    "name": "Tower"
+                    "name": "tower"
                   }
                 },
                 6
@@ -1774,7 +1791,7 @@
             "type": {
               "vec": {
                 "defined": {
-                  "name": "Entity"
+                  "name": "entity"
                 }
               }
             }
@@ -1789,12 +1806,12 @@
       }
     },
     {
-      "name": "CardMintState",
+      "name": "cardMintState",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "card_id",
+            "name": "cardId",
             "type": "u8"
           },
           {
@@ -1813,12 +1830,12 @@
       }
     },
     {
-      "name": "CardProgress",
+      "name": "cardProgress",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "card_id",
+            "name": "cardId",
             "type": "u8"
           },
           {
@@ -1837,7 +1854,7 @@
       }
     },
     {
-      "name": "Clan",
+      "name": "clan",
       "type": {
         "kind": "struct",
         "fields": [
@@ -1850,11 +1867,11 @@
             "type": "pubkey"
           },
           {
-            "name": "member_count",
+            "name": "memberCount",
             "type": "u8"
           },
           {
-            "name": "min_trophies",
+            "name": "minTrophies",
             "type": "u32"
           },
           {
@@ -1865,7 +1882,7 @@
       }
     },
     {
-      "name": "ClanMember",
+      "name": "clanMember",
       "type": {
         "kind": "struct",
         "fields": [
@@ -1881,16 +1898,16 @@
             "name": "role",
             "type": {
               "defined": {
-                "name": "ClanRole"
+                "name": "clanRole"
               }
             }
           },
           {
-            "name": "last_request_time",
+            "name": "lastRequestTime",
             "type": "i64"
           },
           {
-            "name": "donations_given",
+            "name": "donationsGiven",
             "type": "u32"
           },
           {
@@ -1901,27 +1918,27 @@
       }
     },
     {
-      "name": "ClanRole",
+      "name": "clanRole",
       "type": {
         "kind": "enum",
         "variants": [
           {
-            "name": "Member"
+            "name": "member"
           },
           {
-            "name": "Elder"
+            "name": "elder"
           },
           {
-            "name": "CoLeader"
+            "name": "coLeader"
           },
           {
-            "name": "Leader"
+            "name": "leader"
           }
         ]
       }
     },
     {
-      "name": "DonationRequest",
+      "name": "donationRequest",
       "type": {
         "kind": "struct",
         "fields": [
@@ -1934,19 +1951,19 @@
             "type": "pubkey"
           },
           {
-            "name": "card_id",
+            "name": "cardId",
             "type": "u8"
           },
           {
-            "name": "amount_needed",
+            "name": "amountNeeded",
             "type": "u8"
           },
           {
-            "name": "amount_filled",
+            "name": "amountFilled",
             "type": "u8"
           },
           {
-            "name": "is_active",
+            "name": "isActive",
             "type": "bool"
           },
           {
@@ -1957,7 +1974,7 @@
       }
     },
     {
-      "name": "Entity",
+      "name": "entity",
       "type": {
         "kind": "struct",
         "fields": [
@@ -1966,11 +1983,11 @@
             "type": "u32"
           },
           {
-            "name": "owner_idx",
+            "name": "ownerIdx",
             "type": "u8"
           },
           {
-            "name": "card_id",
+            "name": "cardId",
             "type": "u8"
           },
           {
@@ -1993,12 +2010,12 @@
             "name": "state",
             "type": {
               "defined": {
-                "name": "EntityState"
+                "name": "entityState"
               }
             }
           },
           {
-            "name": "target_id",
+            "name": "targetId",
             "type": {
               "option": "u32"
             }
@@ -2007,27 +2024,27 @@
       }
     },
     {
-      "name": "EntityState",
+      "name": "entityState",
       "type": {
         "kind": "enum",
         "variants": [
           {
-            "name": "Idle"
+            "name": "idle"
           },
           {
-            "name": "Moving"
+            "name": "moving"
           },
           {
-            "name": "Attacking"
+            "name": "attacking"
           },
           {
-            "name": "Dead"
+            "name": "dead"
           }
         ]
       }
     },
     {
-      "name": "GameState",
+      "name": "gameState",
       "type": {
         "kind": "struct",
         "fields": [
@@ -2047,7 +2064,7 @@
             }
           },
           {
-            "name": "rewards_claimed",
+            "name": "rewardsClaimed",
             "type": {
               "array": [
                 "bool",
@@ -2056,14 +2073,14 @@
             }
           },
           {
-            "name": "created_at",
+            "name": "createdAt",
             "type": "i64"
           },
           {
             "name": "status",
             "type": {
               "defined": {
-                "name": "GameStatus"
+                "name": "gameStatus"
               }
             }
           }
@@ -2071,24 +2088,24 @@
       }
     },
     {
-      "name": "GameStatus",
+      "name": "gameStatus",
       "type": {
         "kind": "enum",
         "variants": [
           {
-            "name": "Waiting"
+            "name": "waiting"
           },
           {
-            "name": "Active"
+            "name": "active"
           },
           {
-            "name": "Completed"
+            "name": "completed"
           }
         ]
       }
     },
     {
-      "name": "PlayerProfile",
+      "name": "playerProfile",
       "type": {
         "kind": "struct",
         "fields": [
@@ -2114,7 +2131,7 @@
             "type": {
               "vec": {
                 "defined": {
-                  "name": "CardProgress"
+                  "name": "cardProgress"
                 }
               }
             }
@@ -2123,7 +2140,7 @@
       }
     },
     {
-      "name": "SessionToken",
+      "name": "sessionToken",
       "type": {
         "kind": "struct",
         "fields": [
@@ -2132,22 +2149,22 @@
             "type": "pubkey"
           },
           {
-            "name": "target_program",
+            "name": "targetProgram",
             "type": "pubkey"
           },
           {
-            "name": "session_signer",
+            "name": "sessionSigner",
             "type": "pubkey"
           },
           {
-            "name": "valid_until",
+            "name": "validUntil",
             "type": "i64"
           }
         ]
       }
     },
     {
-      "name": "Tower",
+      "name": "tower",
       "type": {
         "kind": "struct",
         "fields": [
@@ -2164,15 +2181,15 @@
             "type": "i32"
           },
           {
-            "name": "owner_idx",
+            "name": "ownerIdx",
             "type": "u8"
           },
           {
-            "name": "is_king",
+            "name": "isKing",
             "type": "bool"
           }
         ]
       }
     }
   ]
-}
+};

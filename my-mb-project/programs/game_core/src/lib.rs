@@ -6,11 +6,11 @@ pub mod errors;
 pub mod instructions;
 pub mod state;
 
-declare_id!("HDYw4gNvVqjCL4c9Er3RfnhuA5tNPPmoHpgyVsDumiWM");
+declare_id!("EVdyMusWRPqpz8S41KvCwMkpvQzQdzxzADpdyN9L3Yod");
 
 #[ephemeral_rollups_sdk::anchor::ephemeral]
 #[program]
-pub mod counter {
+pub mod game_core {
     use super::*;
 
     // Player
@@ -31,8 +31,8 @@ pub mod counter {
     }
 
     // Battle
-    pub fn initialize_game(ctx: Context<InitializeGame>, opponent: Pubkey) -> Result<()> {
-        instructions::battle::initialize_game(ctx, opponent)
+    pub fn start_game(ctx: Context<StartGame>) -> Result<()> {
+        instructions::battle::start_game(ctx)
     }
 
     pub fn delegate(ctx: Context<DelegateInput>) -> Result<()> {
@@ -41,10 +41,6 @@ pub mod counter {
 
     pub fn deploy_troop(ctx: Context<UpdateBattle>, card_idx: u8, x: i32, y: i32) -> Result<()> {
         instructions::battle::deploy_troop(ctx, card_idx, x, y)
-    }
-
-    pub fn game_tick(ctx: Context<UpdateBattle>) -> Result<()> {
-        instructions::battle::game_tick(ctx)
     }
 
     pub fn resolve_game(ctx: Context<ResolveGame>) -> Result<()> {
@@ -91,14 +87,5 @@ pub mod counter {
 
     pub fn donate_cards(ctx: Context<DonateCards>) -> Result<()> {
         instructions::clans::donate_cards(ctx)
-    }
-
-    // Economy
-    pub fn deposit_gold(ctx: Context<DepositGold>, amount: u64) -> Result<()> {
-        instructions::economy::deposit_gold(ctx, amount)
-    }
-
-    pub fn withdraw_gold(ctx: Context<WithdrawGold>, amount: u64) -> Result<()> {
-        instructions::economy::withdraw_gold(ctx, amount)
     }
 }

@@ -1,7 +1,7 @@
 {
-  "address": "J7spB3QtLK45MmsALsdKL255KeM3HfnQm13tbP7kvCMa",
+  "address": "EVdyMusWRPqpz8S41KvCwMkpvQzQdzxzADpdyN9L3Yod",
   "metadata": {
-    "name": "counter",
+    "name": "game_core",
     "version": "0.1.0",
     "spec": "0.1.0",
     "description": "Created with Anchor"
@@ -251,38 +251,38 @@
             "program": {
               "kind": "const",
               "value": [
-                254,
-                89,
-                158,
-                15,
-                21,
-                113,
-                253,
-                150,
-                240,
-                168,
-                92,
-                193,
-                137,
-                134,
-                48,
-                96,
-                52,
-                230,
-                104,
+                200,
+                125,
+                255,
+                44,
+                65,
+                159,
+                143,
+                132,
+                140,
+                127,
+                93,
+                45,
+                136,
+                229,
+                102,
+                213,
+                228,
+                239,
+                180,
+                16,
+                83,
+                40,
                 207,
-                87,
-                218,
-                179,
-                17,
-                101,
-                133,
-                95,
+                3,
+                193,
+                67,
+                253,
                 43,
-                218,
-                5,
-                152,
-                109
+                177,
+                16,
+                220,
+                172
               ]
             }
           }
@@ -364,6 +364,17 @@
           "pda": {
             "seeds": [
               {
+                "kind": "const",
+                "value": [
+                  112,
+                  108,
+                  97,
+                  121,
+                  101,
+                  114
+                ]
+              },
+              {
                 "kind": "account",
                 "path": "payer"
               }
@@ -372,7 +383,7 @@
         },
         {
           "name": "owner_program",
-          "address": "J7spB3QtLK45MmsALsdKL255KeM3HfnQm13tbP7kvCMa"
+          "address": "EVdyMusWRPqpz8S41KvCwMkpvQzQdzxzADpdyN9L3Yod"
         },
         {
           "name": "delegation_program",

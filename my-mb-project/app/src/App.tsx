@@ -1,29 +1,34 @@
+
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { Counter } from "./components/Counter";
 import "./index.css";
+import { TestLayout } from "./components/test-ui/TestLayout";
+import { PlayerSection } from "./components/test-ui/PlayerSection";
+import { ClanSection } from "./components/test-ui/ClanSection";
+import { DeckSection } from "./components/test-ui/DeckSection";
+import { SessionSection } from "./components/test-ui/SessionSection";
+import { GameSection } from "./components/test-ui/GameSection";
+import { useWallet } from "@solana/wallet-adapter-react";
 
 export function App() {
+  const { publicKey } = useWallet();
+
   return (
-    <>
-      <div className="absolute top-5 right-5">
-        <WalletMultiButton />
-      </div>
-      <div className="bg-gray-50 p-8 rounded-xl border">
-        <div className="max-w-2xl mx-auto">
-          <header className="text-center mb-8">
-            <h1 className="text-3xl font-bold mb-2">Magicblock Anchor Counter</h1>
-          </header>
-
-          <main>
-            <Counter />
-          </main>
-
-          <footer className="text-center mt-8 text-gray-500 text-sm">
-            <p>Magicblock + Anchor + Solana</p>
-          </footer>
+    <TestLayout>
+      {!publicKey ? (
+        <div className="text-center py-20">
+          <h2 className="text-2xl font-semibold mb-4">Connect Wallet to Begin Testing</h2>
+          <p className="text-gray-500">You need to connect a Solana wallet to interact with the game.</p>
         </div>
-      </div>
-    </>
+      ) : (
+        <div className="space-y-6">
+          <PlayerSection />
+          <SessionSection />
+          <DeckSection />
+          <ClanSection />
+          <GameSection />
+        </div>
+      )}
+    </TestLayout>
   );
 }
 

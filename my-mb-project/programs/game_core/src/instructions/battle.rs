@@ -14,20 +14,23 @@ use crate::constants::*;
 pub struct DelegateInput<'info> {
     pub payer: Signer<'info>,
     /// CHECK: Validated by seeds
-    #[account(mut, del, seeds = [payer.key().as_ref()], bump)]
+    #[account(mut, del, seeds = [b"player", payer.key().as_ref()], bump)]
     pub pda: AccountInfo<'info>, 
 }
 
 #[derive(Accounts)]
-pub struct InitializeGame<'info> {
-    #[account(init, payer = authority, space = 8 + GameState::INIT_SPACE)]
+pub struct StartGame<'info> {
+    #[account(init, payer = player_one, space = 8 + GameState::INIT_SPACE)]
     pub game: Account<'info, GameState>,
     
-    #[account(init, payer = authority, space = 8 + BattleState::INIT_SPACE)]
+    #[account(init, payer = player_one, space = 8 + BattleState::INIT_SPACE)]
     pub battle: Account<'info, BattleState>,
 
     #[account(mut)]
-    pub authority: Signer<'info>,
+    pub player_one: Signer<'info>,
+    #[account(mut)]
+    pub player_two: Signer<'info>,
+
     pub system_program: Program<'info, System>,
 }
 
@@ -55,8 +58,11 @@ pub struct ResolveGame<'info> {
     pub game: Account<'info, GameState>,
     #[account(mut)]
     pub battle: Account<'info, BattleState>, 
-    /// CHECK: Anyone can resolve for now or Authority
-    pub authority: UncheckedAccount<'info>, 
+    
+    #[account(mut)]
+    pub player_one: Signer<'info>,
+    #[account(mut)]
+    pub player_two: Signer<'info>,
 }
 
 #[commit]
@@ -89,9 +95,9 @@ pub struct ClaimRewards<'info> {
     pub signer: Signer<'info>,
 }
 
-pub fn initialize_game(ctx: Context<InitializeGame>, opponent: Pubkey) -> Result<()> {
+pub fn start_game(ctx: Context<StartGame>) -> Result<()> {
     let game = &mut ctx.accounts.game;
-    game.players = [ctx.accounts.authority.key(), opponent];
+    game.players = [ctx.accounts.player_one.key(), ctx.accounts.player_two.key()];
     game.status = GameStatus::Active;
     game.created_at = Clock::get()?.unix_timestamp;
     game.rewards_claimed = [false; 2];
@@ -170,37 +176,19 @@ pub fn deploy_troop(ctx: Context<UpdateBattle>, card_idx: u8, x: i32, y: i32) ->
     Ok(())
 }
 
-pub fn game_tick(ctx: Context<UpdateBattle>) -> Result<()> {
-    let battle = &mut ctx.accounts.battle;
-    battle.tick_count += 1;
-    
-    for i in 0..2 {
-        if battle.elixir[i] < 1000 { battle.elixir[i] += 1; }
-    }
-
-    battle.entities.retain(|e| e.health > 0);
-    for e in battle.entities.iter_mut() {
-        let speed = 5;
-        if e.owner_idx == 0 { e.y += speed; } else { e.y -= speed; }
-    }
-
-    let p0_king_dead = battle.towers[0].health <= 0;
-    let p1_king_dead = battle.towers[3].health <= 0;
-    
-    if p0_king_dead || p1_king_dead {
-            if p0_king_dead { battle.winner = Some(1); }
-            else { battle.winner = Some(0); }
-    }
-
-    Ok(())
-}
-
 pub fn resolve_game(ctx: Context<ResolveGame>) -> Result<()> {
     let battle = &ctx.accounts.battle;
     let game = &mut ctx.accounts.game;
     
+    // Verify signers are the players
+    require!(ctx.accounts.player_one.key() == game.players[0], GameError::InvalidPlayer);
+    require!(ctx.accounts.player_two.key() == game.players[1], GameError::InvalidPlayer);
+    
     if let Some(w_idx) = battle.winner {
         game.winner = Some(game.players[w_idx as usize]);
+        game.status = GameStatus::Completed;
+    } else {
+        // Handle draw or forced termination?
         game.status = GameStatus::Completed;
     }
     Ok(())
@@ -251,8 +239,8 @@ pub fn claim_rewards(ctx: Context<ClaimRewards>) -> Result<()> {
 
     token::mint_to(cpi_ctx, TOKEN_REWARD_AMOUNT * 1_000_000)?; 
     
-    // Update Soft Currency and MMR
-    ctx.accounts.profile.tokens += TOKEN_REWARD_AMOUNT;
+    // Mint Token (already done above)
+    // Update MMR
     ctx.accounts.profile.mmr += 30; // +30 MMR for win
 
     game.rewards_claimed[idx] = true;

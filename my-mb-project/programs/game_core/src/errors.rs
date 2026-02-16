@@ -46,4 +46,6 @@ pub enum GameError {
     RequestFull,
     #[msg("Cannot donate to self")]
     CannotDonateToSelf,
+    #[msg("Invalid player")]
+    InvalidPlayer,
 }

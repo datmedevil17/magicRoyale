@@ -8,7 +8,6 @@ use crate::constants::*;
 #[derive(InitSpace)]
 pub struct PlayerProfile {
     pub authority: Pubkey,
-    pub tokens: u64,
     pub mmr: u32,
     pub deck: [u8; 8],
     #[max_len(MAX_INVENTORY)]

@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/counter.json`.
  */
 export type Counter = {
-  "address": "HDYw4gNvVqjCL4c9Er3RfnhuA5tNPPmoHpgyVsDumiWM",
+  "address": "J7spB3QtLK45MmsALsdKL255KeM3HfnQm13tbP7kvCMa",
   "metadata": {
     "name": "counter",
     "version": "0.1.0",
@@ -257,38 +257,38 @@ export type Counter = {
             "program": {
               "kind": "const",
               "value": [
-                240,
-                242,
-                16,
-                249,
-                57,
-                227,
-                209,
-                255,
-                12,
-                17,
-                163,
-                91,
-                125,
-                119,
-                87,
-                236,
-                230,
-                117,
-                252,
+                254,
+                89,
+                158,
+                15,
+                21,
+                113,
                 253,
+                150,
+                240,
+                168,
+                92,
+                193,
+                137,
+                134,
+                48,
+                96,
+                52,
+                230,
+                104,
+                207,
+                87,
+                218,
+                179,
+                17,
+                101,
+                133,
+                95,
                 43,
-                99,
-                235,
-                23,
-                67,
-                40,
-                251,
-                185,
-                198,
-                160,
-                51,
-                138
+                218,
+                5,
+                152,
+                109
               ]
             }
           }
@@ -378,7 +378,7 @@ export type Counter = {
         },
         {
           "name": "ownerProgram",
-          "address": "HDYw4gNvVqjCL4c9Er3RfnhuA5tNPPmoHpgyVsDumiWM"
+          "address": "J7spB3QtLK45MmsALsdKL255KeM3HfnQm13tbP7kvCMa"
         },
         {
           "name": "delegationProgram",
@@ -456,71 +456,6 @@ export type Counter = {
         {
           "name": "y",
           "type": "i32"
-        }
-      ]
-    },
-    {
-      "name": "depositGold",
-      "discriminator": [
-        214,
-        54,
-        155,
-        149,
-        172,
-        5,
-        212,
-        37
-      ],
-      "accounts": [
-        {
-          "name": "profile",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  108,
-                  97,
-                  121,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "authority"
-              }
-            ]
-          }
-        },
-        {
-          "name": "goldMint",
-          "writable": true
-        },
-        {
-          "name": "source",
-          "writable": true
-        },
-        {
-          "name": "vault",
-          "writable": true
-        },
-        {
-          "name": "tokenProgram",
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-        },
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true
-        }
-      ],
-      "args": [
-        {
-          "name": "amount",
-          "type": "u64"
         }
       ]
     },
@@ -627,6 +562,44 @@ export type Counter = {
               }
             ]
           }
+        },
+        {
+          "name": "mint",
+          "writable": true
+        },
+        {
+          "name": "donorTokenAccount",
+          "writable": true
+        },
+        {
+          "name": "mintAuthority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         },
         {
           "name": "authority",
@@ -950,61 +923,6 @@ export type Counter = {
       ]
     },
     {
-      "name": "gameTick",
-      "discriminator": [
-        199,
-        24,
-        166,
-        60,
-        223,
-        20,
-        2,
-        161
-      ],
-      "accounts": [
-        {
-          "name": "battle",
-          "writable": true
-        },
-        {
-          "name": "game",
-          "writable": true
-        },
-        {
-          "name": "playerProfile",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  108,
-                  97,
-                  121,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "signer"
-              }
-            ]
-          }
-        },
-        {
-          "name": "signer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "sessionToken",
-          "optional": true
-        }
-      ],
-      "args": []
-    },
-    {
       "name": "importResource",
       "discriminator": [
         215,
@@ -1066,46 +984,6 @@ export type Counter = {
         {
           "name": "amount",
           "type": "u32"
-        }
-      ]
-    },
-    {
-      "name": "initializeGame",
-      "discriminator": [
-        44,
-        62,
-        102,
-        247,
-        126,
-        208,
-        130,
-        215
-      ],
-      "accounts": [
-        {
-          "name": "game",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "battle",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "systemProgram",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": [
-        {
-          "name": "opponent",
-          "type": "pubkey"
         }
       ]
     },
@@ -1370,7 +1248,14 @@ export type Counter = {
           "writable": true
         },
         {
-          "name": "authority"
+          "name": "playerOne",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "playerTwo",
+          "writable": true,
+          "signer": true
         }
       ],
       "args": []
@@ -1412,6 +1297,18 @@ export type Counter = {
           }
         },
         {
+          "name": "mint",
+          "writable": true
+        },
+        {
+          "name": "userTokenAccount",
+          "writable": true
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
           "name": "authority",
           "signer": true
         }
@@ -1427,6 +1324,46 @@ export type Counter = {
           }
         }
       ]
+    },
+    {
+      "name": "startGame",
+      "discriminator": [
+        249,
+        47,
+        252,
+        172,
+        184,
+        162,
+        245,
+        14
+      ],
+      "accounts": [
+        {
+          "name": "game",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "battle",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "playerOne",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "playerTwo",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
     },
     {
       "name": "undelegateBattle",
@@ -1499,6 +1436,18 @@ export type Counter = {
           }
         },
         {
+          "name": "mint",
+          "writable": true
+        },
+        {
+          "name": "userTokenAccount",
+          "writable": true
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
           "name": "authority",
           "signer": true
         }
@@ -1547,6 +1496,18 @@ export type Counter = {
           }
         },
         {
+          "name": "mint",
+          "writable": true
+        },
+        {
+          "name": "userTokenAccount",
+          "writable": true
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
           "name": "authority",
           "signer": true
         }
@@ -1555,93 +1516,6 @@ export type Counter = {
         {
           "name": "cardId",
           "type": "u8"
-        }
-      ]
-    },
-    {
-      "name": "withdrawGold",
-      "discriminator": [
-        179,
-        101,
-        10,
-        15,
-        244,
-        112,
-        28,
-        19
-      ],
-      "accounts": [
-        {
-          "name": "profile",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  108,
-                  97,
-                  121,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "authority"
-              }
-            ]
-          }
-        },
-        {
-          "name": "goldMint",
-          "writable": true
-        },
-        {
-          "name": "destination",
-          "writable": true
-        },
-        {
-          "name": "goldAuthority",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  103,
-                  111,
-                  108,
-                  100,
-                  95,
-                  97,
-                  117,
-                  116,
-                  104,
-                  111,
-                  114,
-                  105,
-                  116,
-                  121
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "tokenProgram",
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-        },
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true
-        }
-      ],
-      "args": [
-        {
-          "name": "amount",
-          "type": "u64"
         }
       ]
     }
@@ -1862,6 +1736,11 @@ export type Counter = {
       "code": 6021,
       "name": "cannotDonateToSelf",
       "msg": "Cannot donate to self"
+    },
+    {
+      "code": 6022,
+      "name": "invalidPlayer",
+      "msg": "Invalid player"
     }
   ],
   "types": [
@@ -2222,10 +2101,6 @@ export type Counter = {
           {
             "name": "authority",
             "type": "pubkey"
-          },
-          {
-            "name": "tokens",
-            "type": "u64"
           },
           {
             "name": "mmr",

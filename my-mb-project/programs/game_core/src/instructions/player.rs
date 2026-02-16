@@ -3,6 +3,8 @@ use crate::state::*;
 use crate::errors::GameError;
 use crate::constants::*;
 
+use anchor_spl::token::{Mint, Token, TokenAccount};
+
 #[derive(Accounts)]
 pub struct InitializePlayer<'info> {
     #[account(
@@ -22,13 +24,19 @@ pub struct InitializePlayer<'info> {
 pub struct ManageCard<'info> {
     #[account(mut, seeds = [b"player", authority.key().as_ref()], bump)]
     pub profile: Account<'info, PlayerProfile>,
+    
+    #[account(mut)]
+    pub mint: Account<'info, Mint>,
+    #[account(mut)] 
+    pub user_token_account: Account<'info, TokenAccount>,
+    
+    pub token_program: Program<'info, Token>,
     pub authority: Signer<'info>,
 }
 
 pub fn initialize_player(ctx: Context<InitializePlayer>) -> Result<()> {
     let profile = &mut ctx.accounts.profile;
     profile.authority = ctx.accounts.authority.key();
-    profile.tokens = 1000; 
     profile.mmr = 1000;    
     profile.deck = [1, 2, 3, 4, 0, 0, 0, 0]; 
     
@@ -46,8 +54,16 @@ pub fn unlock_card(ctx: Context<ManageCard>, card_id: u8) -> Result<()> {
     let profile = &mut ctx.accounts.profile;
     let unlock_cost = 100;
     
-    if profile.tokens < unlock_cost { return err!(GameError::NotEnoughTokens); }
-    profile.tokens -= unlock_cost;
+    // Burn SPL Token
+    let cpi_ctx = CpiContext::new(
+        ctx.accounts.token_program.to_account_info(),
+        anchor_spl::token::Burn {
+            mint: ctx.accounts.mint.to_account_info(),
+            from: ctx.accounts.user_token_account.to_account_info(),
+            authority: ctx.accounts.authority.to_account_info(),
+        },
+    );
+    anchor_spl::token::burn(cpi_ctx, unlock_cost * 1_000_000)?; // Decimals assumption
 
     if let Some(card) = profile.inventory.iter_mut().find(|c| c.card_id == card_id) {
          card.amount += 1;
@@ -78,10 +94,19 @@ pub fn upgrade_card(ctx: Context<ManageCard>, card_id: u8) -> Result<()> {
     let token_cost = 50 * (current_level as u64).pow(2);
 
     if current_amount < cards_needed { return err!(GameError::NotEnoughCards); }
-    if profile.tokens < token_cost { return err!(GameError::NotEnoughTokens); }
     
+    // Burn SPL Token
+    let cpi_ctx = CpiContext::new(
+        ctx.accounts.token_program.to_account_info(),
+        anchor_spl::token::Burn {
+            mint: ctx.accounts.mint.to_account_info(),
+            from: ctx.accounts.user_token_account.to_account_info(),
+            authority: ctx.accounts.authority.to_account_info(),
+        },
+    );
+    anchor_spl::token::burn(cpi_ctx, token_cost * 1_000_000)?;
+
     profile.inventory[card_idx].amount -= cards_needed;
-    profile.tokens -= token_cost;
     profile.inventory[card_idx].level += 1;
     
     msg!("Upgraded card {} to level {}", card_id, profile.inventory[card_idx].level);
