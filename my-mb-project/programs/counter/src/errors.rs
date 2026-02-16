@@ -1,0 +1,49 @@
+use anchor_lang::prelude::*;
+
+#[error_code]
+pub enum GameError {
+    #[msg("Not enough currency")]
+    NotEnoughTokens,
+    #[msg("Card already unlocked")]
+    CardAlreadyUnlocked,
+    #[msg("Inventory full")]
+    InventoryFull,
+    #[msg("Card not owned")]
+    CardNotOwned,
+    #[msg("Invalid card index")]
+    InvalidCardIdx,
+    #[msg("Empty card slot")]
+    EmptyCardSlot,
+    #[msg("Invalid card ID")]
+    InvalidCardId,
+    #[msg("Not enough elixir")]
+    NotEnoughElixir,
+    #[msg("Too many entities")]
+    TooManyEntities,
+    #[msg("Game not finished")]
+    GameNotFinished,
+    #[msg("Not winner")]
+    NotWinner,
+    #[msg("Already claimed")]
+    AlreadyClaimed,
+    #[msg("Invalid auth")]
+    InvalidAuth,
+    #[msg("Max level reached")]
+    MaxLevelReached,
+    #[msg("Not enough cards")]
+    NotEnoughCards,
+    #[msg("Clan full")]
+    ClanFull,
+    #[msg("Already in clan")]
+    AlreadyInClan,
+    #[msg("Clan name too long")]
+    ClanNameTooLong,
+    #[msg("Request cooldown active")]
+    RequestCooldown,
+    #[msg("Request not active")]
+    RequestNotActive,
+    #[msg("Request full")]
+    RequestFull,
+    #[msg("Cannot donate to self")]
+    CannotDonateToSelf,
+}

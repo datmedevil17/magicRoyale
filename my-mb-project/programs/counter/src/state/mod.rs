@@ -1,0 +1,106 @@
+pub mod clans;
+pub use clans::*;
+
+use anchor_lang::prelude::*;
+use crate::constants::*;
+
+#[account]
+#[derive(InitSpace)]
+pub struct PlayerProfile {
+    pub authority: Pubkey,
+    pub tokens: u64,
+    pub mmr: u32,
+    pub deck: [u8; 8],
+    #[max_len(MAX_INVENTORY)]
+    pub inventory: Vec<CardProgress>,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace, Debug)]
+pub struct CardProgress {
+    pub card_id: u8,
+    pub level: u8,
+    pub xp: u16,
+    pub amount: u32,
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct CardMintState {
+    pub card_id: u8,
+    pub level: u8,
+    pub xp: u16,
+    pub bump: u8,
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct GameState {
+    pub players: [Pubkey; 2],
+    pub winner: Option<Pubkey>,
+    pub rewards_claimed: [bool; 2],
+    pub created_at: i64,
+    pub status: GameStatus,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace, PartialEq, Eq)]
+pub enum GameStatus {
+    Waiting,
+    Active,
+    Completed
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct BattleState {
+    pub tick_count: u64,
+    pub elixir: [u64; 2],
+    pub towers: [Tower; 6],
+    #[max_len(MAX_ENTITIES)]
+    pub entities: Vec<Entity>,
+    pub winner: Option<u8>,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace, Debug)]
+pub struct Tower {
+    pub health: i32,
+    pub x: i32,
+    pub y: i32,
+    pub owner_idx: u8,
+    pub is_king: bool,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace, Debug)]
+pub struct Entity {
+    pub id: u32,
+    pub owner_idx: u8,
+    pub card_id: u8,
+    pub x: i32,
+    pub y: i32,
+    pub health: i32,
+    pub damage: i32,
+    pub state: EntityState,
+    pub target_id: Option<u32>,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace, Debug)]
+pub enum EntityState {
+    Idle,
+    Moving,
+    Attacking,
+    Dead
+}
+
+pub struct CardBaseStats {
+    pub cost: u8,
+    pub health: i32,
+    pub damage: i32
+}
+
+pub fn get_card_stats(id: u8) -> Option<CardBaseStats> {
+    match id {
+        1 => Some(CardBaseStats { cost: 3, health: 125, damage: 33 }), // Archer 
+        2 => Some(CardBaseStats { cost: 5, health: 2000, damage: 126 }), // Giant
+        3 => Some(CardBaseStats { cost: 4, health: 600, damage: 325 }), // MiniPEKKA
+        _ => Some(CardBaseStats { cost: 3, health: 100, damage: 100 })
+    }
+}
