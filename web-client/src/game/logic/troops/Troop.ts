@@ -1,5 +1,6 @@
 
 import Phaser from 'phaser';
+import { getTroopStats } from '../../config/TroopConfig';
 import { Entity, EntityType } from '../Entity';
 import type { ArenaLayout } from '../Interfaces';
 import { ArenaConstants } from '../ArenaConstants';
@@ -27,6 +28,19 @@ export abstract class Troop extends Entity {
 
     constructor(id: string, x: number, y: number, ownerId: string, cardId: string) {
         super(id, x, y, ownerId, EntityType.TROOP);
+
+        // Load stats from config
+        const stats = getTroopStats(cardId);
+        this.health = stats.health;
+        this.maxHealth = stats.health;
+        this.speed = stats.speed;
+        this.range = stats.range;
+        this.hitSpeed = stats.hitSpeed;
+        this.damage = stats.damage;
+        this.radius = stats.radius;
+
+        // Map Enum/String if needed
+        // this.attackType = stats.attackType; // If types match
     }
 
     public updateBase(layout: ArenaLayout) {

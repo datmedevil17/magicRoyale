@@ -13,7 +13,7 @@ export class BabyDragon extends Troop {
     public movementType = TroopStats.BabyDragon.movementType;
 
     constructor(id: string, x: number, y: number, ownerId: string) {
-        super(id, x, y, ownerId);
+        super(id, x, y, ownerId, 'BabyDragon');
         this.maxHealth = TroopStats.BabyDragon.health;
         this.health = this.maxHealth;
     }

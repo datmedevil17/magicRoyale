@@ -1,4 +1,5 @@
 import { Entity } from './Entity';
+import { getTroopStats } from '../config/TroopConfig';
 import { Barbarian } from './troops/Barbarian';
 import { Troop } from './troops/Troop';
 import { Archer } from './troops/Archer';
@@ -7,7 +8,7 @@ import { MiniPekka } from './troops/MiniPekka';
 import { Valkyrie } from './troops/Valkyrie';
 import { Wizard } from './troops/Wizard';
 import { BabyDragon } from './troops/BabyDragon';
-import type { Point2D } from './Interfaces';
+import type { Point2D, ArenaLayout } from './Interfaces';
 import type { IUser } from './User';
 
 export class GameManager {
@@ -43,7 +44,7 @@ export class GameManager {
         this.layout = layout;
     }
 
-    public startGame() {
+    public startGame(opponentId?: string) {
         this.gameStarted = true;
     }
 
@@ -59,12 +60,6 @@ export class GameManager {
             return;
         }
 
-        // Update elixir (Slower: approx 1 per 5s? User said "increase elixir formation" .. wait)
-        // User said: "increase eleixir formation" -> FASTER elixir?
-        // "decrese troops walk and attack speed by half" -> SLOWER troops.
-        // "increase elixir formation" usually means get elixir faster.
-        // Original: delta / 2800 -> 1 per 2.8s.
-        // If I make it delta / 1400 -> 1 per 1.4s (Double speed).
         // Update elixir
         if (this.isTestMode) {
             this.elixir = this.maxElixir;
@@ -91,10 +86,6 @@ export class GameManager {
 
     public deployCard(cardId: string, position: Point2D, ownerId: string): Entity | null {
         let entity: Entity | null = null;
-
-        // Simple cost check (for player only, currently)
-        // In a real game, this would check the owner's elixir
-        // For now, we assume implicit success or check GameManager.elixir if owner is player
 
         const stats = getTroopStats(cardId);
         let cost = stats.elixirCost;
@@ -167,6 +158,17 @@ export class GameManager {
         if (this.playerCrowns >= 3 || this.opponentCrowns >= 3) {
             this.endGame();
         }
+    }
+
+    public getState() {
+        return {
+            entities: this.entities,
+            elixir: this.elixir,
+            gameEnded: this.gameEnded,
+            winner: this.winner,
+            playerCrowns: this.playerCrowns,
+            opponentCrowns: this.opponentCrowns
+        };
     }
 
     public getRemainingTime(): number {

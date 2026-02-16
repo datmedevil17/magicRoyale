@@ -13,7 +13,7 @@ export class Wizard extends Troop {
     public movementType = TroopStats.Wizard.movementType;
 
     constructor(id: string, x: number, y: number, ownerId: string) {
-        super(id, x, y, ownerId);
+        super(id, x, y, ownerId, 'Wizard');
         this.maxHealth = TroopStats.Wizard.health;
         this.health = this.maxHealth;
     }

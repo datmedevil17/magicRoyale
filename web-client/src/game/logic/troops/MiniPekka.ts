@@ -13,7 +13,7 @@ export class MiniPekka extends Troop {
     public movementType = TroopStats.MiniPekka.movementType;
 
     constructor(id: string, x: number, y: number, ownerId: string) {
-        super(id, x, y, ownerId);
+        super(id, x, y, ownerId, 'MiniPEKKA');
         this.maxHealth = TroopStats.MiniPekka.health;
         this.health = this.maxHealth;
     }

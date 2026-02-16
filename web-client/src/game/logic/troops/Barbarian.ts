@@ -13,7 +13,7 @@ export class Barbarian extends Troop {
     public movementType = TroopStats.Barbarian.movementType;
 
     constructor(id: string, x: number, y: number, ownerId: string) {
-        super(id, x, y, ownerId);
+        super(id, x, y, ownerId, 'Barbarian');
         this.maxHealth = TroopStats.Barbarian.health;
         this.health = this.maxHealth;
     }

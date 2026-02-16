@@ -13,7 +13,7 @@ export class Giant extends Troop {
     public movementType = TroopStats.Giant.movementType;
 
     constructor(id: string, x: number, y: number, ownerId: string) {
-        super(id, x, y, ownerId);
+        super(id, x, y, ownerId, 'Giant');
         this.maxHealth = TroopStats.Giant.health;
         this.health = this.maxHealth;
         // Giants target buildings only in real game, but for now simple target

@@ -13,7 +13,7 @@ export class Valkyrie extends Troop {
     public movementType = TroopStats.Valkyrie.movementType;
 
     constructor(id: string, x: number, y: number, ownerId: string) {
-        super(id, x, y, ownerId);
+        super(id, x, y, ownerId, 'Valkyrie');
         this.maxHealth = TroopStats.Valkyrie.health;
         this.health = this.maxHealth;
     }
