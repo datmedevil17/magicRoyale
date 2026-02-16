@@ -1,21 +1,12 @@
-import { TroopStats } from '../TroopStats';
 import { Troop, TroopState } from './Troop';
 import { Entity } from '../Entity';
 import type { ArenaLayout } from '../Interfaces';
 
 export class Barbarian extends Troop {
-    public name = TroopStats.Barbarian.name;
-    public speed = TroopStats.Barbarian.speed;
-    public range = TroopStats.Barbarian.range;
-    public hitSpeed = TroopStats.Barbarian.hitSpeed;
-    public damage = TroopStats.Barbarian.damage;
-    public attackType = TroopStats.Barbarian.attackType;
-    public movementType = TroopStats.Barbarian.movementType;
+    public name = 'Barbarians';
 
     constructor(id: string, x: number, y: number, ownerId: string) {
         super(id, x, y, ownerId, 'Barbarian');
-        this.maxHealth = TroopStats.Barbarian.health;
-        this.health = this.maxHealth;
     }
 
     update(time: number, delta: number, enemies: Entity[], layout: ArenaLayout) {

@@ -1,21 +1,12 @@
-import { TroopStats } from '../TroopStats';
 import { Troop, TroopState } from './Troop';
 import { Entity } from '../Entity';
 import type { ArenaLayout } from '../Interfaces';
 
 export class Valkyrie extends Troop {
-    public name = TroopStats.Valkyrie.name;
-    public speed = TroopStats.Valkyrie.speed;
-    public range = TroopStats.Valkyrie.range;
-    public hitSpeed = TroopStats.Valkyrie.hitSpeed;
-    public damage = TroopStats.Valkyrie.damage;
-    public attackType = TroopStats.Valkyrie.attackType;
-    public movementType = TroopStats.Valkyrie.movementType;
+    public name = 'Valkyrie';
 
     constructor(id: string, x: number, y: number, ownerId: string) {
         super(id, x, y, ownerId, 'Valkyrie');
-        this.maxHealth = TroopStats.Valkyrie.health;
-        this.health = this.maxHealth;
     }
 
     update(time: number, delta: number, enemies: Entity[], layout: ArenaLayout) {

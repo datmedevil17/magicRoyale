@@ -117,12 +117,8 @@ export class GameManager {
             const id = `babydragon_${Date.now()}_${Math.random()}`;
             entity = new BabyDragon(id, position.x, position.y, ownerId);
         } else if (cardId === 'Barbarians') {
-            // Spawn 4 Barbarians
-            this.addEntity(new Barbarian(`barb_${Date.now()}_1`, position.x - 20, position.y - 20, ownerId));
-            this.addEntity(new Barbarian(`barb_${Date.now()}_2`, position.x + 20, position.y - 20, ownerId));
-            this.addEntity(new Barbarian(`barb_${Date.now()}_3`, position.x - 20, position.y + 20, ownerId));
-            // Return one as main entity
-            entity = new Barbarian(`barb_${Date.now()}_4`, position.x + 20, position.y + 20, ownerId);
+            const id = `barb_${Date.now()}_${Math.random()}`;
+            entity = new Barbarian(id, position.x, position.y, ownerId);
         }
 
         if (entity) {

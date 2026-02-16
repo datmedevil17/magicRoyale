@@ -15,7 +15,8 @@ const INITIAL_DECK: CardItem[] = [
     { id: 'MiniPEKKA', name: 'Mini P.E.K.K.A', cost: 4, icon: 'assets/MiniPEKKACard.png' },
     { id: 'Valkyrie', name: 'Valkyrie', cost: 4, icon: 'assets/ValkyrieCard.png' },
     { id: 'Wizard', name: 'Wizard', cost: 5, icon: 'assets/WizardCard.png' },
-    { id: 'BabyDragon', name: 'Baby Dragon', cost: 4, icon: 'assets/BabyDragonCard.png' }
+    { id: 'BabyDragon', name: 'Baby Dragon', cost: 4, icon: 'assets/BabyDragonCard.png' },
+    { id: 'Barbarians', name: 'Barbarians', cost: 5, icon: 'assets/BarbariansCard.png' }
 ];
 
 const getRandomDeck = () => {

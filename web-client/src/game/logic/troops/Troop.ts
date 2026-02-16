@@ -1,9 +1,8 @@
-
 import Phaser from 'phaser';
 import { getTroopStats } from '../../config/TroopConfig';
+import { ArenaConfig } from '../../config/ArenaConfig';
 import { Entity, EntityType } from '../Entity';
 import type { ArenaLayout } from '../Interfaces';
-import { ArenaConstants } from '../ArenaConstants';
 
 export const TroopState = {
     WALK: 'walk',
@@ -26,6 +25,9 @@ export abstract class Troop extends Entity {
     public target: Entity | null = null;
     public lastAttackTime: number = 0;
 
+    // Add currentRange property
+    public currentRange: number = 0;
+
     constructor(id: string, x: number, y: number, ownerId: string, cardId: string) {
         super(id, x, y, ownerId, EntityType.TROOP);
 
@@ -39,12 +41,13 @@ export abstract class Troop extends Entity {
         this.damage = stats.damage;
         this.radius = stats.radius;
 
-        // Map Enum/String if needed
-        // this.attackType = stats.attackType; // If types match
+        this.attackType = stats.attackType;
+        this.movementType = stats.movementType;
     }
 
     public updateBase(layout: ArenaLayout) {
-        const scaleFactor = layout.tileSize / ArenaConstants.REFERENCE_TILE_SIZE;
+        // Use ArenaConfig.TILE_SIZE as reference
+        const scaleFactor = layout.tileSize / ArenaConfig.TILE_SIZE;
         this.currentRange = this.range * scaleFactor;
     }
 
@@ -58,12 +61,17 @@ export abstract class Troop extends Entity {
         // Distance is center-to-center
         const dist = this.getDistanceTo(target);
 
-        // BETTER: Store 'currentRange' which is updated in update() method.
-        return dist <= this.currentRange + (target.radius || 20) + (this.radius || 20);
-    }
+        // Range check is edge-to-edge (Current Range + Radii)
+        const attackRange = this.currentRange + (target.radius || 20) + (this.radius || 20);
 
-    // Add currentRange property
-    public currentRange: number = 0;
+        // Hysteresis: If already fighting, maintain intent to fight a bit longer (buffer) 
+        // to prevent flickering when at inevitable range boundary.
+        if (this.state === TroopState.FIGHT) {
+            return dist <= attackRange + 5;
+        }
+
+        return dist <= attackRange;
+    }
 
     public moveTowards(target: Entity | { x: number, y: number }, delta: number, layout: ArenaLayout) {
         let targetX = target.x;
@@ -71,35 +79,63 @@ export abstract class Troop extends Entity {
 
         // Simple Pathfinding for Bridge Crossing (Ground Troops only)
         if (this.movementType === 'GROUND') {
-            const riverRowY = layout.mapStartY + ArenaConstants.RIVER_ROW * layout.tileSize;
+            const tileSize = layout.tileSize;
 
-            const bridgeLeftX = layout.mapStartX + ArenaConstants.BRIDGE_LEFT_COL * layout.tileSize + layout.tileSize / 2;
-            const bridgeRightX = layout.mapStartX + ArenaConstants.BRIDGE_RIGHT_COL * layout.tileSize + layout.tileSize / 2;
+            // Convert to Rows for Logic
+            const myRow = (this.y - layout.mapStartY) / tileSize;
+            const targetRowCheck = (targetY - layout.mapStartY) / tileSize;
+
+            // River Bounds (Visual Config)
+            const riverTopRow = ArenaConfig.RIVER_ROW_START;     // 18
+            const riverBottomRow = ArenaConfig.RIVER_ROW_END + 1; // 20 (End is 19 inclusive)
+
+            const bridgeLeftX = layout.mapStartX + ArenaConfig.BRIDGE_LEFT_COL * tileSize + tileSize / 2;
+            const bridgeRightX = layout.mapStartX + ArenaConfig.BRIDGE_RIGHT_COL * tileSize + tileSize / 2;
 
             // Check if we need to cross the river
-            // If I am above river and target is below, OR I am below and target is above
-            // AND I am NOT already on a bridge (x approx bridgeX)
+            // Case 1: I am above river (Row < 18), Target is below (Row > 19)
+            // Case 2: I am below river (Row > 19), Target is above (Row < 18)
+            // Case 3: I am IN the river area (Row 18-20) -> Must exit via bridge verticality
 
-            const myRow = Math.floor((this.y - layout.mapStartY) / layout.tileSize);
-            const targetRow = Math.floor((targetY - layout.mapStartY) / layout.tileSize);
+            const isAbove = myRow < riverTopRow;
+            const isBelow = myRow > riverBottomRow;
+            const isInRiver = !isAbove && !isBelow;
 
-            const isCrossing = (myRow < ArenaConstants.RIVER_ROW && targetRow > ArenaConstants.RIVER_ROW) ||
-                (myRow > ArenaConstants.RIVER_ROW && targetRow < ArenaConstants.RIVER_ROW);
+            const targetIsAbove = targetRowCheck < riverTopRow;
+            const targetIsBelow = targetRowCheck > riverBottomRow;
 
-            if (isCrossing) {
-                // Determine if we are already at a bridge
+            let needsCrossing = false;
+
+            if (isAbove && targetIsBelow) needsCrossing = true;
+            if (isBelow && targetIsAbove) needsCrossing = true;
+
+            if (needsCrossing || isInRiver) {
+                // Determine Nearest Bridge
                 const distLeft = Math.abs(this.x - bridgeLeftX);
                 const distRight = Math.abs(this.x - bridgeRightX);
 
-                const BRIDGE_WIDTH_TOLERANCE = layout.tileSize * 1.5; // Generous width
+                // Select Bridge
+                const bridgeX = distLeft < distRight ? bridgeLeftX : bridgeRightX;
+                const BRIDGE_TOLERANCE = tileSize * 0.5; // Snap to bridge if close
 
-                if (distLeft > BRIDGE_WIDTH_TOLERANCE && distRight > BRIDGE_WIDTH_TOLERANCE) {
-                    // Not at a bridge, move towards nearest one
-                    const bridgeX = distLeft < distRight ? bridgeLeftX : bridgeRightX;
+                // If we are NOT aligned with the bridge yet, move to Bridge X first
+                if (Math.abs(this.x - bridgeX) > BRIDGE_TOLERANCE) {
                     targetX = bridgeX;
-                    targetY = riverRowY; // Aim for center of river (bridge)
+
+                    // Maintain Y direction towards river
+                    if (isAbove) targetY = riverTopRow * tileSize + layout.mapStartY;
+                    else if (isBelow) targetY = riverBottomRow * tileSize + layout.mapStartY;
+                    else targetY = this.y; // If in river, just correct X? No, we need to exit.
                 }
-                // If we are close enough to bridge X, we proceed to targetY (crossing the bridge)
+
+                // If we are aligned (or in river), ensure we cross VERTICALLY
+                if (Math.abs(this.x - bridgeX) <= BRIDGE_TOLERANCE || isInRiver) {
+                    targetX = bridgeX; // Keep aligned
+                    // Proceed to original target Y (Crossing)
+                    // But if target is far, just aim across the river
+                    if (isAbove || (isInRiver && targetIsBelow)) targetY = Math.max(targetY, (riverBottomRow + 1) * tileSize);
+                    if (isBelow || (isInRiver && targetIsAbove)) targetY = Math.min(targetY, (riverTopRow - 1) * tileSize);
+                }
             }
         }
 
@@ -107,7 +143,7 @@ export abstract class Troop extends Entity {
 
         // Scale speed to match map size
         // If map is 2x larger (tileSize 44 vs 22), we need 2x speed to cover same relative distance in same time.
-        const scaleFactor = layout.tileSize / ArenaConstants.REFERENCE_TILE_SIZE;
+        const scaleFactor = layout.tileSize / ArenaConfig.TILE_SIZE;
         const adjustedSpeed = this.speed * scaleFactor;
 
         const velocityX = Math.cos(angle) * adjustedSpeed * (delta / 1000); // Scale by delta (ms)
@@ -120,22 +156,20 @@ export abstract class Troop extends Entity {
     public moveForward(delta: number, layout: ArenaLayout) {
         // Move towards opponent side
         let targetY = 0;
+        let targetX = this.x; // Default to straight forward
+
         if (this.ownerId.includes('player')) {
             targetY = layout.mapStartY; // Top of arena
         } else {
-            targetY = layout.mapStartY + ArenaConstants.ROWS * layout.tileSize; // Bottom of arena
+            targetY = layout.mapStartY + ArenaConfig.ROWS * layout.tileSize; // Bottom of arena
         }
 
-        // Bridge targeting logic
-        let targetX = this.x;
-        if (this.movementType === 'GROUND') {
-            const bridgeLeftX = layout.mapStartX + ArenaConstants.BRIDGE_LEFT_COL * layout.tileSize + layout.tileSize / 2;
-            const bridgeRightX = layout.mapStartX + ArenaConstants.BRIDGE_RIGHT_COL * layout.tileSize + layout.tileSize / 2;
-            const midX = layout.mapStartX + (ArenaConstants.COLS / 2) * layout.tileSize;
+        // Bridge pathfinding logic is handled in moveTowards, so we just pass the ultimate destination
+        // BUT moveTowards needs to know we want to CROSS.
+        // If we just pass x,y, it checks crossing logic.
 
-            if (this.x < midX) targetX = bridgeLeftX;
-            else targetX = bridgeRightX;
-        }
+        // Wait, moveTowards expects targetX/Y.
+        // If targetY is far end, it triggers crossing logic.
 
         this.moveTowards({ x: targetX, y: targetY }, delta, layout);
     }

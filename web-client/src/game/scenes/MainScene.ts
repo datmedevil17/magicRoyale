@@ -77,6 +77,13 @@ export class MainScene extends Scene {
             if (this.isTestMode && tower) {
                 tower.health = 100000;
                 tower.maxHealth = 100000;
+
+                // Update Visual Sprite Max Health too!
+                const visualTower = this.towerSprites.get(towerConfig.id);
+                if (visualTower) {
+                    visualTower.maxHealth = 100000;
+                    visualTower.setHealth(100000);
+                }
             }
         });
 
@@ -110,6 +117,8 @@ export class MainScene extends Scene {
             console.log('MainScene: Game Started!', data);
             waitingText.destroy();
             this.input.enabled = true;
+            this.gameManager.startGame(); // CRITICAL: Start the game loop!
+
             this.add.text(centerX, centerY - 100, 'Game Start!', { fontSize: '32px', color: '#00ff00' })
                 .setOrigin(0.5)
                 .setScrollFactor(0)
@@ -117,6 +126,11 @@ export class MainScene extends Scene {
                 .setDepth(100)
                 .setScale(0.5);
         });
+
+        // Test Mode Auto-Start
+        if (this.isTestMode) {
+            EventBus.emit(EVENTS.GAME_START, { test: true });
+        }
 
         // Input listener for deploying troops
         this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {

@@ -1,21 +1,12 @@
-import { TroopStats } from '../TroopStats';
 import { Troop, TroopState } from './Troop';
 import { Entity } from '../Entity';
 import type { ArenaLayout } from '../Interfaces';
 
 export class Wizard extends Troop {
-    public name = TroopStats.Wizard.name;
-    public speed = TroopStats.Wizard.speed;
-    public range = TroopStats.Wizard.range;
-    public hitSpeed = TroopStats.Wizard.hitSpeed;
-    public damage = TroopStats.Wizard.damage;
-    public attackType = TroopStats.Wizard.attackType;
-    public movementType = TroopStats.Wizard.movementType;
+    public name = 'Wizard';
 
     constructor(id: string, x: number, y: number, ownerId: string) {
         super(id, x, y, ownerId, 'Wizard');
-        this.maxHealth = TroopStats.Wizard.health;
-        this.health = this.maxHealth;
     }
 
     update(time: number, delta: number, enemies: Entity[], layout: ArenaLayout) {

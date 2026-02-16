@@ -1,21 +1,12 @@
-import { TroopStats } from '../TroopStats';
 import { Troop, TroopState } from './Troop';
 import { Entity } from '../Entity';
 import type { ArenaLayout } from '../Interfaces';
 
 export class MiniPekka extends Troop {
-    public name = TroopStats.MiniPekka.name;
-    public speed = TroopStats.MiniPekka.speed;
-    public range = TroopStats.MiniPekka.range;
-    public hitSpeed = TroopStats.MiniPekka.hitSpeed;
-    public damage = TroopStats.MiniPekka.damage;
-    public attackType = TroopStats.MiniPekka.attackType;
-    public movementType = TroopStats.MiniPekka.movementType;
+    public name = 'MiniPEKKA';
 
     constructor(id: string, x: number, y: number, ownerId: string) {
         super(id, x, y, ownerId, 'MiniPEKKA');
-        this.maxHealth = TroopStats.MiniPekka.health;
-        this.health = this.maxHealth;
     }
 
     update(time: number, delta: number, enemies: Entity[], layout: ArenaLayout) {

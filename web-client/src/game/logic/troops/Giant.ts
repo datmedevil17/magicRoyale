@@ -1,21 +1,12 @@
-import { TroopStats } from '../TroopStats';
 import { Troop, TroopState } from './Troop';
 import { Entity, EntityType } from '../Entity';
 import type { ArenaLayout } from '../Interfaces';
 
 export class Giant extends Troop {
-    public name = TroopStats.Giant.name;
-    public speed = TroopStats.Giant.speed;
-    public range = TroopStats.Giant.range;
-    public hitSpeed = TroopStats.Giant.hitSpeed;
-    public damage = TroopStats.Giant.damage;
-    public attackType = TroopStats.Giant.attackType;
-    public movementType = TroopStats.Giant.movementType;
+    public name = 'Giant';
 
     constructor(id: string, x: number, y: number, ownerId: string) {
         super(id, x, y, ownerId, 'Giant');
-        this.maxHealth = TroopStats.Giant.health;
-        this.health = this.maxHealth;
         // Giants target buildings only in real game, but for now simple target
         // Actually let's try to mimic that they ignore troops? 
         // For simplicity now, let's keep them attacking anything, or prefer towers?

@@ -3,21 +3,11 @@ import { Troop, TroopState } from './Troop';
 import { Entity } from '../Entity';
 import type { ArenaLayout } from '../Interfaces';
 
-import { TroopStats } from '../TroopStats';
-
 export class Archer extends Troop {
-    public name = TroopStats.Archer.name;
-    public speed = TroopStats.Archer.speed;
-    public range = TroopStats.Archer.range;
-    public hitSpeed = TroopStats.Archer.hitSpeed;
-    public damage = TroopStats.Archer.damage;
-    public attackType = TroopStats.Archer.attackType;
-    public movementType = TroopStats.Archer.movementType;
+    public name = 'Archers';
 
     constructor(id: string, x: number, y: number, ownerId: string) {
         super(id, x, y, ownerId, 'Archers');
-        this.maxHealth = TroopStats.Archer.health;
-        this.health = this.maxHealth;
     }
 
     update(time: number, delta: number, enemies: Entity[], layout: ArenaLayout) {

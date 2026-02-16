@@ -30,6 +30,7 @@ export class Unit extends Phaser.GameObjects.Sprite {
     public updateVisuals(entity: Entity) {
         // Update Position
         this.setPosition(entity.x, entity.y);
+        this.setDepth(entity.y); // Fix Z-ordering/flickering
 
         // Update Animation/Texture based on State
         if (entity instanceof Troop) {

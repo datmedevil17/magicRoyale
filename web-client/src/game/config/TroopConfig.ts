@@ -22,92 +22,103 @@ export interface TroopStats {
     elixirCost: number;
     radius: number;      // collision radius
     spawnCount: number;  // How many units spawn
+    animSpeed?: {
+        walk: number;
+        fight: number;
+    };
 }
 
 export const TROOP_STATS: Record<string, TroopStats> = {
     'Archers': {
-        health: 200,
-        speed: 25,
-        range: 150,
-        hitSpeed: 1000,
-        damage: 50,
+        health: 304,
+        speed: 45, // Medium
+        range: 60, // 5 tiles (5 * 22)
+        hitSpeed: 900, // 0.9s
+        damage: 112,
         attackType: TargetType.BOTH,
         movementType: TroopType.GROUND,
         elixirCost: 3,
         radius: 20,
-        spawnCount: 2
+        spawnCount: 2,
+        animSpeed: { walk: 2, fight: 2 }
     },
     'Barbarian': {
-        health: 350,
-        speed: 45,
-        range: 50,
-        hitSpeed: 1500,
-        damage: 75,
+        health: 670,
+        speed: 45, // Medium
+        range: 30, // Melee
+        hitSpeed: 1300, // 1.3s
+        damage: 192,
         attackType: TargetType.GROUND,
         movementType: TroopType.GROUND,
-        elixirCost: 3, // User said 3 (default)
+        elixirCost: 5,
         radius: 20,
-        spawnCount: 1 // Usually 4 in CR, but user didn't specify count, likely 1 for now or handled by card logic
+        spawnCount: 1, // User has single GIF containing 5 barbarians
+        animSpeed: { walk: 2, fight: 2 }
     },
     'Giant': {
-        health: 2000,
-        speed: 45,
-        range: 30, // Melee usually implies small range, user said 2px but that might be contact. 30 is safer for interaction.
-        hitSpeed: 1500,
-        damage: 211,
-        attackType: TargetType.GROUND, // Giant usually targets BUILDINGS only, but user said GROUND (Attack Type). Logic might need update if it's building-only.
+        health: 3000,
+        speed: 1, // Slow
+        range: 30, // Melee
+        hitSpeed: 1500, // 1.5s
+        damage: 253,
+        attackType: TargetType.GROUND, // Building only logically
         movementType: TroopType.GROUND,
         elixirCost: 5,
         radius: 20,
-        spawnCount: 1
+        spawnCount: 1,
+        animSpeed: { walk: 2, fight: 2 }
     },
     'MiniPEKKA': {
-        health: 600,
-        speed: 45,
-        range: 30, // User said 1.5px
-        hitSpeed: 1800,
-        damage: 350,
+        health: 1392,
+        speed: 60, // Fast
+        range: 30, // Melee
+        hitSpeed: 1600, // 1.6s
+        damage: 755,
         attackType: TargetType.GROUND,
         movementType: TroopType.GROUND,
         elixirCost: 4,
         radius: 20,
-        spawnCount: 1
+        spawnCount: 1,
+        animSpeed: { walk: 2, fight: 2 }
     },
     'Valkyrie': {
-        health: 900,
-        speed: 30,
-        range: 30, // User said 1.5px
-        hitSpeed: 1500,
-        damage: 120,
-        attackType: TargetType.GROUND, // Valkyrie has Area Damage, logic needs to handle this
+        health: 1907,
+        speed: 45, // Medium
+        range: 30, // Melee
+        hitSpeed: 1500, // 1.5s
+        damage: 266,
+        attackType: TargetType.GROUND,
         movementType: TroopType.GROUND,
         elixirCost: 4,
         radius: 20,
-        spawnCount: 1
+        spawnCount: 1,
+        animSpeed: { walk: 2, fight: 2 }
     },
     'Wizard': {
-        health: 340,
-        speed: 30,
-        range: 150,
-        hitSpeed: 1400,
-        damage: 130,
-        attackType: TargetType.BOTH, // Area damage usually
+        health: 755,
+        speed: 45, // Medium
+        range: 121, // ~5.5 tiles
+        hitSpeed: 1400, // 1.4s
+        damage: 281,
+        attackType: TargetType.BOTH,
         movementType: TroopType.GROUND,
         elixirCost: 5,
         radius: 20,
-        spawnCount: 1
+        spawnCount: 1,
+        animSpeed: { walk: 2, fight: 2 }
     },
     'BabyDragon': {
-        health: 800,
-        speed: 45,
-        range: 120,
-        hitSpeed: 1600,
-        damage: 100,
-        attackType: TargetType.BOTH, // Area damage
+        health: 1152,
+        speed: 60, // Fast
+        range: 77, // ~3.5 tiles
+        hitSpeed: 1500, // 1.5s
+        damage: 161,
+        attackType: TargetType.BOTH,
         movementType: TroopType.AIR,
         elixirCost: 4,
         radius: 20,
-        spawnCount: 1
+        spawnCount: 1,
+        animSpeed: { walk: 2, fight: 2 }
     }
 };
 

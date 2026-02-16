@@ -8,7 +8,7 @@ import { Scene } from 'phaser';
 // OR better, make BootScene async.
 
 import { loadGif } from '../utils/GifLoader';
-import { TroopStats } from '../logic/TroopStats';
+import { TROOP_STATS } from '../config/TroopConfig';
 
 export class BootScene extends Scene {
     constructor() {
@@ -65,71 +65,62 @@ export class BootScene extends Scene {
     async create() {
         console.log('BootScene: Loading GIFs...');
 
-        // Load GIFs manually
-        // We need to use the full path relative to public/
-        // Vite serves public at root.
-
         const gifPath = 'assets/gifs/';
 
-        // Array of GIFs to load
         const gifs = [
             'Archer_walk_player', 'Archer_walk_opponent',
             'Archer_fight_player', 'Archer_fight_opponent',
-
             'Giant_walk_player', 'Giant_walk_opponent',
             'Giant_fight_player', 'Giant_fight_opponent',
-
             'MiniPekka_walk_player', 'MiniPekka_walk_opponent',
             'MiniPekka_fight_player', 'MiniPekka_fight_opponent',
-
             'Valkyrie_walk_player', 'Valkyrie_walk_opponent',
             'Valkyrie_fight_player', 'Valkyrie_fight_opponent',
-
             'Wizard_walk_player', 'Wizard_walk_opponent',
             'Wizard_fight_player', 'Wizard_fight_opponent',
-
             'BabyDragon_walk_player', 'BabyDragon_walk_opponent',
-            'BabyDragon_fight_player', 'BabyDragon_fight_opponent'
+            'BabyDragon_fight_player', 'BabyDragon_fight_opponent',
+            'Barbarian_walk_player', 'Barbarian_walk_opponent',
+            'Barbarian_fight_player', 'Barbarian_fight_opponent'
         ];
 
-        const troops = Object.keys(TroopStats);
+        const gifToConfigMap: Record<string, string> = {
+            'Archer': 'Archers',
+            'Giant': 'Giant',
+            'MiniPekka': 'MiniPEKKA',
+            'Valkyrie': 'Valkyrie',
+            'Wizard': 'Wizard',
+            'BabyDragon': 'BabyDragon',
+            'Barbarian': 'Barbarians' // Map GIF prefix 'Barbarian' to Config key 'Barbarians'
+        };
 
-        for (const troopName of troops) {
-            const stats = TroopStats[troopName as keyof typeof TroopStats];
-            if (stats && stats.animSpeed) {
-                // Determine keys
-                // Current naming convention in BootScene: Name_action_owner
-                // TroopStats key: Archer, Giant, etc.
-
-                // We need to map TroopStats key to file names if they differ, or rely on convention.
-                // The current array `gifs` had specific names. 
-                // Let's iterate the `gifs` array and find matching stats.
-            }
-        }
-
-        // Actually, better to iterate the known GIF list and look up stats.
         for (const key of gifs) {
             let frameRate: number | undefined = undefined;
-
-            // Try to find matching troop stats
-            // Key format: Name_action_owner (e.g. Archer_walk_player)
             const parts = key.split('_');
-            const name = parts[0]; // Archer
-            const action = parts[1]; // walk or fight
+            const name = parts[0];
+            const action = parts[1];
 
-            // Check if name exists in TroopStats
-            // Handle edge cases like "BabyDragon" vs "BabyDragon" (Match)
-            // "MiniPekka" vs "MiniPekka" (Match)
+            // Construct the key that Unit.ts expects: Name_action_owner
+            // Unit.ts uses entity.name, which comes from TroopConfig (e.g. 'Archers', 'MiniPEKKA')
+            // The GIF file is named 'Archer_...' or 'MiniPekka_...'
 
-            if (name in TroopStats) {
-                const stats = TroopStats[name as keyof typeof TroopStats];
+            // We need to map:
+            // GIF 'Archer' -> Config 'Archers' -> Unit expects 'Archers'
+            // So we should load the GIF with the key 'Archers_...' 
+
+            const configName = gifToConfigMap[name];
+            const finalKey = configName ? `${configName}_${action}_${parts[2] || 'player'}` : key;
+            // parts[2] should be 'player' or 'opponent' from the split
+
+            if (configName && TROOP_STATS[configName]) {
+                const stats = TROOP_STATS[configName];
                 if (stats.animSpeed) {
                     if (action === 'walk') frameRate = stats.animSpeed.walk;
                     else if (action === 'fight') frameRate = stats.animSpeed.fight;
                 }
             }
 
-            await loadGif(this, key, `${gifPath}${key}.gif`, frameRate);
+            await loadGif(this, finalKey, `${gifPath}${key}.gif`, frameRate);
         }
 
         console.log('BootScene: GIFs Loaded');
@@ -137,4 +128,3 @@ export class BootScene extends Scene {
         this.scene.start('MainScene', data);
     }
 }
-

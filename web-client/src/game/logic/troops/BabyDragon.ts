@@ -1,21 +1,12 @@
-import { TroopStats } from '../TroopStats';
 import { Troop, TroopState } from './Troop';
 import { Entity } from '../Entity';
 import type { ArenaLayout } from '../Interfaces';
 
 export class BabyDragon extends Troop {
-    public name = TroopStats.BabyDragon.name;
-    public speed = TroopStats.BabyDragon.speed;
-    public range = TroopStats.BabyDragon.range;
-    public hitSpeed = TroopStats.BabyDragon.hitSpeed;
-    public damage = TroopStats.BabyDragon.damage;
-    public attackType = TroopStats.BabyDragon.attackType;
-    public movementType = TroopStats.BabyDragon.movementType;
+    public name = 'BabyDragon';
 
     constructor(id: string, x: number, y: number, ownerId: string) {
         super(id, x, y, ownerId, 'BabyDragon');
-        this.maxHealth = TroopStats.BabyDragon.health;
-        this.health = this.maxHealth;
     }
 
     update(time: number, delta: number, enemies: Entity[], layout: ArenaLayout) {
