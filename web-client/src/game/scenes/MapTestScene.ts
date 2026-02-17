@@ -57,11 +57,24 @@ export class MapTestScene extends Scene {
             const isKing = towerConfig.type === 'king';
 
             // Visual Sprite only
-            const maxHealth = isKing ? 4000 : 2500;
+            const maxHealth = isKing ? ArenaConfig.KING_TOWER_HP : ArenaConfig.PRINCESS_TOWER_HP;
             const towerSprite = new Tower(this, x, y, towerConfig.texture, maxHealth);
             towerSprite.setScale(towerConfig.pixelScale);
+
+            // Allow access to towers for update loop
+            this.towers.push(towerSprite);
         });
+    }
 
+    private towers: Tower[] = [];
 
+    update(_time: number, _delta: number) {
+        // Auto-heal logic for test
+        this.towers.forEach(tower => {
+            if (tower.currentHealth <= 0) {
+                tower.setHealth(tower.maxHealth);
+                console.log('Tower destroyed in Test Scene -> Resetting HP');
+            }
+        });
     }
 }

@@ -73,18 +73,18 @@ export class MainScene extends Scene {
                 towerConfig.pixelScale
             );
 
-            // High health for testing
-            if (this.isTestMode && tower) {
-                tower.health = 100000;
-                tower.maxHealth = 100000;
-
-                // Update Visual Sprite Max Health too!
-                const visualTower = this.towerSprites.get(towerConfig.id);
-                if (visualTower) {
-                    visualTower.maxHealth = 100000;
-                    visualTower.setHealth(100000);
-                }
-            }
+            // High health for testing - REMOVED override to respect ArenaConfig
+            // if (this.isTestMode && tower) {
+            //    tower.health = 100000;
+            //    tower.maxHealth = 100000;
+            //
+            //    // Update Visual Sprite Max Health too!
+            //    const visualTower = this.towerSprites.get(towerConfig.id);
+            //    if (visualTower) {
+            //        visualTower.maxHealth = 100000;
+            //        visualTower.setHealth(100000);
+            //    }
+            // }
         });
 
 

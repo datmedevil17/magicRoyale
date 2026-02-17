@@ -27,7 +27,7 @@ export class Valkyrie extends Troop {
         if (this.target) {
             if (this.isInRange(this.target)) {
                 this.state = TroopState.FIGHT;
-                if (time - this.lastAttackTime > this.hitSpeed * 1000) {
+                if (time - this.lastAttackTime > this.hitSpeed) {
                     this.attack(this.target);
                     // Valkyrie deals AOE damage in real game. 
                     // Let's simplisticly damage only target for now, 

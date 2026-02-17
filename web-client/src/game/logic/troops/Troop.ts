@@ -21,12 +21,23 @@ export abstract class Troop extends Entity {
     public damage: number = 0;
     public attackType: 'GROUND' | 'AIR' | 'BOTH' = 'GROUND';
     public movementType: 'GROUND' | 'AIR' = 'GROUND';
+    public pixelScale: number = 0.5;
+    public stopRange: number = 0;
+    public impactFrame: number | undefined; // Added for sync logic
+    public fightPixelScale: number | undefined;
 
     public target: Entity | null = null;
     public lastAttackTime: number = 0;
 
+    // Damage Scheduling
+    protected damageScheduled: boolean = false;
+    protected damageTime: number = 0;
+    protected pendingTarget: Entity | null = null;
+    protected impactDelay: number = 0;
+
     // Add currentRange property
     public currentRange: number = 0;
+    public currentStopRange: number = 0;
 
     constructor(id: string, x: number, y: number, ownerId: string, cardId: string) {
         super(id, x, y, ownerId, EntityType.TROOP);
@@ -43,12 +54,25 @@ export abstract class Troop extends Entity {
 
         this.attackType = stats.attackType;
         this.movementType = stats.movementType;
+        this.pixelScale = stats.pixelScale !== undefined ? stats.pixelScale : 0.5;
+        this.stopRange = stats.stopRange;
+        this.impactFrame = stats.impactFrame;
+        this.fightPixelScale = stats.fightPixelScale;
+
+        // Calculate impact delay
+        if (stats.impactFrame !== undefined && stats.animSpeed.fight > 0) {
+            this.impactDelay = (stats.impactFrame / stats.animSpeed.fight) * 1000;
+        }
     }
 
     public updateBase(layout: ArenaLayout) {
         // Use ArenaConfig.TILE_SIZE as reference
         const scaleFactor = layout.tileSize / ArenaConfig.TILE_SIZE;
         this.currentRange = this.range * scaleFactor;
+
+        // Stop Range: If stopRange exists, use it. Otherwise default to range.
+        const rawStopRange = this.stopRange || this.range;
+        this.currentStopRange = rawStopRange * scaleFactor;
     }
 
     abstract update(time: number, delta: number, enemies: Entity[], layout: ArenaLayout): void;
@@ -56,6 +80,12 @@ export abstract class Troop extends Entity {
     public getDistanceTo(target: Entity): number {
         return Phaser.Math.Distance.Between(this.x, this.y, target.x, target.y);
     }
+
+    // Add properties
+
+    // Config properties should be loaded in constructor
+
+    // Config properties should be loaded in constructor
 
     public isInRange(target: Entity): boolean {
         // Distance is center-to-center
@@ -71,6 +101,17 @@ export abstract class Troop extends Entity {
         }
 
         return dist <= attackRange;
+    }
+
+    public shouldStopMoving(target: Entity): boolean {
+        const dist = this.getDistanceTo(target);
+
+        // Stop Range Check (Edge-to-Edge)
+        // Use stopRange insteaad of range
+        // If stopRange is not set/same as range, it behaves like before.
+        const stopDistance = this.currentStopRange + (target.radius || 20) + (this.radius || 20);
+
+        return dist <= stopDistance;
     }
 
     public moveTowards(target: Entity | { x: number, y: number }, delta: number, layout: ArenaLayout) {
@@ -170,6 +211,12 @@ export abstract class Troop extends Entity {
 
         // Wait, moveTowards expects targetX/Y.
         // If targetY is far end, it triggers crossing logic.
+        // Note: Troop.ts is abstract. Attack logic is likely in specific subclasses or a shared method I need to find.
+        // Let me check if Troop.ts has an attack method.
+        // Looking at file view from Step 168... no 'attack' method in Troop.ts base class.
+        // It has `update` abstract method. 
+        // Subclasses like Archer.ts have `attack`.
+        // I need to check a subclass to see where to add logs.
 
         this.moveTowards({ x: targetX, y: targetY }, delta, layout);
     }

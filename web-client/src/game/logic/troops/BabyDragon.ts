@@ -30,7 +30,7 @@ export class BabyDragon extends Troop {
         if (this.target) {
             if (this.isInRange(this.target)) {
                 this.state = TroopState.FIGHT;
-                if (time - this.lastAttackTime > this.hitSpeed * 1000) {
+                if (time - this.lastAttackTime > this.hitSpeed) {
                     this.attack(this.target);
                     this.lastAttackTime = time;
                 }

@@ -16,7 +16,7 @@ export class Archer extends Troop {
         // 2. If target exists and in range -> Attack
         // 3. If no target -> Move forward (up/down depending on owner)
 
-        if (this.target && (this.target.health <= 0 || !this.isInRange(this.target))) {
+        if (this.target && (this.target.health <= 0)) {
             this.target = null;
             this.state = TroopState.WALK;
         }
@@ -26,15 +26,45 @@ export class Archer extends Troop {
         }
 
         if (this.target) {
+            // Check Attack Range first
             if (this.isInRange(this.target)) {
                 this.state = TroopState.FIGHT;
-                if (time - this.lastAttackTime > this.hitSpeed * 1000) {
+                if (time - this.lastAttackTime > this.hitSpeed) {
                     this.attack(this.target);
                     this.lastAttackTime = time;
                 }
             } else {
-                this.state = TroopState.WALK;
-                this.moveTowards(this.target, delta, layout);
+                // Not in attack range. Should we move?
+                // Logic:
+                // If not in Stop Range -> Move.
+                // If in Stop Range but NOT Attack Range -> Stand still? (Dead zone).
+                // Ideally stopRange <= range so this never happens.
+                // If stopRange > range (we stop early), we can't attack.
+
+                if (!this.shouldStopMoving(this.target)) {
+                    this.state = TroopState.WALK;
+                    this.moveTowards(this.target, delta, layout);
+                } else {
+                    // We are in Stop Range, but NOT in Attack Range.
+                    // This creates a standoff.
+                    // But if stopRange <= range, this else block assumes we are NOT in range.
+                    // So we must be > range.
+                    // If we are > range, and !shouldStopMoving (<= stopRange), then we are <= stopRange.
+
+                    // Case: range=40, stopRange=30. Dist=35.
+                    // isInRange(40)? True. -> Attacks.
+
+                    // Case: range=40, stopRange=50. Dist=45.
+                    // isInRange(40)? False.
+                    // shouldStop(50)? True.
+                    // Result: Stands still at 45. Too far to attack.
+
+                    // So user MUST set stopRange <= range for melee/attack logic to work, OR we allow attacking from stopRange?
+                    // User wants to "reduce to range".
+                    // So stopRange will be smaller.
+
+                    this.state = TroopState.IDLE; // Wait
+                }
             }
         } else {
             this.state = TroopState.WALK;
@@ -59,6 +89,7 @@ export class Archer extends Troop {
     }
 
     private attack(target: Entity) {
+        console.log(`[${Date.now()}] Archer ${this.id} attacks ${target.id} for ${this.damage} damage`);
         target.takeDamage(this.damage);
     }
 }

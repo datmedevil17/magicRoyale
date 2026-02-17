@@ -20,7 +20,13 @@ export class Unit extends Phaser.GameObjects.Sprite {
         this.updateVisuals(entity);
 
         // Scale adjustment if needed
-        this.setScale(0.5); // Adjust based on asset size
+        // this.setScale(0.5); // Removed hardcoded scale
+        if (entity instanceof Troop) {
+            const troop = entity as Troop;
+            this.setScale(troop.pixelScale);
+        } else {
+            this.setScale(0.5); // Default/Fallback
+        }
     }
 
     public preUpdate(time: number, delta: number) {

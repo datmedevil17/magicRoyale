@@ -20,6 +20,10 @@ export const ArenaConfig = {
     ROWS: 38, // Total rows (Reduced to zoom in)
     COLS: 24, // Total cols
 
+    // Tower Stats
+    KING_TOWER_HP: 4200,
+    PRINCESS_TOWER_HP: 2400,
+
     // Playable Area (centered)
     PLAYABLE_ROWS: 30,
     PLAYABLE_COLS: 18,
@@ -246,13 +250,13 @@ export const ArenaConfig = {
 
     // Custom Fences (Wall segments at specific locations)
     CUSTOM_FENCES: [
-        
 
 
 
 
 
-     
+
+
 
         { col: 2, row: 10, rotate: 3, texture: 'wall3', scaleX: 5, scaleY: 1 },
         { col: 2, row: 15, rotate: 3, texture: 'wall3', scaleX: 5, scaleY: 1 },
@@ -269,9 +273,9 @@ export const ArenaConfig = {
         { col: 21, row: 5, rotate: 1, texture: 'wall3', scaleX: 5, scaleY: 1 },
         { col: 18, row: 2.5, rotate: 2, texture: 'wall3', scaleX: 5, scaleY: 1 },
         { col: 13, row: 2.5, rotate: 2, texture: 'wall3', scaleX: 5, scaleY: 1 },
-        
 
-        
+
+
 
 
 
@@ -285,24 +289,24 @@ export const ArenaConfig = {
 
     // Props (Trees, Stones, etc.) outside the playable area
     PROPS: [
-       
+
         // { col: 0, row: 20, texture: 'tree3' }, // Near river
         { col: 5, row: 16, texture: 'stone3' },
         { col: 5, row: 20, texture: 'stone3' },
         { col: 18, row: 16, texture: 'stone3' },
         { col: 18, row: 20, texture: 'stone3' },
-        { col: 0.5, row: 10, texture: 'tree2',rotate:0 },
-        { col: 0.5, row: 15, texture: 'tree2',rotate:0 },
+        { col: 0.5, row: 10, texture: 'tree2', rotate: 0 },
+        { col: 0.5, row: 15, texture: 'tree2', rotate: 0 },
 
 
-        { col: 1, row: 29, texture: 'trees3',rotate:0 },
+        { col: 1, row: 29, texture: 'trees3', rotate: 0 },
 
-        { col: 22.5, row: 12, texture: 'tree4',rotate:0 },
-        { col: 22.5, row: 1.5, texture: 'trees5',rotate:0 },
-        { col: 22.5, row: 7, texture: 'tree4',rotate:0 },
-        { col: 22.5, row: 22, texture: 'tree4',rotate:0 },
-        { col: 22.5, row: 27, texture: 'tree4',rotate:0 },
-      
+        { col: 22.5, row: 12, texture: 'tree4', rotate: 0 },
+        { col: 22.5, row: 1.5, texture: 'trees5', rotate: 0 },
+        { col: 22.5, row: 7, texture: 'tree4', rotate: 0 },
+        { col: 22.5, row: 22, texture: 'tree4', rotate: 0 },
+        { col: 22.5, row: 27, texture: 'tree4', rotate: 0 },
+
         // { col: 1, row: 31, texture: 'stone4' },
         // { col: 0, row: 30, texture: 'trees2' },
         // { col: 1, row: 35, texture: 'tree4' },
@@ -346,8 +350,8 @@ export const ArenaConfig = {
         //     texture: 'tree1',
         //     rotate: 2
         // },
-        
-       
+
+
 
 
         // Right Margin (Cols 21-23)

@@ -8,7 +8,7 @@ import { Scene } from 'phaser';
 // OR better, make BootScene async.
 
 import { loadGif } from '../utils/GifLoader';
-import { TROOP_STATS } from '../config/TroopConfig';
+import { getTroopStats } from '../config/TroopConfig';
 
 export class BootScene extends Scene {
     constructor() {
@@ -95,32 +95,46 @@ export class BootScene extends Scene {
         };
 
         for (const key of gifs) {
-            let frameRate: number | undefined = undefined;
             const parts = key.split('_');
             const name = parts[0];
             const action = parts[1];
+            const owner = parts[2] || 'player';
 
-            // Construct the key that Unit.ts expects: Name_action_owner
-            // Unit.ts uses entity.name, which comes from TroopConfig (e.g. 'Archers', 'MiniPEKKA')
-            // The GIF file is named 'Archer_...' or 'MiniPekka_...'
+            // Map GIF prefix to Config Key if necessary
+            // e.g. 'Archer' (GIF) -> 'Archers' (Config/Entity Name)
+            // e.g. 'MiniPekka' (GIF) -> 'MiniPEKKA' (Config/Entity Name)
+            const configName = gifToConfigMap[name] || name;
 
-            // We need to map:
-            // GIF 'Archer' -> Config 'Archers' -> Unit expects 'Archers'
-            // So we should load the GIF with the key 'Archers_...' 
+            // Final Key for Phaser Cache: 'Archers_walk_player'
+            const finalKey = `${configName}_${action}_${owner}`;
 
-            const configName = gifToConfigMap[name];
-            const finalKey = configName ? `${configName}_${action}_${parts[2] || 'player'}` : key;
-            // parts[2] should be 'player' or 'opponent' from the split
+            // Path to file: 'assets/gifs/Archer_walk_player.gif'
+            const url = `${gifPath}${key}.gif`;
 
-            if (configName && TROOP_STATS[configName]) {
-                const stats = TROOP_STATS[configName];
-                if (stats.animSpeed) {
-                    if (action === 'walk') frameRate = stats.animSpeed.walk;
-                    else if (action === 'fight') frameRate = stats.animSpeed.fight;
+            // Use getTroopStats to ensure we get derived stats like hitSpeed
+            const stats = getTroopStats(configName);
+
+            if (stats && action === 'walk') {
+                // Calculate FPS from speed heuristic (e.g. 45 speed -> ~11 FPS)
+                // stats.speed is derived, but we have movePerFrame and animSpeed.walk
+                // Actually, let's use the configurated walk FPS directly if available?
+                // stats.animSpeed.walk IS the FPS.
+                const frameRate = stats.animSpeed.walk;
+                await loadGif(this, finalKey, url, { frameRate });
+            } else if (stats && action === 'fight') {
+                // Use FPS from config to decouple visual speed from hit cooldown
+                // This allows animation to loop faster than damage if needed (e.g. 2 swings = 1 hit)
+                const frameRate = stats.animSpeed.fight;
+                // Pass hitSpeed to auto-calculate pause (repeatDelay) unless continuous
+                const options: any = { frameRate };
+                if (!stats.continuousAttack) {
+                    options.hitSpeed = stats.hitSpeed;
                 }
+                await loadGif(this, finalKey, url, options);
+            } else {
+                // Fallback
+                await loadGif(this, finalKey, url);
             }
-
-            await loadGif(this, finalKey, `${gifPath}${key}.gif`, frameRate);
         }
 
         console.log('BootScene: GIFs Loaded');
