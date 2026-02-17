@@ -27,13 +27,18 @@ export class Wizard extends Troop {
         if (this.target) {
             if (this.isInRange(this.target)) {
                 this.state = TroopState.FIGHT;
-                if (time - this.lastAttackTime > this.hitSpeed * 1000) {
+                if (time - this.lastAttackTime > this.hitSpeed) {
                     this.attack(this.target);
                     this.lastAttackTime = time;
                 }
             } else {
-                this.state = TroopState.WALK;
-                this.moveTowards(this.target, delta, layout);
+                // Use shouldStopMoving to prevent jitter/teleport issues at range edge
+                if (!this.shouldStopMoving(this.target)) {
+                    this.state = TroopState.WALK;
+                    this.moveTowards(this.target, delta, layout);
+                } else {
+                    this.state = TroopState.IDLE;
+                }
             }
         } else {
             this.state = TroopState.WALK;
@@ -42,6 +47,7 @@ export class Wizard extends Troop {
     }
 
     private attack(target: Entity) {
+        console.log(`[${Date.now()}] Wizard ${this.id} attacks ${target.id} for ${this.damage}`);
         target.takeDamage(this.damage);
     }
 }

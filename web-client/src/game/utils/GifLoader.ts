@@ -1,7 +1,13 @@
 // @ts-ignore
 import { parseGIF, decompressFrames } from 'gifuct-js';
 
-export const loadGif = async (scene: Phaser.Scene, key: string, url: string, frameRateOverride?: number) => {
+interface LoadGifOptions {
+    duration?: number; // Total duration of the animation in ms
+    frameRate?: number; // Override frame rate (fps)
+    hitSpeed?: number; // Target total cycle time (ms) to calculate pause
+}
+
+export const loadGif = async (scene: Phaser.Scene, key: string, url: string, options: LoadGifOptions = {}) => {
     try {
         const response = await fetch(url);
         const buffer = await response.arrayBuffer();
@@ -34,8 +40,13 @@ export const loadGif = async (scene: Phaser.Scene, key: string, url: string, fra
 
             // Calculate frame rate
             let frameRate = 10;
-            if (frameRateOverride) {
-                frameRate = frameRateOverride;
+
+            if (options.frameRate) {
+                frameRate = options.frameRate;
+            } else if (options.duration) {
+                // Determine frame rate to fit all frames within duration
+                // fps = frames / seconds
+                frameRate = frames.length / (options.duration / 1000);
             } else {
                 // Calculate from delays
                 let totalDelay = 0;
@@ -44,11 +55,22 @@ export const loadGif = async (scene: Phaser.Scene, key: string, url: string, fra
                 frameRate = 1000 / avgDelay;
             }
 
+            // Calculate Repeat Delay (Pause between loops)
+            let repeatDelay = 0;
+            if (options.hitSpeed) {
+                const animDuration = (frames.length / frameRate) * 1000;
+                if (options.hitSpeed > animDuration) {
+                    repeatDelay = options.hitSpeed - animDuration;
+                    // console.log(`[GifLoader] Adding pause of ${Math.round(repeatDelay)}ms to ${key}`);
+                }
+            }
+
             scene.anims.create({
                 key: key,
                 frames: animFrames,
                 frameRate: frameRate,
-                repeat: -1
+                repeat: -1,
+                repeatDelay: repeatDelay
             });
         }
 

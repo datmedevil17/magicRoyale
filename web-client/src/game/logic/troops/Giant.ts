@@ -14,7 +14,17 @@ export class Giant extends Troop {
     }
 
     update(time: number, delta: number, enemies: Entity[], layout: ArenaLayout) {
+        // Handle Scheduled Damage
+        if (this.damageScheduled && time >= this.damageTime) {
+            if (this.pendingTarget && this.pendingTarget.health > 0) {
+                this.performAttack(this.pendingTarget);
+            }
+            this.damageScheduled = false;
+            this.pendingTarget = null;
+        }
+
         // Simple AI: Move to nearest enemy, attack if in range
+        // ... (existing targeting logic)
 
         // Find nearest enemy
         let closest: Entity | null = null;
@@ -40,22 +50,50 @@ export class Giant extends Troop {
         if (this.target) {
             if (this.isInRange(this.target)) {
                 this.state = TroopState.FIGHT;
-                if (time - this.lastAttackTime > this.hitSpeed * 1000) {
-                    this.attack(this.target);
-                    this.lastAttackTime = time;
+                if (time - this.lastAttackTime > this.hitSpeed) {
+                    // Schedule Attack instead of immediate
+                    if (!this.damageScheduled) {
+                        this.damageScheduled = true;
+                        this.damageTime = time + this.impactDelay;
+                        this.pendingTarget = this.target;
+                        this.lastAttackTime = time;
+                        console.log(`[${Date.now()}] Giant ${this.id} starts attack animation... (Damage in ${this.impactDelay}ms)`);
+                    }
                 }
             } else {
-                this.state = TroopState.WALK;
-                this.moveTowards(this.target, delta, layout);
+                // If attack is scheduled, finish it? 
+                // Or cancel if moved out of range?
+                // Standard behavior: finish windup? No, usually proximity check.
+
+                // For movement: use stopRange
+                if (!this.damageScheduled && !this.shouldStopMoving(this.target)) {
+                    this.state = TroopState.WALK;
+                    this.moveTowards(this.target, delta, layout);
+                } else if (!this.damageScheduled) {
+                    // In dead zone (stopRange < dist < attackRange)
+                    // If stopRange <= attackRange, this means we are WAITING to attack?
+                    // Or we are close enough to stop, but not close enough to attack?
+                    // This implies stopRange > attackRange.
+                    // If stopRange < attackRange, isInRange consumes the close case.
+
+                    // So if we are here: !isInRange (dist > range) AND shouldStop (dist <= stopRange).
+                    // This means range < dist <= stopRange.
+                    // We stop, but cannot attack.
+                    this.state = TroopState.IDLE;
+                }
+                // If damage scheduled, we wait (stay in Fight state or walk? Fight usually locks).
             }
         } else {
-            this.state = TroopState.WALK;
-            // Move forward if no target
-            this.moveForward(delta, layout);
+            if (!this.damageScheduled) {
+                this.state = TroopState.WALK;
+                this.moveForward(delta, layout);
+            }
         }
     }
 
-    private attack(target: Entity) {
+    private performAttack(target: Entity) {
+        console.log(`[${Date.now()}] Giant ${this.id} deals IMPACT damage to ${target.id}`);
         target.takeDamage(this.damage);
+        console.log(`[${Date.now()}] Target ${target.id} remaining HP: ${target.health}`);
     }
 }
