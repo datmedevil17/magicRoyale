@@ -12,7 +12,11 @@ pub struct PlayerProfile {
     pub deck: [u8; 8],
     #[max_len(MAX_INVENTORY)]
     pub inventory: Vec<CardProgress>,
+    #[max_len(20)]
+    pub username: String,
+    pub trophies: u32,
 }
+
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace, Debug)]
 pub struct CardProgress {

@@ -9,12 +9,15 @@ const CONNECTION_URL = "https://api.devnet.solana.com";
 const OUTPUT_FILE = "game-tokens.json";
 
 // Starter Card IDs from lib.rs constants
-// 1: Archer, 2: Giant, 3: MiniPEKKA, 4: Arrows
+// 1: Archer, 2: Giant, 3: MiniPEKKA, 4: Arrows, 5: Valkyrie, 6: Wizard, 7: Baby Dragon
 const STARTER_CARDS = [
     { id: 1, name: "Archer" },
     { id: 2, name: "Giant" },
     { id: 3, name: "MiniPEKKA" },
-    { id: 4, name: "Arrows" }
+    { id: 4, name: "Arrows" },
+    { id: 5, name: "Valkyrie" },
+    { id: 6, name: "Wizard" },
+    { id: 7, name: "BabyDragon" }
 ];
 
 async function main() {
@@ -49,25 +52,41 @@ async function main() {
         return;
     }
 
-    const tokens: any = {};
+    let tokens: any = {};
+    if (fs.existsSync(OUTPUT_FILE)) {
+        console.log("Loading existing tokens...");
+        tokens = JSON.parse(fs.readFileSync(OUTPUT_FILE, 'utf-8'));
+    }
 
     console.log("\n--- Creating Currency Mints ---");
 
     // 1. Gold Mint (Currency)
-    console.log("Creating Gold Mint...");
-    const goldMint = await createMint(connection, keypair, keypair.publicKey, null, 9);
-    tokens.Gold = goldMint.toBase58();
-    console.log(`Gold Mint: ${goldMint.toBase58()}`);
+    if (!tokens.Gold) {
+        console.log("Creating Gold Mint...");
+        const goldMint = await createMint(connection, keypair, keypair.publicKey, null, 9);
+        tokens.Gold = goldMint.toBase58();
+        console.log(`Gold Mint: ${goldMint.toBase58()}`);
+    } else {
+        console.log(`Gold Mint exists: ${tokens.Gold}`);
+    }
 
     // 2. Gems Mint (Premium Currency)
-    console.log("Creating Gems Mint...");
-    const gemsMint = await createMint(connection, keypair, keypair.publicKey, null, 9);
-    tokens.Gems = gemsMint.toBase58();
-    console.log(`Gems Mint: ${gemsMint.toBase58()}`);
+    if (!tokens.Gems) {
+        console.log("Creating Gems Mint...");
+        const gemsMint = await createMint(connection, keypair, keypair.publicKey, null, 9);
+        tokens.Gems = gemsMint.toBase58();
+        console.log(`Gems Mint: ${gemsMint.toBase58()}`);
+    } else {
+        console.log(`Gems Mint exists: ${tokens.Gems}`);
+    }
 
     console.log("\n--- Creating Card Mints ---");
 
     for (const card of STARTER_CARDS) {
+        if (tokens[card.name]) {
+            console.log(`${card.name} Mint exists: ${tokens[card.name]}`);
+            continue;
+        }
         console.log(`Creating Mint for ${card.name} (ID: ${card.id})...`);
         // Card mints usually have 0 decimals if they are SFTs/NFTs representing count
         const cardMint = await createMint(connection, keypair, keypair.publicKey, null, 0);
@@ -79,8 +98,9 @@ async function main() {
 
     // Mint some Gold
     try {
-        const goldAta = await getOrCreateAssociatedTokenAccount(connection, keypair, goldMint, keypair.publicKey);
-        await mintTo(connection, keypair, goldMint, goldAta.address, keypair, 10000 * 10 ** 9);
+        const goldMintPubkey = new PublicKey(tokens.Gold);
+        const goldAta = await getOrCreateAssociatedTokenAccount(connection, keypair, goldMintPubkey, keypair.publicKey);
+        await mintTo(connection, keypair, goldMintPubkey, goldAta.address, keypair, 10000 * 10 ** 9);
         console.log("Minted 10,000 Gold");
     } catch (err) {
         console.log("Error minting Gold:", err);

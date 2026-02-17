@@ -12,6 +12,7 @@ export class Tower extends Phaser.GameObjects.Sprite {
         this.maxHealth = maxHealth;
         this.currentHealth = maxHealth;
         this.healthBar = this.scene.add.graphics();
+        this.healthBar.setDepth(100); // Ensure health bar renders above all ground tiles
         this.updateHealthBar();
     }
 

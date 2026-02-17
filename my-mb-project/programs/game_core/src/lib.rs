@@ -14,8 +14,8 @@ pub mod game_core {
     use super::*;
 
     // Player
-    pub fn initialize_player(ctx: Context<InitializePlayer>) -> Result<()> {
-        instructions::player::initialize_player(ctx)
+    pub fn initialize_player(ctx: Context<InitializePlayer>, username: String) -> Result<()> {
+        instructions::player::initialize_player(ctx, username)
     }
 
     pub fn unlock_card(ctx: Context<ManageCard>, card_id: u8) -> Result<()> {
@@ -43,8 +43,8 @@ pub mod game_core {
         instructions::battle::deploy_troop(ctx, card_idx, x, y)
     }
 
-    pub fn resolve_game(ctx: Context<ResolveGame>) -> Result<()> {
-        instructions::battle::resolve_game(ctx)
+    pub fn resolve_game(ctx: Context<ResolveGame>, winner_idx: Option<u8>) -> Result<()> {
+        instructions::battle::resolve_game(ctx, winner_idx)
     }
 
     pub fn commit_battle(ctx: Context<CommitBattle>) -> Result<()> {

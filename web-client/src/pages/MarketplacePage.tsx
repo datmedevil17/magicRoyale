@@ -35,7 +35,7 @@ export const MarketplacePage: React.FC = () => {
         <MobileLayout bgClass="bg-[#121212]" className="text-white">
             <div className="absolute inset-0 bg-[url('/assets/hex_bg.png')] opacity-10 pointer-events-none"></div>
 
-            <div className="relative z-10 flex-1 w-full flex flex-col px-4 pt-4 overflow-y-auto pb-[90px]">
+            <div className="relative z-10 flex-1 w-full flex flex-col px-4 pt-6 overflow-y-auto pb-[90px]">
 
                 {/* Header / Wallet */}
                 <div className="flex justify-between items-center mb-8 bg-[#1e1e1e] p-4 rounded-xl border border-[#333] shadow-lg relative z-10">
@@ -51,7 +51,7 @@ export const MarketplacePage: React.FC = () => {
                 </div>
 
                 {/* Filters */}
-                <div className="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide min-h-[40px] items-center">
+                <div className="flex gap-2 mb-6 items-center justify-start">
                     {['All', 'Troop', 'Spell'].map(f => (
                         <button
                             key={f}
@@ -64,7 +64,7 @@ export const MarketplacePage: React.FC = () => {
                 </div>
 
                 {/* NFT Grid */}
-                <h2 className="text-xl text-white mb-4 flex items-center gap-2 mt-2">
+                <h2 className="text-xl text-white mb-6 flex items-center gap-2">
                     Market Listings <span className="text-xs text-black bg-[#fbce47] px-2 py-0.5 rounded-full font-bold shadow-sm">{isLoading ? '...' : filteredListings.length}</span>
                 </h2>
 

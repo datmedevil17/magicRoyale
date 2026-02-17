@@ -92,15 +92,15 @@ export const BattleDeckPage: React.FC = () => {
                             </div>
                         ))}
                     </div>
-                    <div className="text-center mt-1 text-sm text-blue-200">
+                    <div className="text-center mt-2 mb-3 text-sm text-blue-200">
                         Avg Elixir: <span className="text-purple-300">3.8</span>
                     </div>
                 </div>
 
                 {/* Scrollable Collection Area */}
-                <div className="flex-1 overflow-y-auto bg-[#1a1a1a] p-4 pb-[80px]">
-                    <h2 className="text-center text-lg mb-4 text-[#fbce47] text-shadow-sm sticky top-0 bg-[#1a1a1b] py-2 z-10 border-b border-white/10">Card Collection</h2>
-                    <div className="grid grid-cols-4 gap-3">
+                <div className="flex-1 overflow-y-auto bg-[#1a1a1a] pb-[80px]">
+                    <h2 className="text-center text-lg mb-4 text-[#fbce47] text-shadow-sm sticky top-0 bg-[#1a1a1a] pt-4 pb-3 px-4 z-20 border-b border-white/10">Card Collection</h2>
+                    <div className="grid grid-cols-4 gap-3 px-4">
                         {COLLECTION.map((card, index) => {
                             const isSelected = selectedCard === card;
                             const isInDeck = battleDeck.includes(card);

@@ -6,6 +6,7 @@ import { LoginPage } from './pages/LoginPage';
 import { MainMenuPage } from './pages/MainMenuPage';
 import { BattleDeckPage } from './pages/BattleDeckPage';
 import { MapTestPage } from './pages/MapTestPage';
+import { Map2v2TestPage } from './pages/Map2v2TestPage';
 import { TroopTestPage } from './pages/TroopTestPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { HistoryPage } from './pages/HistoryPage';
@@ -29,6 +30,7 @@ function App() {
         <Route path="/game" element={<GameWrapper />} />
         <Route path="/test" element={<TestGifComponent />} />
         <Route path="/map-test" element={<MapTestPage />} />
+        <Route path="/map2v2test" element={<Map2v2TestPage />} />
         <Route path="/troop-test" element={<TroopTestPage />} />
       </Routes>
     </Router>

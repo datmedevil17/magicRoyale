@@ -42,7 +42,6 @@ pub struct UpdateBattle<'info> {
     #[account(mut)]
     pub battle: Account<'info, BattleState>, 
     
-    #[account(mut)] 
     pub game: Account<'info, GameState>, 
     
     #[account(seeds = [b"player", signer.key().as_ref()], bump)]
@@ -186,7 +185,7 @@ pub fn deploy_troop(ctx: Context<UpdateBattle>, card_idx: u8, x: i32, y: i32) ->
     Ok(())
 }
 
-pub fn resolve_game(ctx: Context<ResolveGame>) -> Result<()> {
+pub fn resolve_game(ctx: Context<ResolveGame>, winner_idx: Option<u8>) -> Result<()> {
     require!(ctx.accounts.authority.key().to_string() == BACKEND_AUTHORITY, GameError::Unauthorized);
     
     let battle = &ctx.accounts.battle;
@@ -196,7 +195,10 @@ pub fn resolve_game(ctx: Context<ResolveGame>) -> Result<()> {
     require!(ctx.accounts.player_one.key() == game.players[0], GameError::InvalidPlayer);
     require!(ctx.accounts.player_two.key() == game.players[1], GameError::InvalidPlayer);
     
-    if let Some(w_idx) = battle.winner {
+    // Use provided winner_idx if available (Admin/Backend decision), otherwise check battle state
+    let final_winner = winner_idx.or(battle.winner);
+
+    if let Some(w_idx) = final_winner {
         game.winner = Some(game.players[w_idx as usize]);
         game.status = GameStatus::Completed;
     } else {
@@ -255,6 +257,7 @@ pub fn claim_rewards(ctx: Context<ClaimRewards>) -> Result<()> {
     // Mint Token (already done above)
     // Update MMR
     ctx.accounts.profile.mmr += 30; // +30 MMR for win
+    ctx.accounts.profile.trophies += 30; // +30 Trophies for win
 
     game.rewards_claimed[idx] = true;
     

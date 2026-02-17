@@ -34,7 +34,7 @@ pub struct ManageCard<'info> {
     pub authority: Signer<'info>,
 }
 
-pub fn initialize_player(ctx: Context<InitializePlayer>) -> Result<()> {
+pub fn initialize_player(ctx: Context<InitializePlayer>, username: String) -> Result<()> {
     let profile = &mut ctx.accounts.profile;
     profile.authority = ctx.accounts.authority.key();
     profile.mmr = 1000;    
@@ -46,6 +46,9 @@ pub fn initialize_player(ctx: Context<InitializePlayer>) -> Result<()> {
     profile.inventory.push(CardProgress { card_id: 3, level: 1, xp: 0, amount: 1 }); // MiniPEKKA
     profile.inventory.push(CardProgress { card_id: 4, level: 1, xp: 0, amount: 1 }); // Arrows
     
+    profile.username = username;
+    profile.trophies = 0;
+
     msg!("Player initialized: {}", ctx.accounts.authority.key());
     Ok(())
 }
