@@ -44,7 +44,7 @@ export class GameManager {
         this.layout = layout;
     }
 
-    public startGame(opponentId?: string) {
+    public startGame(_opponentId?: string) {
         this.gameStarted = true;
     }
 

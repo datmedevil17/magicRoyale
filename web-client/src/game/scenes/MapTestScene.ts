@@ -48,7 +48,7 @@ export class MapTestScene extends Scene {
         this.cameras.main.setBackgroundColor('#000000');
 
         // 2. Build Map
-        const mapBuilder = new MapBuilder(this, 0, 0, ArenaConfig.TILE_SIZE);
+        const mapBuilder = new MapBuilder(this, 0, 0);
         mapBuilder.build();
 
         // 3. Place Visual Towers (No Logic Entities)

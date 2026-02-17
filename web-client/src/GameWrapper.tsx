@@ -59,43 +59,46 @@ export const GameWrapper = () => {
     }, []);
 
     return (
-        <div id="app" style={{
-            position: 'relative',
-            width: '480px',
-            height: '800px',
-            boxShadow: '0 0 50px rgba(0,0,0,0.5)',
-            backgroundColor: '#000',
-            borderRadius: '16px',
-            overflow: 'hidden'
-        }}>
-            <div id="game-container" style={{ width: '100%', height: '100%' }}></div>
-            <div className="ui-overlay" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <GameHUD
-                    playerName={playerName}
-                    opponentName="Opponent"
-                    playerLevel={1}
-                    opponentLevel={1}
-                    playerCrowns={playerCrowns}
-                    opponentCrowns={opponentCrowns}
-                    timeLeft={timeLeft}
-                />
+        <div className="w-screen h-screen bg-[#111] flex justify-center items-center overflow-hidden">
+            <div id="app" style={{
+                position: 'relative',
+                width: '100%',
+                maxWidth: '480px',
+                height: '100%',
+                maxHeight: '900px',
+                boxShadow: '0 0 50px rgba(0,0,0,0.5)',
+                backgroundColor: '#000',
+                overflow: 'hidden'
+            }}>
+                <div id="game-container" style={{ width: '100%', height: '100%' }}></div>
+                <div className="ui-overlay" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <GameHUD
+                        playerName={playerName}
+                        opponentName="Opponent"
+                        playerLevel={1}
+                        opponentLevel={1}
+                        playerCrowns={playerCrowns}
+                        opponentCrowns={opponentCrowns}
+                        timeLeft={timeLeft}
+                    />
 
-                <div style={{ padding: '10px', pointerEvents: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', marginTop: 'auto' }}>
-                    <div style={{ alignSelf: 'flex-end', marginBottom: '10px' }}>
-                        {/* This could be emote button etc */}
+                    <div style={{ padding: '10px', pointerEvents: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', marginTop: 'auto' }}>
+                        <div style={{ alignSelf: 'flex-end', marginBottom: '10px' }}>
+                            {/* This could be emote button etc */}
+                        </div>
+                        <ElixirBar />
+                        <CardDeck />
                     </div>
-                    <ElixirBar />
-                    <CardDeck />
                 </div>
-            </div>
 
-            {gameEnded && (
-                <VictoryScreen
-                    winner={winner}
-                    playerCrowns={playerCrowns}
-                    opponentCrowns={opponentCrowns}
-                />
-            )}
+                {gameEnded && (
+                    <VictoryScreen
+                        winner={winner}
+                        playerCrowns={playerCrowns}
+                        opponentCrowns={opponentCrowns}
+                    />
+                )}
+            </div>
         </div>
     );
 };

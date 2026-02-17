@@ -29,7 +29,7 @@ export const WaitingScreen: React.FC = () => {
     }, [navigate]);
 
     return (
-        <div className="w-screen h-screen bg-[#222] flex justify-center items-center font-[Supercell-Magic] text-white overflow-hidden">
+        <div className="w-screen h-screen bg-[#222] flex justify-center items-center  text-white overflow-hidden">
             {/* Mobile Container */}
             <div className="relative h-full max-h-[946px] w-full max-w-[528px] bg-black shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col items-center justify-end pb-32 border-x-4 border-black">
 

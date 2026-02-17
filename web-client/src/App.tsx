@@ -7,6 +7,11 @@ import { MainMenuPage } from './pages/MainMenuPage';
 import { BattleDeckPage } from './pages/BattleDeckPage';
 import { MapTestPage } from './pages/MapTestPage';
 import { TroopTestPage } from './pages/TroopTestPage';
+import { ProfilePage } from './pages/ProfilePage';
+import { HistoryPage } from './pages/HistoryPage';
+import { MarketplacePage } from './pages/MarketplacePage';
+import { ClanPage } from './pages/ClanPage';
+import { TournamentPage } from './pages/TournamentPage';
 
 function App() {
   return (
@@ -15,6 +20,11 @@ function App() {
         <Route path="/" element={<LoginPage />} />
         <Route path="/menu" element={<MainMenuPage />} />
         <Route path="/deck" element={<BattleDeckPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/history" element={<HistoryPage />} />
+        <Route path="/market" element={<MarketplacePage />} />
+        <Route path="/clan" element={<ClanPage />} />
+        <Route path="/tournament" element={<TournamentPage />} />
         <Route path="/waiting" element={<WaitingScreen />} />
         <Route path="/game" element={<GameWrapper />} />
         <Route path="/test" element={<TestGifComponent />} />
