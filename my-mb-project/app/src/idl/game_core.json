@@ -414,8 +414,7 @@
           "writable": true
         },
         {
-          "name": "game",
-          "writable": true
+          "name": "game"
         },
         {
           "name": "player_profile",
@@ -1038,7 +1037,12 @@
           "address": "11111111111111111111111111111111"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "username",
+          "type": "string"
+        }
+      ]
     },
     {
       "name": "join_clan",
@@ -1266,7 +1270,14 @@
           "signer": true
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "winner_idx",
+          "type": {
+            "option": "u8"
+          }
+        }
+      ]
     },
     {
       "name": "set_deck",
@@ -2138,6 +2149,14 @@
                 }
               }
             }
+          },
+          {
+            "name": "username",
+            "type": "string"
+          },
+          {
+            "name": "trophies",
+            "type": "u32"
           }
         ]
       }

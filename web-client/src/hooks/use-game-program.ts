@@ -5,14 +5,13 @@ import { Connection, PublicKey, SystemProgram, Keypair } from "@solana/web3.js";
 import { type GameCore } from "../idl/game_core";
 import IDL from "../idl/game_core.json";
 import { useSessionKeyManager } from "@magicblock-labs/gum-react-sdk";
-import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, createAssociatedTokenAccountInstruction, getAssociatedTokenAddressSync } from "@solana/spl-token";
+import { TOKEN_PROGRAM_ID, createAssociatedTokenAccountInstruction, getAssociatedTokenAddressSync } from "@solana/spl-token";
 
 // Ephemeral Rollup endpoints - configurable via environment
 const ER_ENDPOINT = "https://devnet.magicblock.app";
 const ER_WS_ENDPOINT = "wss://devnet.magicblock.app";
 
-// Delegation program for checking if accounts are on ER
-const DELEGATION_PROGRAM_ID = new PublicKey("DELeGGvXpWV2fqJUhqcF5ZSYMS4JTLjteaAMARRSaeSh");
+
 
 // Note: magic_program and magic_context are auto-resolved by Anchor
 // because they have fixed addresses in the IDL
@@ -39,12 +38,7 @@ const getClanMemberPda = (clan: PublicKey, authority: PublicKey, programId: Publ
     )[0];
 };
 
-const getCardMintStatePda = (mint: PublicKey, programId: PublicKey) => {
-    return PublicKey.findProgramAddressSync(
-        [Buffer.from("card_mint"), mint.toBuffer()],
-        programId
-    )[0];
-};
+
 
 const getRequestPda = (clan: PublicKey, requesterAuthority: PublicKey, programId: PublicKey) => {
     // requester_profile.authority is the requesterAuthority
@@ -86,11 +80,8 @@ export function useGameProgram() {
     const wallet = useWallet();
 
     const [playerProfilePda, setPlayerProfilePda] = useState<PublicKey | null>(null);
-    const [gameState, setGameState] = useState<GameState | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [isDelegating, setIsDelegating] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [delegationStatus, setDelegationStatus] = useState<DelegationStatus>("checking");
 
     // Base layer Anchor provider and program
     const program = useMemo(() => {
@@ -152,7 +143,7 @@ export function useGameProgram() {
         "devnet"
     );
 
-    const { sessionToken, createSession: sdkCreateSession, isLoading: isSessionLoading } = sessionWallet;
+    const { sessionToken, createSession: sdkCreateSession } = sessionWallet;
 
     const createSession = useCallback(async () => {
         return await sdkCreateSession(new PublicKey(IDL.address));
@@ -275,7 +266,6 @@ export function useGameProgram() {
         if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
 
         setIsLoading(true);
-        setIsDelegating(true);
 
         try {
             console.log("Delegating PDA:", pdaToDelegate.toBase58());
@@ -317,7 +307,6 @@ export function useGameProgram() {
             throw err;
         } finally {
             setIsLoading(false);
-            setIsDelegating(false);
         }
     }, [program, wallet.publicKey]);
 
@@ -367,7 +356,6 @@ export function useGameProgram() {
         if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
         setIsLoading(true);
         try {
-            const { getAssociatedTokenAddressSync } = await import("@solana/spl-token");
             const ata = getAssociatedTokenAddressSync(mint, wallet.publicKey);
 
             const tx = await program.methods
@@ -490,7 +478,6 @@ export function useGameProgram() {
         if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
         setIsLoading(true);
         try {
-            const { getAssociatedTokenAddressSync } = await import("@solana/spl-token");
             const donorTokenAccount = getAssociatedTokenAddressSync(mint, wallet.publicKey);
 
             const tx = await program.methods

@@ -3,134 +3,175 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const bcrypt = require('bcryptjs');
-const { pool, initDB } = require('./db');
+require('dotenv').config();
+
+// Solana/Anchor imports
+const { Connection, PublicKey, Keypair, SystemProgram } = require('@solana/web3.js');
+const { Program, AnchorProvider, Wallet, BN } = require('@coral-xyz/anchor');
+const IDL = require('./game_core.json');
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// Initialize DB
-initDB();
-
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "*", // Allow all for dev
+        origin: "*",
         methods: ["GET", "POST"]
     }
 });
 
-// --- Auth Routes ---
+// --- Blockchain Setup ---
+const PROGRAM_ID = new PublicKey(IDL.address);
+const RPC_URL = process.env.ANCHOR_PROVIDER_URL || 'https://api.devnet.solana.com';
 
-app.post('/register', async (req, res) => {
-    const { username, password } = req.body;
-    if (!username || !password) {
-        return res.status(400).json({ error: "Username and password required" });
+// Parse server private key from env
+let serverKeypair;
+try {
+    const privateKeyArray = JSON.parse(process.env.SERVER_PRIVATE_KEY || '[]');
+    if (privateKeyArray.length === 0) {
+        console.warn('⚠️  SERVER_PRIVATE_KEY not set in .env. Please add a funded keypair.');
+        serverKeypair = Keypair.generate(); // Temporary fallback
+    } else {
+        serverKeypair = Keypair.fromSecretKey(Uint8Array.from(privateKeyArray));
     }
+    console.log('✅ Server Authority Wallet:', serverKeypair.publicKey.toBase58());
+} catch (err) {
+    console.error('❌ Error parsing SERVER_PRIVATE_KEY:', err.message);
+    process.exit(1);
+}
 
-    try {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const result = await pool.query(
-            'INSERT INTO users (username, password) VALUES ($1, $2) RETURNING id, username, trophies, level',
-            [username, hashedPassword]
-        );
-        res.status(201).json(result.rows[0]);
-    } catch (err) {
-        if (err.code === '23505') { // Unique violation
-            return res.status(409).json({ error: "Username already exists" });
-        }
-        console.error(err);
-        res.status(500).json({ error: "Server error" });
-    }
-});
+// Initialize Anchor Provider
+const connection = new Connection(RPC_URL, { commitment: 'confirmed' });
+const wallet = new Wallet(serverKeypair);
+const provider = new AnchorProvider(connection, wallet, { commitment: 'confirmed' });
+const program = new Program(IDL, provider);
 
-app.post('/login', async (req, res) => {
-    const { username, password } = req.body;
-    if (!username || !password) {
-        return res.status(400).json({ error: "Username and password required" });
-    }
+console.log('✅ Connected to Solana:', RPC_URL);
+console.log('✅ Program ID:', PROGRAM_ID.toBase58());
 
-    try {
-        const result = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
-        if (result.rows.length === 0) {
-            return res.status(401).json({ error: "Invalid credentials" });
-        }
-
-        const user = result.rows[0];
-        const isMatch = await bcrypt.compare(password, user.password);
-
-        if (!isMatch) {
-            return res.status(401).json({ error: "Invalid credentials" });
-        }
-
-        // Return user info (excluding password)
-        res.json({
-            id: user.id,
-            username: user.username,
-            trophies: user.trophies,
-            level: user.level
-        });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Server error" });
-    }
-});
+// --- Helper Functions ---
+function getPlayerProfilePda(authority) {
+    return PublicKey.findProgramAddressSync(
+        [Buffer.from("player"), authority.toBuffer()],
+        PROGRAM_ID
+    )[0];
+}
 
 // --- Socket.IO Game Logic ---
-
 let waitingPlayers = [];
 
 io.on('connection', (socket) => {
-    console.log('User connected:', socket.id);
+    const walletPublicKey = socket.handshake.query.walletPublicKey;
 
-    // Notify player of their ID
-    socket.emit('connect_ack', { id: socket.id });
+    if (!walletPublicKey) {
+        console.log('❌ Connection rejected: No wallet public key provided');
+        socket.disconnect();
+        return;
+    }
+
+    try {
+        const walletPubkey = new PublicKey(walletPublicKey);
+        socket.walletPublicKey = walletPubkey;
+        console.log('✅ User connected:', socket.id, '| Wallet:', walletPublicKey);
+    } catch (err) {
+        console.log('❌ Invalid wallet public key:', walletPublicKey);
+        socket.disconnect();
+        return;
+    }
+
+    socket.emit('connect_ack', { id: socket.id, wallet: walletPublicKey });
 
     // Handle Matchmaking
-    socket.on('find-match', () => {
-        console.log('User searching for match:', socket.id);
+    socket.on('find-match', async () => {
+        console.log('🔍 User searching for match:', socket.id);
 
-        // Remove if already in queue (to be safe)
         waitingPlayers = waitingPlayers.filter(id => id !== socket.id);
-
         waitingPlayers.push(socket.id);
 
         if (waitingPlayers.length >= 2) {
-            const player1 = waitingPlayers.shift();
-            const player2 = waitingPlayers.shift();
+            const player1Id = waitingPlayers.shift();
+            const player2Id = waitingPlayers.shift();
 
-            const roomId = `room_${player1}_${player2}`;
-            console.log(`Match found: ${player1} vs ${player2} in ${roomId}`);
-
-            // Make both sockets join the room
-            // Note: io.sockets.sockets is a Map in Socket.IO v4
-            const s1 = io.sockets.sockets.get(player1);
-            const s2 = io.sockets.sockets.get(player2);
+            const s1 = io.sockets.sockets.get(player1Id);
+            const s2 = io.sockets.sockets.get(player2Id);
 
             if (s1 && s2) {
-                s1.join(roomId);
-                s2.join(roomId);
+                const player1Wallet = s1.walletPublicKey;
+                const player2Wallet = s2.walletPublicKey;
 
-                // Store room ID on socket for easy access later logic? 
-                // Alternatively, client sends room ID, or we track it.
-                // For now, let's just use the fact they are in a room. 
-                // Actually, 'card-played' needs to know WHICH room to broadcast to.
-                // `socket.rooms` contains room IDs.
+                console.log(`🎮 Match found: ${player1Wallet.toBase58()} vs ${player2Wallet.toBase58()}`);
 
-                // Notify both players
-                io.to(player1).emit('game-start', { opponentId: player2, role: 'player1', roomId });
-                io.to(player2).emit('game-start', { opponentId: player1, role: 'player2', roomId });
+                try {
+                    // Generate keypairs for game and battle
+                    const gameKeypair = Keypair.generate();
+                    const battleKeypair = Keypair.generate();
+
+                    console.log('⏳ Creating game on-chain...');
+                    console.log('  Game PDA:', gameKeypair.publicKey.toBase58());
+                    console.log('  Battle PDA:', battleKeypair.publicKey.toBase58());
+
+                    // Call startGame instruction
+                    const tx = await program.methods
+                        .startGame()
+                        .accounts({
+                            game: gameKeypair.publicKey,
+                            battle: battleKeypair.publicKey,
+                            playerOne: player1Wallet,
+                            playerTwo: player2Wallet,
+                            authority: serverKeypair.publicKey,
+                            systemProgram: SystemProgram.programId,
+                        })
+                        .signers([gameKeypair, battleKeypair])
+                        .rpc();
+
+                    console.log('✅ Game created on-chain. TX:', tx);
+
+                    const roomId = `room_${gameKeypair.publicKey.toBase58()}`;
+                    s1.join(roomId);
+                    s2.join(roomId);
+
+                    // Store game info on sockets
+                    s1.gameId = gameKeypair.publicKey.toBase58();
+                    s1.battleId = battleKeypair.publicKey.toBase58();
+                    s1.roomId = roomId;
+                    s2.gameId = gameKeypair.publicKey.toBase58();
+                    s2.battleId = battleKeypair.publicKey.toBase58();
+                    s2.roomId = roomId;
+
+                    // Notify both players
+                    io.to(player1Id).emit('game-start', {
+                        opponentId: player2Id,
+                        opponentWallet: player2Wallet.toBase58(),
+                        role: 'player1',
+                        roomId,
+                        gameId: gameKeypair.publicKey.toBase58(),
+                        battleId: battleKeypair.publicKey.toBase58(),
+                    });
+
+                    io.to(player2Id).emit('game-start', {
+                        opponentId: player1Id,
+                        opponentWallet: player1Wallet.toBase58(),
+                        role: 'player2',
+                        roomId,
+                        gameId: gameKeypair.publicKey.toBase58(),
+                        battleId: battleKeypair.publicKey.toBase58(),
+                    });
+
+                } catch (err) {
+                    console.error('❌ Error creating game on-chain:', err);
+                    s1.emit('error', { message: 'Failed to create game on blockchain' });
+                    s2.emit('error', { message: 'Failed to create game on blockchain' });
+                }
             }
         }
     });
 
-    // Relay Card Placement
+    // Relay Card Placement (still useful for optimistic updates)
     socket.on('card-played', (data) => {
-        console.log('Card played by', socket.id, data);
+        console.log('🃏 Card played by', socket.id, data);
 
-        // Find the game room this socket is in (excluding their own ID)
-        // socket.rooms is a Set. It contains socket.id and any joined rooms.
         let gameRoom = null;
         for (const room of socket.rooms) {
             if (room !== socket.id) {
@@ -140,7 +181,6 @@ io.on('connection', (socket) => {
         }
 
         if (gameRoom) {
-            // Broadcast to everyone in the room EXCEPT sender
             socket.to(gameRoom).emit('opponent-card-played', {
                 id: socket.id,
                 cardId: data.cardId,
@@ -149,14 +189,69 @@ io.on('connection', (socket) => {
         }
     });
 
+    // Handle Game End (resolve game on-chain)
+    socket.on('game-end', async (data) => {
+        console.log('🏁 Game ended:', socket.id, data);
+
+        try {
+            const gameId = new PublicKey(socket.gameId);
+            const battleId = new PublicKey(socket.battleId);
+
+            // Find opponent in room
+            let opponentSocket = null;
+            for (const room of socket.rooms) {
+                if (room !== socket.id && room === socket.roomId) {
+                    const socketsInRoom = await io.in(room).fetchSockets();
+                    opponentSocket = socketsInRoom.find(s => s.id !== socket.id);
+                    break;
+                }
+            }
+
+            if (!opponentSocket) {
+                console.log('⚠️  Opponent not found for game resolution');
+                return;
+            }
+
+            const player1Wallet = socket.walletPublicKey;
+            const player2Wallet = opponentSocket.walletPublicKey;
+
+            // Determine winner index (0 or 1, or null for draw)
+            let winnerIdx = data.winnerIdx !== undefined ? data.winnerIdx : null;
+
+            console.log('⏳ Resolving game on-chain...');
+            const tx = await program.methods
+                .resolveGame(winnerIdx)
+                .accounts({
+                    game: gameId,
+                    battle: battleId,
+                    playerOne: player1Wallet,
+                    playerTwo: player2Wallet,
+                    authority: serverKeypair.publicKey,
+                })
+                .rpc();
+
+            console.log('✅ Game resolved on-chain. TX:', tx);
+
+            // Notify both players
+            io.to(socket.roomId).emit('game-resolved', {
+                gameId: socket.gameId,
+                winnerIdx,
+                tx,
+            });
+
+        } catch (err) {
+            console.error('❌ Error resolving game on-chain:', err);
+            socket.emit('error', { message: 'Failed to resolve game on blockchain' });
+        }
+    });
+
     socket.on('disconnect', () => {
-        console.log('User disconnected:', socket.id);
+        console.log('👋 User disconnected:', socket.id);
         waitingPlayers = waitingPlayers.filter(id => id !== socket.id);
     });
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`🚀 Server running on port ${PORT}`);
 });
-

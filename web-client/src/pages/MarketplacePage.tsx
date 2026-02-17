@@ -3,6 +3,8 @@ import { BottomNav } from '../ui/BottomNav';
 import { MobileLayout } from '../ui/MobileLayout';
 import { CardModal } from '../ui/CardModal';
 import { SkeletonLoader } from '../ui/SkeletonLoader';
+import { useGameProgram } from '../hooks/use-game-program';
+import { TROOP_NAME_TO_MINT } from '../game/config/MintConfig';
 
 const MOCK_NFT_LISTINGS = [
     { id: 1, name: 'Golden Giant', type: 'Troop', rarity: 'Rare', price: 1.2, image: 'GiantCard', mintNumber: 420 },
@@ -20,6 +22,7 @@ const MOCK_TRANSACTIONS = [
 ];
 
 export const MarketplacePage: React.FC = () => {
+    const { unlockCard, isLoading: isTxLoading, error: txError } = useGameProgram();
     const [selectedCard, setSelectedCard] = useState<any | null>(null);
     const [filter, setFilter] = useState<'All' | 'Troop' | 'Spell'>('All');
     const [isLoading, setIsLoading] = useState(true);
@@ -145,6 +148,47 @@ export const MarketplacePage: React.FC = () => {
                     }}
                     onClose={() => setSelectedCard(null)}
                 />
+            )}
+
+            {/* Buy Confirmation Button (Floating when card selected) */}
+            {selectedCard && (
+                <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[60] animate-slideUp">
+                    <button
+                        onClick={async () => {
+                            const canonicalName = selectedCard.name.split(' ').pop(); // e.g., 'Golden Giant' -> 'Giant'
+                            const mint = TROOP_NAME_TO_MINT[canonicalName || ''];
+                            const nameToId: Record<string, number> = {
+                                'Archer': 1, 'Giant': 2, 'MiniPEKKA': 3, 'Arrows': 4, 'Valkyrie': 5, 'Wizard': 6, 'BabyDragon': 7
+                            };
+                            const cardId = nameToId[canonicalName || ''];
+
+                            if (!mint || !cardId) {
+                                alert(`Could not find mint or ID for ${canonicalName}`);
+                                return;
+                            }
+
+                            try {
+                                console.log(`Unlocking ${canonicalName} (ID: ${cardId})`);
+                                await unlockCard(cardId, mint);
+                                alert(`Successfully unlocked ${selectedCard.name}!`);
+                                setSelectedCard(null);
+                            } catch (err) {
+                                console.error('Unlock failed:', err);
+                            }
+                        }}
+                        disabled={isTxLoading}
+                        className="bg-[#fbce47] hover:bg-[#ffe082] text-black font-black px-12 py-4 rounded-full shadow-[0_10px_30px_rgba(251,206,71,0.4)] border-b-4 border-yellow-700 active:border-b-0 active:translate-y-1 transition-all text-xl uppercase tracking-wider"
+                    >
+                        {isTxLoading ? 'Processing...' : `Buy for ${selectedCard.price} SOL`}
+                    </button>
+                </div>
+            )}
+
+            {/* Transaction feedback - simplified for brevity */}
+            {txError && (
+                <div className="fixed bottom-20 left-4 right-4 bg-red-500 text-white p-3 rounded-lg z-50 text-sm">
+                    {txError}
+                </div>
             )}
 
             <BottomNav />

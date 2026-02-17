@@ -10,5 +10,6 @@ export const EVENTS = {
     CROWN_UPDATE: 'crown-update',
     GAME_END: 'game-end',
     TOWER_DESTROYED: 'tower-destroyed',
-    GAME_START: 'game-start'
+    GAME_START: 'game-start',
+    DEPLOY_TROOP_BLOCKCHAIN: 'deploy-troop-blockchain'
 };

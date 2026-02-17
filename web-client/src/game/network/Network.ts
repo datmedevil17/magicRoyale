@@ -1,12 +1,19 @@
 import { io, Socket } from 'socket.io-client';
 import { EventBus, EVENTS } from '../EventBus';
+import { PublicKey } from '@solana/web3.js';
 
 export class Network {
     private socket: Socket;
+    public gameId: string | null = null;
+    public battleId: string | null = null;
 
-    constructor() {
-        // Connect to local Node server
-        this.socket = io('http://localhost:3000');
+    constructor(walletPublicKey: PublicKey | null) {
+        // Connect to local Node server with wallet authentication
+        this.socket = io('http://localhost:3000', {
+            query: {
+                walletPublicKey: walletPublicKey?.toBase58() || ''
+            }
+        });
 
         this.socket.on('connect', () => {
             console.log('Connected to Game Server:', this.socket.id);
@@ -15,12 +22,14 @@ export class Network {
         });
 
         this.socket.on('connect_ack', (data) => {
-            console.log('Server acknowledged connection, ID:', data.id);
+            console.log('Server acknowledged connection, ID:', data.id, 'Wallet:', data.wallet);
         });
 
-        // Listen for game start
+        // Listen for game start with blockchain IDs
         this.socket.on('game-start', (data) => {
             console.log('Network: Game Started', data);
+            this.gameId = data.gameId;
+            this.battleId = data.battleId;
             EventBus.emit(EVENTS.GAME_START, data);
         });
 
@@ -29,11 +38,22 @@ export class Network {
             EventBus.emit('network-opponent-deploy', data);
         });
 
-        // Listen to local events to send to server - simplified, moving send logic to MainScene
-        // EventBus.on(EVENTS.CARD_PLAYED, (cardId: string) => { });
+        this.socket.on('game-resolved', (data) => {
+            console.log('Game resolved on-chain:', data);
+            EventBus.emit('game-resolved', data);
+        });
+
+        this.socket.on('error', (err) => {
+            console.error('Socket error:', err);
+        });
     }
 
     public sendDeploy(cardId: string, position: { x: number, y: number }) {
+        // Still used for optimistic UI updates
         this.socket.emit('card-played', { cardId, position });
+    }
+
+    public sendGameEnd(winnerIdx: number | null) {
+        this.socket.emit('game-end', { winnerIdx });
     }
 }

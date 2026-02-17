@@ -9,6 +9,7 @@ import { Tower } from '../entities/Tower';
 import { TowerEntity } from '../logic/TowerEntity';
 import { Unit } from '../entities/Unit';
 import { ArenaConfig } from '../config/ArenaConfig';
+import { PublicKey } from '@solana/web3.js';
 
 export class MainScene extends Scene {
     private gameManager!: GameManager;
@@ -35,7 +36,11 @@ export class MainScene extends Scene {
     }
 
     create() {
-        this.network = new Network();
+        // Get blockchain data from registry (passed from GameWrapper)
+        const registryData = this.game.registry.get('data');
+        const walletPublicKey = registryData?.walletPublicKey;
+
+        this.network = new Network(walletPublicKey ? new PublicKey(walletPublicKey) : null);
 
         // 1. Calculate Dimensions & Zoom
         const mapWidth = ArenaConfig.COLS * ArenaConfig.TILE_SIZE;   // 24 * 22 = 528
@@ -75,7 +80,7 @@ export class MainScene extends Scene {
         ArenaConfig.TOWERS.forEach(towerConfig => {
             const { x, y } = ArenaConfig.getPixelCoords(towerConfig.towerCol, towerConfig.towerRow);
             const isKing = towerConfig.type === 'king';
-            const tower = this.createTower(
+            this.createTower(
                 towerConfig.id,
                 x,
                 y,
@@ -173,6 +178,15 @@ export class MainScene extends Scene {
                         delay: 1000
                     });
                     EventBus.emit(EVENTS.CARD_PLAYED, this.selectedCardId);
+
+                    // Emit blockchain deployment event
+                    EventBus.emit(EVENTS.DEPLOY_TROOP_BLOCKCHAIN, {
+                        cardIdx: 0, // TODO: map cardId to cardIdx
+                        x: Math.floor(worldPoint.x),
+                        y: Math.floor(worldPoint.y)
+                    });
+
+                    // Still send to socket for optimistic updates
                     if (this.network) {
                         this.network.sendDeploy(this.selectedCardId, { x: worldPoint.x, y: worldPoint.y });
                     }

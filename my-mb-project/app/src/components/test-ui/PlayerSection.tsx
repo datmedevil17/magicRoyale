@@ -6,11 +6,16 @@ import toast from "react-hot-toast";
 
 export function PlayerSection() {
     const { initializePlayer, playerProfilePda, isLoading } = useGameProgram();
+    const [username, setUsername] = useState("");
 
     const handleInitialize = async () => {
+        if (!username.trim()) {
+            toast.error("Please enter a username");
+            return;
+        }
         const toastId = toast.loading("Initializing Player...");
         try {
-            const tx = await initializePlayer();
+            const tx = await initializePlayer(username);
             toast.success(`Player Initialized: ${tx}`, { id: toastId });
         } catch (error: any) {
             toast.error(`Error: ${error.message}`, { id: toastId });
@@ -22,6 +27,13 @@ export function PlayerSection() {
             <div className="flex flex-col gap-4">
                 <p className="text-sm text-gray-500">Initialize your player profile on-chain.</p>
                 <div className="flex gap-2 items-center">
+                    <input
+                        type="text"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder="Enter username"
+                        className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
                     <button
                         onClick={handleInitialize}
                         disabled={isLoading}

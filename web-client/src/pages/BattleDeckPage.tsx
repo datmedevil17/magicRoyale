@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { BottomNav } from '../ui/BottomNav';
 import { MobileLayout } from '../ui/MobileLayout';
 import { CardModal } from '../ui/CardModal';
+import { useGameProgram } from '../hooks/use-game-program';
+import { TROOP_NAME_TO_MINT } from '../game/config/MintConfig';
 
 // Mock Data
 const BATTLE_DECK_INITIAL = [
@@ -19,6 +21,7 @@ const COLLECTION = [
 ];
 
 export const BattleDeckPage: React.FC = () => {
+    const { upgradeCard, isLoading, error } = useGameProgram();
     // State for deck & collection
     const [battleDeck, setBattleDeck] = useState<string[]>(() => {
         const saved = localStorage.getItem('battleDeck');
@@ -65,9 +68,37 @@ export const BattleDeckPage: React.FC = () => {
         }
     };
 
-    const handleUpgrade = (e: React.MouseEvent, cardName: string) => {
+    const handleUpgrade = async (e: React.MouseEvent, cardName: string) => {
         e.stopPropagation();
-        alert(`Upgrading ${cardName}... (Mock)`);
+
+        // Map card name (e.g., 'GiantCard') to canonical name (e.g., 'Giant')
+        const canonicalName = cardName.replace('Card', '');
+        const mint = TROOP_NAME_TO_MINT[canonicalName];
+
+        if (!mint) {
+            alert(`Mint not found for ${canonicalName}`);
+            return;
+        }
+
+        try {
+            // Card IDs: Archers: 1, Giant: 2, MiniPEKKA: 3, Arrows: 4, Valkyrie: 5, Wizard: 6, BabyDragon: 7
+            const nameToId: Record<string, number> = {
+                'Archers': 1, 'Giant': 2, 'MiniPEKKA': 3, 'Arrows': 4, 'Valkyrie': 5, 'Wizard': 6, 'BabyDragon': 7
+            };
+            const cardId = nameToId[canonicalName];
+
+            if (!cardId) {
+                alert(`Card ID not found for ${canonicalName}`);
+                return;
+            }
+
+            console.log(`Upgrading ${canonicalName} (ID: ${cardId}) with mint ${mint.toBase58()}`);
+            await upgradeCard(cardId, mint);
+            alert(`Successfully upgraded ${canonicalName}!`);
+        } catch (err: any) {
+            console.error('Upgrade failed:', err);
+            alert(`Upgrade failed: ${err.message}`);
+        }
     };
 
     return (
@@ -145,6 +176,22 @@ export const BattleDeckPage: React.FC = () => {
                 {/* Bottom Nav */}
                 <BottomNav />
             </div>
+
+            {/* Loading & Error Overlays */}
+            {isLoading && (
+                <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-[60] backdrop-blur-sm">
+                    <div className="bg-[#1a254a] p-6 rounded-xl border-4 border-[#4a6cd6] text-white flex flex-col items-center">
+                        <div className="w-12 h-12 border-4 border-t-yellow-400 border-white/20 rounded-full animate-spin mb-4" />
+                        <p className="LuckiestGuy">Processing Transaction...</p>
+                    </div>
+                </div>
+            )}
+
+            {error && (
+                <div className="fixed bottom-20 left-4 right-4 bg-red-600 text-white p-4 rounded-xl z-50 border-2 border-white/20 shadow-2xl animate-bounce">
+                    <p className="text-center font-bold">{error}</p>
+                </div>
+            )}
         </MobileLayout>
     );
 };
