@@ -5,9 +5,19 @@ interface VictoryScreenProps {
     winner: 'player' | 'opponent' | 'draw';
     playerCrowns: number;
     opponentCrowns: number;
+    playerTowersDestroyed: number;
+    opponentTowersDestroyed: number;
+    victoryReason?: string;
 }
 
-export const VictoryScreen: React.FC<VictoryScreenProps> = ({ winner, playerCrowns, opponentCrowns }) => {
+export const VictoryScreen: React.FC<VictoryScreenProps> = ({ 
+    winner, 
+    playerCrowns, 
+    opponentCrowns, 
+    playerTowersDestroyed, 
+    opponentTowersDestroyed, 
+    victoryReason 
+}) => {
     const navigate = useNavigate();
 
     const getTitle = () => {
@@ -56,6 +66,28 @@ export const VictoryScreen: React.FC<VictoryScreenProps> = ({ winner, playerCrow
                         <div className="text-3xl font-bold text-white mt-2">{opponentCrowns}</div>
                     </div>
                 </div>
+
+                {/* Tower Destruction Stats */}
+                <div className="flex justify-center items-center gap-8 mb-6">
+                    <div className="text-center">
+                        <div className="text-sm text-blue-300">Towers Destroyed</div>
+                        <div className="text-2xl font-bold text-white">{opponentTowersDestroyed}/3</div>
+                    </div>
+                    <div className="text-2xl text-gray-500">vs</div>
+                    <div className="text-center">
+                        <div className="text-sm text-red-300">Towers Destroyed</div>
+                        <div className="text-2xl font-bold text-white">{playerTowersDestroyed}/3</div>
+                    </div>
+                </div>
+
+                {/* Victory Reason */}
+                {victoryReason && (
+                    <div className="mb-6 text-center">
+                        <div className="bg-yellow-500/20 border border-yellow-500 rounded-lg px-4 py-2">
+                            <span className="text-yellow-300 font-semibold">{victoryReason}</span>
+                        </div>
+                    </div>
+                )}
 
                 <div className="flex gap-4 justify-center">
                     <button

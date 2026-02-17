@@ -56,8 +56,20 @@ export class MainScene extends Scene {
 
         this.add.text(10, 10, 'Clash Royale Web', { fontSize: '20px', color: '#ffffff' }).setScrollFactor(0); // Sticky UI
 
-        // Debug Text
-        const debugText = this.add.text(10, 50, 'Debug: Init... Waiting for Card', { fontSize: '16px', color: '#ffff00', backgroundColor: '#000000' }).setScrollFactor(0);
+        // Deployment Notifications - Modern styling
+        const centerX = this.scale.width / 2;
+        const debugText = this.add.text(centerX, 30, '', {
+            fontSize: '18px',
+            color: '#ffffff',
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            padding: { x: 12, y: 8 },
+            stroke: '#000000',
+            strokeThickness: 2
+        })
+            .setOrigin(0.5, 0)
+            .setScrollFactor(0)
+            .setDepth(1000)
+            .setAlpha(0);
 
         // 3. Tower Placement (Using logic from MapConfig)
         ArenaConfig.TOWERS.forEach(towerConfig => {
@@ -101,11 +113,19 @@ export class MainScene extends Scene {
             const mirroredY = mapHeight - data.position.y;
 
             this.gameManager.deployCard(data.cardId, { x: mirroredX, y: mirroredY }, 'opponent');
-            debugText.setText(`Opponent: ${data.cardId} at ${Math.floor(mirroredX)},${Math.floor(mirroredY)}`);
+
+            // Show notification
+            debugText.setText(`${data.cardId} deployed`);
+            debugText.setAlpha(1);
+            this.tweens.add({
+                targets: debugText,
+                alpha: 0,
+                duration: 2000,
+                delay: 1000
+            });
         });
 
-        // Waiting State
-        const centerX = this.scale.width / 2;
+        // Waiting State (reuse centerX from above)
         const centerY = this.scale.height / 2;
         const waitingText = this.add.text(centerX, centerY, 'Searching for Opponent...', { fontSize: '24px', color: '#ffffff', backgroundColor: '#000000', padding: { x: 10, y: 10 } })
             .setOrigin(0.5)
@@ -144,19 +164,38 @@ export class MainScene extends Scene {
                 const entity = this.gameManager.deployCard(this.selectedCardId, { x: worldPoint.x, y: worldPoint.y }, 'player');
 
                 if (entity) {
-                    debugText.setText(`Deployed ${this.selectedCardId}`);
+                    debugText.setText(`${this.selectedCardId} deployed`);
+                    debugText.setAlpha(1);
+                    this.tweens.add({
+                        targets: debugText,
+                        alpha: 0,
+                        duration: 2000,
+                        delay: 1000
+                    });
                     EventBus.emit(EVENTS.CARD_PLAYED, this.selectedCardId);
                     if (this.network) {
                         this.network.sendDeploy(this.selectedCardId, { x: worldPoint.x, y: worldPoint.y });
                     }
                 } else {
-                    debugText.setText(`Failed: Low Elixir or Invalid`);
+                    debugText.setText('Not enough elixir');
+                    debugText.setAlpha(1);
+                    this.tweens.add({
+                        targets: debugText,
+                        alpha: 0,
+                        duration: 2000,
+                        delay: 500
+                    });
                 }
             }
         });
     }
 
     update(time: number, delta: number) {
+        // Freeze game if ended
+        if (this.gameManager.gameEnded) {
+            return;
+        }
+
         this.gameManager.update(time, delta);
         EventBus.emit(EVENTS.ELIXIR_UPDATE, this.gameManager.elixir);
 
@@ -170,7 +209,10 @@ export class MainScene extends Scene {
             EventBus.emit(EVENTS.GAME_END, {
                 winner: this.gameManager.winner,
                 playerCrowns: this.gameManager.playerCrowns,
-                opponentCrowns: this.gameManager.opponentCrowns
+                opponentCrowns: this.gameManager.opponentCrowns,
+                playerTowersDestroyed: this.gameManager.playerTowersDestroyed,
+                opponentTowersDestroyed: this.gameManager.opponentTowersDestroyed,
+                victoryReason: this.gameManager.victoryReason
             });
         }
 

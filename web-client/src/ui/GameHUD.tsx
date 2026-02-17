@@ -9,6 +9,8 @@ interface GameHUDProps {
     playerCrowns: number;
     opponentCrowns: number;
     timeLeft: string;
+    playerTowersDestroyed?: number;
+    opponentTowersDestroyed?: number;
 }
 
 export const GameHUD: React.FC<GameHUDProps> = ({
@@ -18,7 +20,9 @@ export const GameHUD: React.FC<GameHUDProps> = ({
     opponentLevel,
     playerCrowns,
     opponentCrowns,
-    timeLeft
+    timeLeft,
+    playerTowersDestroyed = 0,
+    opponentTowersDestroyed = 0
 }) => {
     return (
         <div className="game-hud">
@@ -49,6 +53,9 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                             />
                         ))}
                     </div>
+                    <div className="tower-count">
+                        Towers: {opponentTowersDestroyed}/3
+                    </div>
                 </div>
             </div>
 
@@ -64,6 +71,9 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                                 className="crown-icon"
                             />
                         ))}
+                    </div>
+                    <div className="tower-count">
+                        Towers: {playerTowersDestroyed}/3
                     </div>
                 </div>
 

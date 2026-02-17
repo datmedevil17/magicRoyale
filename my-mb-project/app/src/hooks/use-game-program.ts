@@ -5,7 +5,7 @@ import { Connection, PublicKey, SystemProgram, Keypair } from "@solana/web3.js";
 import { type GameCore } from "../idl/game_core";
 import IDL from "../idl/game_core.json";
 import { useSessionKeyManager } from "@magicblock-labs/gum-react-sdk";
-import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, createAssociatedTokenAccountInstruction, getAssociatedTokenAddressSync } from "@solana/spl-token";
 
 // Ephemeral Rollup endpoints - configurable via environment
 const ER_ENDPOINT = "https://devnet.magicblock.app";
@@ -321,8 +321,21 @@ export function useGameProgram() {
         if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
         setIsLoading(true);
         try {
-            const { getAssociatedTokenAddressSync } = await import("@solana/spl-token");
             const ata = getAssociatedTokenAddressSync(mint, wallet.publicKey);
+
+            const preInstructions = [];
+            const ataInfo = await connection.getAccountInfo(ata);
+            if (!ataInfo) {
+                console.log("Creating ATA for", mint.toBase58());
+                preInstructions.push(
+                    createAssociatedTokenAccountInstruction(
+                        wallet.publicKey,
+                        ata,
+                        wallet.publicKey,
+                        mint
+                    )
+                );
+            }
 
             const tx = await program.methods
                 .unlockCard(cardId)
@@ -336,6 +349,7 @@ export function useGameProgram() {
                     tokenProgram: TOKEN_PROGRAM_ID,
                     associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
                 } as any)
+                .preInstructions(preInstructions)
                 .rpc();
             return tx;
         } catch (err: any) {
@@ -344,7 +358,7 @@ export function useGameProgram() {
         } finally {
             setIsLoading(false);
         }
-    }, [program, wallet.publicKey]);
+    }, [program, wallet.publicKey, connection]);
 
     // Upgrade Card (Base Layer)
     const upgradeCard = useCallback(async (cardId: number, mint: PublicKey): Promise<string> => {
@@ -533,8 +547,21 @@ export function useGameProgram() {
         if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
         setIsLoading(true);
         try {
-            const { getAssociatedTokenAddressSync } = await import("@solana/spl-token");
             const destination = getAssociatedTokenAddressSync(mint, wallet.publicKey);
+
+            const preInstructions = [];
+            const destInfo = await connection.getAccountInfo(destination);
+            if (!destInfo) {
+                console.log("Creating ATA for rewards", mint.toBase58());
+                preInstructions.push(
+                    createAssociatedTokenAccountInstruction(
+                        wallet.publicKey,
+                        destination,
+                        wallet.publicKey,
+                        mint
+                    )
+                );
+            }
 
             const tx = await program.methods
                 .claimRewards()
@@ -548,6 +575,7 @@ export function useGameProgram() {
                     signer: wallet.publicKey,
                     systemProgram: SystemProgram.programId, // Just in case
                 } as any)
+                .preInstructions(preInstructions)
                 .rpc();
             return tx;
         } catch (err: any) {
@@ -556,7 +584,7 @@ export function useGameProgram() {
         } finally {
             setIsLoading(false);
         }
-    }, [program, wallet.publicKey]);
+    }, [program, wallet.publicKey, connection]);
 
     // Commit Battle (ER -> Base)
     const commitBattle = useCallback(async (battle: PublicKey): Promise<string> => {

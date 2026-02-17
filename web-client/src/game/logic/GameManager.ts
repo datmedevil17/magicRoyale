@@ -8,6 +8,7 @@ import { MiniPekka } from './troops/MiniPekka';
 import { Valkyrie } from './troops/Valkyrie';
 import { Wizard } from './troops/Wizard';
 import { BabyDragon } from './troops/BabyDragon';
+import { TowerEntity } from './TowerEntity';
 import type { Point2D, ArenaLayout } from './Interfaces';
 import type { IUser } from './User';
 
@@ -26,6 +27,9 @@ export class GameManager {
     // Game state
     public playerCrowns: number = 0;
     public opponentCrowns: number = 0;
+    public playerTowersDestroyed: number = 0;
+    public opponentTowersDestroyed: number = 0;
+    public victoryReason: string = '';
     public matchDuration: number = 180000; // 3 minutes in ms
     public elapsedTime: number = 0;
     public gameEnded: boolean = false;
@@ -73,6 +77,16 @@ export class GameManager {
             if (entity instanceof Troop) {
                 entity.updateBase(this.layout);
                 entity.update(time, delta, this.entities, this.layout);
+            }
+        }
+
+        // Check for destroyed towers BEFORE removing dead entities
+        for (const entity of this.entities) {
+            if (entity instanceof TowerEntity && entity.health <= 0 && !entity.destroyed) {
+                entity.destroyed = true; // Mark as destroyed to avoid calling onTowerDestroyed multiple times
+                const isKing = entity.id.includes('King');
+                console.log(`Tower ${entity.id} destroyed! IsKing: ${isKing}, Owner: ${entity.ownerId}`);
+                this.onTowerDestroyed(isKing, entity.ownerId);
             }
         }
 
@@ -135,6 +149,13 @@ export class GameManager {
     public onTowerDestroyed(isKing: boolean, ownerId: string) {
         if (this.gameEnded) return;
 
+        // Track tower destruction
+        if (ownerId === 'player') {
+            this.playerTowersDestroyed++;
+        } else {
+            this.opponentTowersDestroyed++;
+        }
+
         // Award crowns
         const crownCount = isKing ? 3 : 1;
 
@@ -150,8 +171,16 @@ export class GameManager {
         this.playerCrowns = Math.min(3, this.playerCrowns);
         this.opponentCrowns = Math.min(3, this.opponentCrowns);
 
+        // IMMEDIATE victory on king tower destruction
+        if (isKing) {
+            this.victoryReason = 'King Tower Destroyed!';
+            this.endGame();
+            return;
+        }
+
         // Check for 3-crown victory
         if (this.playerCrowns >= 3 || this.opponentCrowns >= 3) {
+            this.victoryReason = 'Three Crown Victory!';
             this.endGame();
         }
     }
@@ -176,13 +205,51 @@ export class GameManager {
 
         this.gameEnded = true;
 
-        // Determine winner
+        // Get remaining towers
+        const playerTowers = this.entities.filter(e =>
+            e instanceof TowerEntity && e.ownerId === 'player' && e.health > 0
+        );
+        const opponentTowers = this.entities.filter(e =>
+            e instanceof TowerEntity && e.ownerId === 'opponent' && e.health > 0
+        );
+
+        // Update tower destruction counts (in case called by timer)
+        this.playerTowersDestroyed = 3 - playerTowers.length;
+        this.opponentTowersDestroyed = 3 - opponentTowers.length;
+
+        // Victory logic with tiebreakers
         if (this.playerCrowns > this.opponentCrowns) {
             this.winner = 'player';
+            if (!this.victoryReason) this.victoryReason = 'More Crowns';
         } else if (this.opponentCrowns > this.playerCrowns) {
             this.winner = 'opponent';
+            if (!this.victoryReason) this.victoryReason = 'More Crowns';
+        } else if (playerTowers.length > opponentTowers.length) {
+            // Tiebreaker 1: More towers remaining
+            this.winner = 'player';
+            this.victoryReason = 'More Towers Remaining';
+        } else if (opponentTowers.length > playerTowers.length) {
+            this.winner = 'opponent';
+            this.victoryReason = 'More Towers Remaining';
+        } else if (playerTowers.length > 0 && opponentTowers.length > 0) {
+            // Tiebreaker 2: Minimum health comparison
+            const playerMinHealth = Math.min(...playerTowers.map(t => t.health));
+            const opponentMinHealth = Math.min(...opponentTowers.map(t => t.health));
+
+            if (playerMinHealth > opponentMinHealth) {
+                this.winner = 'player';
+                this.victoryReason = 'Higher Tower Health';
+            } else if (opponentMinHealth > playerMinHealth) {
+                this.winner = 'opponent';
+                this.victoryReason = 'Higher Tower Health';
+            } else {
+                this.winner = 'draw';
+                this.victoryReason = 'Perfect Draw';
+            }
         } else {
+            // All towers destroyed on both sides (rare)
             this.winner = 'draw';
+            this.victoryReason = 'All Towers Destroyed';
         }
     }
 }

@@ -87,31 +87,51 @@
 }
 
 .crowns-display {
-    position: relative;
-    width: 80px;
-    height: 35px;
+    position: fixed;  /* Changed from relative to fixed */
+    right: 10px;      /* Position at right edge */
+    width: 90px;      /* Slightly wider for tower count */
+    height: auto;     /* Auto height for vertical layout */
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
+    gap: 4px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 8px;
+    border-radius: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    z-index: 100;
+}
+
+.crowns-display.opponent-crowns {
+    top: 80px;  /* Below opponent info */
+}
+
+.crowns-display.player-crowns {
+    bottom: 320px;  /* Above card deck */
 }
 
 .score-bg {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    z-index: 0;
+    display: none;  /* Hide background images for cleaner look */
 }
 
 .crown-icons {
-    position: relative;
-    z-index: 10;
     display: flex;
-    gap: 2px;
+    gap: 3px;
+    margin-bottom: 4px;
 }
 
 .crown-icon {
-    width: 15px;
+    width: 18px;
     height: auto;
+}
+
+/* Tower destruction counter */
+.tower-count {
+    font-size: 0.75rem;
+    color: #ffffff;
+    text-shadow: 1px 1px 2px #000;
+    font-weight: bold;
+    text-align: center;
 }
 
 .hud-bottom {

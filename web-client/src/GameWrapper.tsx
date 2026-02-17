@@ -14,6 +14,9 @@ export const GameWrapper = () => {
     const [gameEnded, setGameEnded] = useState(false);
     const [winner, setWinner] = useState<'player' | 'opponent' | 'draw'>('draw');
     const [playerName, setPlayerName] = useState('Player 1');
+    const [playerTowersDestroyed, setPlayerTowersDestroyed] = useState(0);
+    const [opponentTowersDestroyed, setOpponentTowersDestroyed] = useState(0);
+    const [victoryReason, setVictoryReason] = useState<string>('');
 
     useEffect(() => {
         const storedName = localStorage.getItem('username');
@@ -37,11 +40,21 @@ export const GameWrapper = () => {
         };
 
         // Listen for game end
-        const handleGameEnd = (data: { winner: string, playerCrowns: number, opponentCrowns: number }) => {
+        const handleGameEnd = (data: { 
+            winner: string, 
+            playerCrowns: number, 
+            opponentCrowns: number, 
+            playerTowersDestroyed: number, 
+            opponentTowersDestroyed: number, 
+            victoryReason: string 
+        }) => {
             setGameEnded(true);
             setWinner(data.winner as 'player' | 'opponent' | 'draw');
             setPlayerCrowns(data.playerCrowns);
             setOpponentCrowns(data.opponentCrowns);
+            setPlayerTowersDestroyed(data.playerTowersDestroyed || 0);
+            setOpponentTowersDestroyed(data.opponentTowersDestroyed || 0);
+            setVictoryReason(data.victoryReason || '');
         };
 
         EventBus.on(EVENTS.CROWN_UPDATE, handleCrownUpdate);
@@ -70,7 +83,12 @@ export const GameWrapper = () => {
                 backgroundColor: '#000',
                 overflow: 'hidden'
             }}>
-                <div id="game-container" style={{ width: '100%', height: '100%' }}></div>
+                <div id="game-container" style={{ 
+                    width: '100%', 
+                    height: '100%',
+                    filter: gameEnded ? 'blur(8px)' : 'none',
+                    transition: 'filter 0.5s ease-in-out'
+                }}></div>
                 <div className="ui-overlay" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                     <GameHUD
                         playerName={playerName}
@@ -80,14 +98,16 @@ export const GameWrapper = () => {
                         playerCrowns={playerCrowns}
                         opponentCrowns={opponentCrowns}
                         timeLeft={timeLeft}
+                        playerTowersDestroyed={playerTowersDestroyed}
+                        opponentTowersDestroyed={opponentTowersDestroyed}
                     />
 
                     <div style={{ padding: '10px', pointerEvents: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', marginTop: 'auto' }}>
                         <div style={{ alignSelf: 'flex-end', marginBottom: '10px' }}>
                             {/* This could be emote button etc */}
                         </div>
-                        <ElixirBar />
                         <CardDeck />
+                        <ElixirBar />
                     </div>
                 </div>
 
@@ -96,6 +116,9 @@ export const GameWrapper = () => {
                         winner={winner}
                         playerCrowns={playerCrowns}
                         opponentCrowns={opponentCrowns}
+                        playerTowersDestroyed={playerTowersDestroyed}
+                        opponentTowersDestroyed={opponentTowersDestroyed}
+                        victoryReason={victoryReason}
                     />
                 )}
             </div>
