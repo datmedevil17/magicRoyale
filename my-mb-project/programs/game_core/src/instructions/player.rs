@@ -54,16 +54,25 @@ pub fn unlock_card(ctx: Context<ManageCard>, card_id: u8) -> Result<()> {
     let profile = &mut ctx.accounts.profile;
     let unlock_cost = 100;
     
-    // Burn SPL Token
-    let cpi_ctx = CpiContext::new(
-        ctx.accounts.token_program.to_account_info(),
-        anchor_spl::token::Burn {
-            mint: ctx.accounts.mint.to_account_info(),
-            from: ctx.accounts.user_token_account.to_account_info(),
-            authority: ctx.accounts.authority.to_account_info(),
-        },
-    );
-    anchor_spl::token::burn(cpi_ctx, unlock_cost * 1_000_000)?; // Decimals assumption
+    // Check if card is a starter card
+    let is_starter = STARTER_CARDS.contains(&card_id);
+    
+    // Check if player already owns the card
+    let already_owned = profile.inventory.iter().any(|c| c.card_id == card_id);
+
+    // Burn tokens only if it's NOT a starter card OR if the player already owns it (buying duplicates)
+    if !is_starter || already_owned {
+        // Burn SPL Token
+        let cpi_ctx = CpiContext::new(
+            ctx.accounts.token_program.to_account_info(),
+            anchor_spl::token::Burn {
+                mint: ctx.accounts.mint.to_account_info(),
+                from: ctx.accounts.user_token_account.to_account_info(),
+                authority: ctx.accounts.authority.to_account_info(),
+            },
+        );
+        anchor_spl::token::burn(cpi_ctx, unlock_cost * 1_000_000)?; // Decimals assumption
+    }
 
     if let Some(card) = profile.inventory.iter_mut().find(|c| c.card_id == card_id) {
          card.amount += 1;

@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/game_core.json`.
  */
 export type GameCore = {
-  "address": "EVdyMusWRPqpz8S41KvCwMkpvQzQdzxzADpdyN9L3Yod",
+  "address": "HMwmTSa6tG42K7Es9Fhnj8ufD9jktSSxihtU3cmZsVyb",
   "metadata": {
     "name": "gameCore",
     "version": "0.1.0",
@@ -257,38 +257,38 @@ export type GameCore = {
             "program": {
               "kind": "const",
               "value": [
-                200,
-                125,
-                255,
-                44,
-                65,
-                159,
-                143,
-                132,
-                140,
-                127,
-                93,
-                45,
+                243,
+                24,
                 136,
+                26,
+                226,
+                80,
                 229,
-                102,
-                213,
-                228,
-                239,
-                180,
-                16,
-                83,
-                40,
-                207,
-                3,
-                193,
-                67,
-                253,
                 43,
-                177,
+                13,
+                35,
+                175,
+                22,
+                155,
+                253,
+                208,
+                209,
+                225,
+                41,
+                249,
+                224,
+                179,
+                192,
+                222,
+                71,
                 16,
                 220,
-                172
+                254,
+                19,
+                175,
+                99,
+                226,
+                210
               ]
             }
           }
@@ -389,7 +389,7 @@ export type GameCore = {
         },
         {
           "name": "ownerProgram",
-          "address": "EVdyMusWRPqpz8S41KvCwMkpvQzQdzxzADpdyN9L3Yod"
+          "address": "HMwmTSa6tG42K7Es9Fhnj8ufD9jktSSxihtU3cmZsVyb"
         },
         {
           "name": "delegationProgram",
@@ -1260,11 +1260,14 @@ export type GameCore = {
         },
         {
           "name": "playerOne",
-          "writable": true,
-          "signer": true
+          "writable": true
         },
         {
           "name": "playerTwo",
+          "writable": true
+        },
+        {
+          "name": "authority",
           "writable": true,
           "signer": true
         }
@@ -1360,12 +1363,13 @@ export type GameCore = {
           "signer": true
         },
         {
-          "name": "playerOne",
-          "writable": true,
-          "signer": true
+          "name": "playerOne"
         },
         {
-          "name": "playerTwo",
+          "name": "playerTwo"
+        },
+        {
+          "name": "authority",
           "writable": true,
           "signer": true
         },
@@ -1752,6 +1756,11 @@ export type GameCore = {
       "code": 6022,
       "name": "invalidPlayer",
       "msg": "Invalid player"
+    },
+    {
+      "code": 6023,
+      "name": "unauthorized",
+      "msg": "unauthorized"
     }
   ],
   "types": [

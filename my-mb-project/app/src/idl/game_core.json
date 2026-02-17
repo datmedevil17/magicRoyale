@@ -1,5 +1,5 @@
 {
-  "address": "EVdyMusWRPqpz8S41KvCwMkpvQzQdzxzADpdyN9L3Yod",
+  "address": "HMwmTSa6tG42K7Es9Fhnj8ufD9jktSSxihtU3cmZsVyb",
   "metadata": {
     "name": "game_core",
     "version": "0.1.0",
@@ -251,38 +251,38 @@
             "program": {
               "kind": "const",
               "value": [
-                200,
-                125,
-                255,
-                44,
-                65,
-                159,
-                143,
-                132,
-                140,
-                127,
-                93,
-                45,
+                243,
+                24,
                 136,
+                26,
+                226,
+                80,
                 229,
-                102,
-                213,
-                228,
-                239,
-                180,
-                16,
-                83,
-                40,
-                207,
-                3,
-                193,
-                67,
-                253,
                 43,
-                177,
+                13,
+                35,
+                175,
+                22,
+                155,
+                253,
+                208,
+                209,
+                225,
+                41,
+                249,
+                224,
+                179,
+                192,
+                222,
+                71,
                 16,
                 220,
-                172
+                254,
+                19,
+                175,
+                99,
+                226,
+                210
               ]
             }
           }
@@ -383,7 +383,7 @@
         },
         {
           "name": "owner_program",
-          "address": "EVdyMusWRPqpz8S41KvCwMkpvQzQdzxzADpdyN9L3Yod"
+          "address": "HMwmTSa6tG42K7Es9Fhnj8ufD9jktSSxihtU3cmZsVyb"
         },
         {
           "name": "delegation_program",
@@ -1254,11 +1254,14 @@
         },
         {
           "name": "player_one",
-          "writable": true,
-          "signer": true
+          "writable": true
         },
         {
           "name": "player_two",
+          "writable": true
+        },
+        {
+          "name": "authority",
           "writable": true,
           "signer": true
         }
@@ -1354,12 +1357,13 @@
           "signer": true
         },
         {
-          "name": "player_one",
-          "writable": true,
-          "signer": true
+          "name": "player_one"
         },
         {
-          "name": "player_two",
+          "name": "player_two"
+        },
+        {
+          "name": "authority",
           "writable": true,
           "signer": true
         },
@@ -1746,6 +1750,11 @@
       "code": 6022,
       "name": "InvalidPlayer",
       "msg": "Invalid player"
+    },
+    {
+      "code": 6023,
+      "name": "Unauthorized",
+      "msg": "Unauthorized"
     }
   ],
   "types": [

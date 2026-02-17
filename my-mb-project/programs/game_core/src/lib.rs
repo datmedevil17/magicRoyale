@@ -6,7 +6,7 @@ pub mod errors;
 pub mod instructions;
 pub mod state;
 
-declare_id!("EVdyMusWRPqpz8S41KvCwMkpvQzQdzxzADpdyN9L3Yod");
+declare_id!("HMwmTSa6tG42K7Es9Fhnj8ufD9jktSSxihtU3cmZsVyb");
 
 #[ephemeral_rollups_sdk::anchor::ephemeral]
 #[program]

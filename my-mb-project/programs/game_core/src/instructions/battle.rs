@@ -20,16 +20,19 @@ pub struct DelegateInput<'info> {
 
 #[derive(Accounts)]
 pub struct StartGame<'info> {
-    #[account(init, payer = player_one, space = 8 + GameState::INIT_SPACE)]
+    #[account(init, payer = authority, space = 8 + GameState::INIT_SPACE)]
     pub game: Account<'info, GameState>,
     
-    #[account(init, payer = player_one, space = 8 + BattleState::INIT_SPACE)]
+    #[account(init, payer = authority, space = 8 + BattleState::INIT_SPACE)]
     pub battle: Account<'info, BattleState>,
 
+    /// CHECK: Validated in instruction
+    pub player_one: AccountInfo<'info>,
+    /// CHECK: Validated in instruction
+    pub player_two: AccountInfo<'info>,
+
     #[account(mut)]
-    pub player_one: Signer<'info>,
-    #[account(mut)]
-    pub player_two: Signer<'info>,
+    pub authority: Signer<'info>,
 
     pub system_program: Program<'info, System>,
 }
@@ -59,10 +62,15 @@ pub struct ResolveGame<'info> {
     #[account(mut)]
     pub battle: Account<'info, BattleState>, 
     
+    /// CHECK: Validated in instruction
     #[account(mut)]
-    pub player_one: Signer<'info>,
+    pub player_one: AccountInfo<'info>,
+    /// CHECK: Validated in instruction
     #[account(mut)]
-    pub player_two: Signer<'info>,
+    pub player_two: AccountInfo<'info>,
+
+    #[account(mut)]
+    pub authority: Signer<'info>,
 }
 
 #[commit]
@@ -96,6 +104,8 @@ pub struct ClaimRewards<'info> {
 }
 
 pub fn start_game(ctx: Context<StartGame>) -> Result<()> {
+    require!(ctx.accounts.authority.key().to_string() == BACKEND_AUTHORITY, GameError::Unauthorized);
+
     let game = &mut ctx.accounts.game;
     game.players = [ctx.accounts.player_one.key(), ctx.accounts.player_two.key()];
     game.status = GameStatus::Active;
@@ -177,10 +187,12 @@ pub fn deploy_troop(ctx: Context<UpdateBattle>, card_idx: u8, x: i32, y: i32) ->
 }
 
 pub fn resolve_game(ctx: Context<ResolveGame>) -> Result<()> {
+    require!(ctx.accounts.authority.key().to_string() == BACKEND_AUTHORITY, GameError::Unauthorized);
+    
     let battle = &ctx.accounts.battle;
     let game = &mut ctx.accounts.game;
     
-    // Verify signers are the players
+    // Verify accounts passed match game players
     require!(ctx.accounts.player_one.key() == game.players[0], GameError::InvalidPlayer);
     require!(ctx.accounts.player_two.key() == game.players[1], GameError::InvalidPlayer);
     
@@ -189,6 +201,7 @@ pub fn resolve_game(ctx: Context<ResolveGame>) -> Result<()> {
         game.status = GameStatus::Completed;
     } else {
         // Handle draw or forced termination?
+        game.winner = None; // Draw or aborted
         game.status = GameStatus::Completed;
     }
     Ok(())

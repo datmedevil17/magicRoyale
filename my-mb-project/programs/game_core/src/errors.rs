@@ -48,4 +48,6 @@ pub enum GameError {
     CannotDonateToSelf,
     #[msg("Invalid player")]
     InvalidPlayer,
+    #[msg("Unauthorized")]
+    Unauthorized,
 }
