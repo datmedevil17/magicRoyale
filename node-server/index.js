@@ -264,6 +264,57 @@ io.on('connection', (socket) => {
     });
 });
 
+// --- Market Logic (JSON File) ---
+const fs = require('fs');
+const path = require('path');
+const MARKET_FILE = path.join(__dirname, 'market.json');
+
+// Ensure market file exists
+if (!fs.existsSync(MARKET_FILE)) {
+    fs.writeFileSync(MARKET_FILE, JSON.stringify([], null, 2));
+}
+
+// GET /market
+app.get('/market', (req, res) => {
+    try {
+        const data = fs.readFileSync(MARKET_FILE, 'utf8');
+        const listings = JSON.parse(data);
+        res.json(listings);
+    } catch (err) {
+        console.error('Error reading market file:', err);
+        res.status(500).json({ error: 'Failed to read market listings' });
+    }
+});
+
+// POST /market (Admin add/update listing)
+app.post('/market', (req, res) => {
+    const { cardId, price } = req.body;
+
+    if (!cardId || price === undefined) {
+        return res.status(400).json({ error: 'Missing cardId or price' });
+    }
+
+    try {
+        const data = fs.readFileSync(MARKET_FILE, 'utf8');
+        let listings = JSON.parse(data);
+
+        // Check if listing exists, update or add
+        const existingIndex = listings.findIndex(item => item.cardId === cardId);
+        if (existingIndex !== -1) {
+            listings[existingIndex].price = price;
+        } else {
+            listings.push({ cardId, price });
+        }
+
+        fs.writeFileSync(MARKET_FILE, JSON.stringify(listings, null, 2));
+        console.log(`✅ Market listing updated: Card ${cardId} -> ${price}`);
+        res.json({ success: true, listings });
+    } catch (err) {
+        console.error('Error updating market file:', err);
+        res.status(500).json({ error: 'Failed to update market listing' });
+    }
+});
+
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);

@@ -4,6 +4,7 @@ export const MINT_CONFIG = {
     // Currencies
     GOLD: new PublicKey("3yrXat8Z6FwEoiPhTFrUw43LHGqnGgNtKVFZ9QRzLyCT"),
     GEMS: new PublicKey("23t3mDz1ciDXUo9a1B1LDnExtBLya3Hzswa997ufhV8w"),
+    PLATFORM: new PublicKey("GT6jVixgxz55EYGMitA5YKXY5s5XUp1DXk5vPxvyXuBZ"),
 
     // Troop Mints
     Archer: new PublicKey("36iaURU1R2eZKKHfvucxx36QmBRArsmP2jjEfkjsUPsN"),
@@ -17,13 +18,13 @@ export const MINT_CONFIG = {
 
 // Map from card ID (program) to Mint
 export const CARD_ID_TO_MINT: Record<number, PublicKey> = {
-    1: MINT_CONFIG.Archer,
-    2: MINT_CONFIG.Giant,
+    1: MINT_CONFIG.Giant,
+    2: MINT_CONFIG.Valkyrie,
     3: MINT_CONFIG.MiniPEKKA,
-    4: MINT_CONFIG.Arrows,
-    5: MINT_CONFIG.Valkyrie,
-    6: MINT_CONFIG.Wizard,
-    7: MINT_CONFIG.BabyDragon,
+    4: MINT_CONFIG.BabyDragon,
+    5: MINT_CONFIG.Archer,
+    6: MINT_CONFIG.Arrows,
+    7: MINT_CONFIG.Wizard,
 };
 
 // Map from Troop Name (frontend) to Mint

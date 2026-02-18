@@ -6,10 +6,12 @@ import { type GameCore } from "../idl/game_core";
 import IDL from "../idl/game_core.json";
 import { useSessionKeyManager } from "@magicblock-labs/gum-react-sdk";
 import { TOKEN_PROGRAM_ID, createAssociatedTokenAccountInstruction, getAssociatedTokenAddressSync } from "@solana/spl-token";
+import { MINT_CONFIG } from "../game/config/MintConfig";
 
 // Ephemeral Rollup endpoints - configurable via environment
 const ER_ENDPOINT = "https://devnet.magicblock.app";
 const ER_WS_ENDPOINT = "wss://devnet.magicblock.app";
+const API_URL = "http://localhost:3000";
 
 
 
@@ -64,11 +66,20 @@ export interface BattleState {
     // ... add fields from IDL
 }
 
+export interface CardProgress {
+    cardId: number;
+    level: number;
+    xp: number;
+    amount: number;
+}
+
 export interface PlayerProfile {
     authority: PublicKey;
     mmr: number;
     deck: number[];
-    inventory: any[];
+    inventory: CardProgress[];
+    username: string;
+    trophies: number;
 }
 
 /**
@@ -636,6 +647,60 @@ export function useGameProgram() {
     }, [program, erProvider, erConnection, wallet.publicKey]);
 
 
+    // Fetch all clans
+    const fetchAllClans = useCallback(async () => {
+        if (!program) return [];
+        try {
+            const clans = await program.account.clan.all();
+            return clans.map(c => ({
+                publicKey: c.publicKey,
+                account: c.account
+            }));
+        } catch (err) {
+            console.error("Error fetching clans:", err);
+            return [];
+        }
+    }, [program]);
+
+    // Fetch User's Clan
+    const fetchUserClan = useCallback(async () => {
+        if (!program || !wallet.publicKey) return null;
+        try {
+            // ClanMember layout: discriminator(8) + clan(32) + player(32)
+            // We filter by player matches wallet.publicKey
+            const memberAccounts = await program.account.clanMember.all([
+                {
+                    memcmp: {
+                        offset: 40, // 8 + 32
+                        bytes: wallet.publicKey.toBase58(),
+                    },
+                },
+            ]);
+
+            if (memberAccounts.length > 0) {
+                const member = memberAccounts[0];
+                const clan = await program.account.clan.fetch(member.account.clan);
+                return {
+                    memberKey: member.publicKey,
+                    memberAccount: member.account,
+                    clanKey: member.account.clan,
+                    clanAccount: clan
+                };
+            }
+            return null;
+        } catch (err) {
+            console.error("Error fetching user clan:", err);
+            return null;
+        }
+    }, [program, wallet.publicKey]);
+
+    // Leave Clan (Mock)
+    const leaveClan = useCallback(async () => {
+        // No instruction for this yet.
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        console.log("Mock Left Clan");
+    }, []);
+
     // Fetch Player Profile
     const fetchPlayerProfile = useCallback(async (pda: PublicKey) => {
         if (!program) return null;
@@ -648,34 +713,84 @@ export function useGameProgram() {
         }
     }, [program]);
 
+    const [platformBalance, setPlatformBalance] = useState<number>(0);
+
+    // Fetch Platform Token Balance
+    const fetchPlatformBalance = useCallback(async () => {
+        if (!wallet.publicKey) return;
+        try {
+            const ata = getAssociatedTokenAddressSync(MINT_CONFIG.PLATFORM, wallet.publicKey);
+            const balance = await connection.getTokenAccountBalance(ata);
+            setPlatformBalance(balance.value.uiAmount || 0);
+        } catch (err) {
+            console.log("Error fetching platform balance (likely no ATA):", err);
+            setPlatformBalance(0);
+        }
+    }, [wallet.publicKey, connection]);
+
+    // Initial fetch
+    useEffect(() => {
+        fetchPlatformBalance();
+    }, [fetchPlatformBalance]);
+
+    // Market API (Node Server)
+    const fetchMarketListings = useCallback(async (): Promise<{ cardId: number; price: number; }[]> => {
+        try {
+            const res = await fetch(`${API_URL}/market`);
+            if (!res.ok) throw new Error('Failed to fetch market listings');
+            return await res.json();
+        } catch (err) {
+            console.error('Error fetching market:', err);
+            return [];
+        }
+    }, []);
+
+    const addMarketListing = useCallback(async (cardId: number, price: number): Promise<boolean> => {
+        try {
+            const res = await fetch(`${API_URL}/market`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cardId, price })
+            });
+            if (!res.ok) throw new Error('Failed to add listing');
+            return true;
+        } catch (err) {
+            console.error('Error adding listing:', err);
+            return false;
+        }
+    }, []);
+
     return {
         program,
         erProgram,
         isLoading,
         error,
-        // Player
+        platformBalance,
+        fetchPlatformBalance,
+        // ... (rest of exports)
         initializePlayer,
         fetchPlayerProfile,
         unlockCard,
         upgradeCard,
         setDeck,
-        // Game / Battle
         startGame,
         deployTroop,
         resolveGame,
         claimRewards,
-        // Clans
         createClan,
         joinClan,
         requestCards,
         donateCards,
-        // ER / Delegation
         delegate,
         commitBattle,
         undelegateBattle,
-        // Session
         createSession,
         sessionToken,
         playerProfilePda,
+        fetchAllClans,
+        fetchUserClan,
+        leaveClan,
+        fetchMarketListings,
+        addMarketListing,
     };
 }

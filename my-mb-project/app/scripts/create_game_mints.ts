@@ -80,6 +80,16 @@ async function main() {
         console.log(`Gems Mint exists: ${tokens.Gems}`);
     }
 
+    // 3. Platform Mint (Platform Token)
+    if (!tokens.Platform) {
+        console.log("Creating Platform Mint...");
+        const platformMint = await createMint(connection, keypair, keypair.publicKey, null, 9);
+        tokens.Platform = platformMint.toBase58();
+        console.log(`Platform Mint: ${platformMint.toBase58()}`);
+    } else {
+        console.log(`Platform Mint exists: ${tokens.Platform}`);
+    }
+
     console.log("\n--- Creating Card Mints ---");
 
     for (const card of STARTER_CARDS) {
@@ -94,16 +104,27 @@ async function main() {
         console.log(`${card.name} Mint: ${cardMint.toBase58()}`);
     }
 
-    console.log("\n--- Minting Initial Supply to Developer ---");
+    console.log("\n--- Minting Initial Supply ---");
 
     // Mint some Gold
     try {
         const goldMintPubkey = new PublicKey(tokens.Gold);
         const goldAta = await getOrCreateAssociatedTokenAccount(connection, keypair, goldMintPubkey, keypair.publicKey);
         await mintTo(connection, keypair, goldMintPubkey, goldAta.address, keypair, 10000 * 10 ** 9);
-        console.log("Minted 10,000 Gold");
+        console.log("Minted 10,000 Gold to Dev");
     } catch (err) {
         console.log("Error minting Gold:", err);
+    }
+
+    // Mint Platform Tokens to User
+    try {
+        const platformMintPubkey = new PublicKey(tokens.Platform);
+        const recipient = new PublicKey("A8QvmfQzJuutZp7HKqLXLWoPdTcVji5DyPbzMYoJ7r3a");
+        const platformAta = await getOrCreateAssociatedTokenAccount(connection, keypair, platformMintPubkey, recipient);
+        await mintTo(connection, keypair, platformMintPubkey, platformAta.address, keypair, 500 * 10 ** 9);
+        console.log("Minted 500 Platform Tokens to User (A8Qv...)");
+    } catch (err) {
+        console.log("Error minting Platform Tokens:", err);
     }
 
     // Mint some Cards

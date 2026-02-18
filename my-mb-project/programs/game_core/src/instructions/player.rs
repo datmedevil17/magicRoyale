@@ -41,10 +41,10 @@ pub fn initialize_player(ctx: Context<InitializePlayer>, username: String) -> Re
     profile.deck = [1, 2, 3, 4, 0, 0, 0, 0]; 
     
     profile.inventory = Vec::new();
-    profile.inventory.push(CardProgress { card_id: 1, level: 1, xp: 0, amount: 1 }); // Archer
-    profile.inventory.push(CardProgress { card_id: 2, level: 1, xp: 0, amount: 1 }); // Giant
-    profile.inventory.push(CardProgress { card_id: 3, level: 1, xp: 0, amount: 1 }); // MiniPEKKA
-    profile.inventory.push(CardProgress { card_id: 4, level: 1, xp: 0, amount: 1 }); // Arrows
+    profile.inventory.push(CardProgress { card_id: 1, level: 1, xp: 0, amount: 1 }); 
+    profile.inventory.push(CardProgress { card_id: 2, level: 1, xp: 0, amount: 1 }); 
+    profile.inventory.push(CardProgress { card_id: 3, level: 1, xp: 0, amount: 1 }); 
+    profile.inventory.push(CardProgress { card_id: 4, level: 1, xp: 0, amount: 1 }); 
     
     profile.username = username;
     profile.trophies = 0;
@@ -74,7 +74,7 @@ pub fn unlock_card(ctx: Context<ManageCard>, card_id: u8) -> Result<()> {
                 authority: ctx.accounts.authority.to_account_info(),
             },
         );
-        anchor_spl::token::burn(cpi_ctx, unlock_cost * 1_000_000)?; // Decimals assumption
+        anchor_spl::token::burn(cpi_ctx, unlock_cost * 1_000_000_000)?; // 9 Decimals assumption
     }
 
     if let Some(card) = profile.inventory.iter_mut().find(|c| c.card_id == card_id) {
@@ -116,7 +116,7 @@ pub fn upgrade_card(ctx: Context<ManageCard>, card_id: u8) -> Result<()> {
             authority: ctx.accounts.authority.to_account_info(),
         },
     );
-    anchor_spl::token::burn(cpi_ctx, token_cost * 1_000_000)?;
+    anchor_spl::token::burn(cpi_ctx, token_cost * 1_000_000_000)?;
 
     profile.inventory[card_idx].amount -= cards_needed;
     profile.inventory[card_idx].level += 1;

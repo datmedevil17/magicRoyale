@@ -1,0 +1,30 @@
+[
+    {
+        "cardId": 1,
+        "price": 200
+    },
+    {
+        "cardId": 2,
+        "price": 250
+    },
+    {
+        "cardId": 3,
+        "price": 300
+    },
+    {
+        "cardId": 4,
+        "price": 350
+    },
+    {
+        "cardId": 5,
+        "price": 100
+    },
+    {
+        "cardId": 6,
+        "price": 150
+    },
+    {
+        "cardId": 7,
+        "price": 500
+    }
+]
