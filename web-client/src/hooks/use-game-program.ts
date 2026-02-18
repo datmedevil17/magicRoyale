@@ -636,6 +636,18 @@ export function useGameProgram() {
     }, [program, erProvider, erConnection, wallet.publicKey]);
 
 
+    // Fetch Player Profile
+    const fetchPlayerProfile = useCallback(async (pda: PublicKey) => {
+        if (!program) return null;
+        try {
+            const profile = await program.account.playerProfile.fetch(pda);
+            return profile;
+        } catch (err) {
+            console.log("Profile not found or error fetching:", err);
+            return null;
+        }
+    }, [program]);
+
     return {
         program,
         erProgram,
@@ -643,6 +655,7 @@ export function useGameProgram() {
         error,
         // Player
         initializePlayer,
+        fetchPlayerProfile,
         unlockCard,
         upgradeCard,
         setDeck,

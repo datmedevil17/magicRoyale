@@ -4,6 +4,7 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 require('dotenv').config();
+const bs58 = require('bs58');
 
 // Solana/Anchor imports
 const { Connection, PublicKey, Keypair, SystemProgram } = require('@solana/web3.js');
@@ -29,12 +30,24 @@ const RPC_URL = process.env.ANCHOR_PROVIDER_URL || 'https://api.devnet.solana.co
 // Parse server private key from env
 let serverKeypair;
 try {
-    const privateKeyArray = JSON.parse(process.env.SERVER_PRIVATE_KEY || '[]');
-    if (privateKeyArray.length === 0) {
+    const rawKey = process.env.SERVER_PRIVATE_KEY;
+    if (!rawKey) {
         console.warn('⚠️  SERVER_PRIVATE_KEY not set in .env. Please add a funded keypair.');
         serverKeypair = Keypair.generate(); // Temporary fallback
     } else {
-        serverKeypair = Keypair.fromSecretKey(Uint8Array.from(privateKeyArray));
+        // Try parsing as JSON array first
+        try {
+            const privateKeyArray = JSON.parse(rawKey);
+            serverKeypair = Keypair.fromSecretKey(Uint8Array.from(privateKeyArray));
+        } catch (jsonErr) {
+            // Fallback to Base58 parsing
+            try {
+                const decoded = bs58.decode(rawKey);
+                serverKeypair = Keypair.fromSecretKey(decoded);
+            } catch (bs58Err) {
+                throw new Error('Invalid SERVER_PRIVATE_KEY format. Must be JSON array or Base58 string.');
+            }
+        }
     }
     console.log('✅ Server Authority Wallet:', serverKeypair.publicKey.toBase58());
 } catch (err) {

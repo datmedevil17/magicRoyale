@@ -24,7 +24,7 @@ export const TroopTestPage = () => {
         const handleCrownUpdate = (data: { playerCrowns: number, opponentCrowns: number, remainingTime: number }) => {
             setPlayerCrowns(data.playerCrowns);
             setOpponentCrowns(data.opponentCrowns);
-            
+
             // Format remaining time
             const minutes = Math.floor(data.remainingTime / 60000);
             const seconds = Math.floor((data.remainingTime % 60000) / 1000);
@@ -45,7 +45,7 @@ export const TroopTestPage = () => {
         return () => {
             EventBus.off(EVENTS.CROWN_UPDATE, handleCrownUpdate);
             EventBus.off(EVENTS.GAME_END, handleGameEnd);
-            
+
             if (gameRef.current) {
                 gameRef.current.destroy(true);
                 gameRef.current = null;
@@ -65,7 +65,7 @@ export const TroopTestPage = () => {
             margin: '20px auto' // Centered
         }}>
             <div id="game-container" style={{ width: '100%', height: '100%' }}></div>
-            
+
             {/* Overlay UI */}
             <div className="ui-overlay" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <GameHUD
@@ -88,10 +88,12 @@ export const TroopTestPage = () => {
             </div>
 
             {gameEnded && (
-                <VictoryScreen 
+                <VictoryScreen
                     winner={winner}
                     playerCrowns={playerCrowns}
                     opponentCrowns={opponentCrowns}
+                    playerTowersDestroyed={0}
+                    opponentTowersDestroyed={0}
                 />
             )}
         </div>
