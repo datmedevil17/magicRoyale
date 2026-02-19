@@ -1,0 +1,12 @@
+{
+    "name": "Magic Royale Gems",
+    "symbol": "GEMS",
+    "description": "Premium currency for Magic Royale, used for special items and speeding up progress.",
+    "image": "https://raw.githubusercontent.com/datmedevil17/magicRoyale/main/web-client/public/assets/crown_big_blue.png",
+    "attributes": [
+        {
+            "trait_type": "Type",
+            "value": "Premium Currency"
+        }
+    ]
+}

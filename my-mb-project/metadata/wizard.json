@@ -1,0 +1,16 @@
+{
+    "name": "Wizard",
+    "symbol": "WIZ",
+    "description": "The most awesome man to ever set foot in the arena, the Wizard will blow you away with his handsomeness... and fireballs.",
+    "image": "https://raw.githubusercontent.com/datmedevil17/magicRoyale/main/web-client/public/assets/WizardCard.png",
+    "attributes": [
+        {
+            "trait_type": "Type",
+            "value": "Troop"
+        },
+        {
+            "trait_type": "Rarity",
+            "value": "Rare"
+        }
+    ]
+}

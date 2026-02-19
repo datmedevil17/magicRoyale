@@ -1,0 +1,16 @@
+{
+    "name": "Mini PEKKA",
+    "symbol": "MPK",
+    "description": "The Arena is a certified butterfly-free zone. No distractions for PEKKA, only destruction!",
+    "image": "https://raw.githubusercontent.com/datmedevil17/magicRoyale/main/web-client/public/assets/MiniPEKKACard.png",
+    "attributes": [
+        {
+            "trait_type": "Type",
+            "value": "Troop"
+        },
+        {
+            "trait_type": "Rarity",
+            "value": "Rare"
+        }
+    ]
+}

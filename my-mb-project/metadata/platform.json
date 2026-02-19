@@ -1,0 +1,12 @@
+{
+    "name": "Magic Royale Platform",
+    "symbol": "PLAT",
+    "description": "The platform governance and utility token for the Magic Royale ecosystem.",
+    "image": "https://raw.githubusercontent.com/datmedevil17/magicRoyale/main/web-client/public/assets/clash_royale_logo.png",
+    "attributes": [
+        {
+            "trait_type": "Type",
+            "value": "Platform Token"
+        }
+    ]
+}

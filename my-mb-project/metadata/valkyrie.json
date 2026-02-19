@@ -1,0 +1,16 @@
+{
+    "name": "Valkyrie",
+    "symbol": "VAL",
+    "description": "Tough melee fighter, deals area damage around her. Swarms or characters, she will deal with them!",
+    "image": "https://raw.githubusercontent.com/datmedevil17/magicRoyale/main/web-client/public/assets/ValkyrieCard.png",
+    "attributes": [
+        {
+            "trait_type": "Type",
+            "value": "Troop"
+        },
+        {
+            "trait_type": "Rarity",
+            "value": "Rare"
+        }
+    ]
+}

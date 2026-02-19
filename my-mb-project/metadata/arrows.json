@@ -1,0 +1,16 @@
+{
+    "name": "Arrows",
+    "symbol": "ARR",
+    "description": "Arrows pepper a large area, damaging everyone hit. Higher damage to crown towers.",
+    "image": "https://raw.githubusercontent.com/datmedevil17/magicRoyale/main/web-client/public/assets/ArrowsCard.png",
+    "attributes": [
+        {
+            "trait_type": "Type",
+            "value": "Spell"
+        },
+        {
+            "trait_type": "Rarity",
+            "value": "Common"
+        }
+    ]
+}
