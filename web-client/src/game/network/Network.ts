@@ -46,6 +46,23 @@ export class Network {
         this.socket.on('error', (err) => {
             console.error('Socket error:', err);
         });
+
+        this.socket.on('battle-started', () => {
+            console.log('⚔️ Battle Started!');
+            EventBus.emit(EVENTS.BATTLE_STARTED);
+        });
+
+        // Listen for local delegation event to notify server
+        EventBus.on(EVENTS.PLAYER_DELEGATED, () => {
+            console.log('Sending delegated signal to server...');
+            this.socket.emit('delegated');
+        });
+
+        // Listen for client undelegation to notify server
+        EventBus.on(EVENTS.CLIENT_UNDELEGATED, (data) => {
+            console.log('Network: Clients undelegated, notifying server...', data);
+            this.socket.emit('client-undelegated', data);
+        });
     }
 
     public sendDeploy(cardId: string, position: { x: number, y: number }) {

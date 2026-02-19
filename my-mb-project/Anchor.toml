@@ -6,7 +6,7 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-game_core = "HMwmTSa6tG42K7Es9Fhnj8ufD9jktSSxihtU3cmZsVyb"
+game_core = "DGVUS3YkgLTXh5hqEMtN8o46Ewzsi7MXMh6mL9jCeBEC"
 
 [registry]
 url = "https://api.apr.dev"

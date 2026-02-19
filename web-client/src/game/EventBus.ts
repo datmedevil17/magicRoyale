@@ -11,5 +11,8 @@ export const EVENTS = {
     GAME_END: 'game-end',
     TOWER_DESTROYED: 'tower-destroyed',
     GAME_START: 'game-start',
-    DEPLOY_TROOP_BLOCKCHAIN: 'deploy-troop-blockchain'
+    DEPLOY_TROOP_BLOCKCHAIN: 'deploy-troop-blockchain',
+    BATTLE_STARTED: 'battle-started',
+    PLAYER_DELEGATED: 'player-delegated',
+    CLIENT_UNDELEGATED: 'client-undelegated'
 };

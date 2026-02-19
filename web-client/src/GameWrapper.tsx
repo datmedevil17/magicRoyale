@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { PublicKey } from '@solana/web3.js';
+import { Toaster, toast } from 'react-hot-toast';
 import StartGame from './game/PhaserGame';
 import { ElixirBar } from './ui/ElixirBar';
 import { CardDeck } from './ui/CardDeck';
@@ -10,11 +11,16 @@ import { VictoryScreen } from './ui/VictoryScreen';
 import { EventBus, EVENTS } from './game/EventBus';
 import { useGameProgram } from './hooks/use-game-program';
 
+
 export const GameWrapper = () => {
     const gameRef = useRef<Phaser.Game | null>(null);
     const location = useLocation();
     const wallet = useWallet();
-    const { deployTroop } = useGameProgram();
+    const { deployTroop, delegate, undelegateBattle } = useGameProgram();
+
+    const [isBattleActive, setIsBattleActive] = useState(false);
+    const [isDelegated, setIsDelegated] = useState(false);
+    const [isDelegating, setIsDelegating] = useState(false);
 
     const [playerCrowns, setPlayerCrowns] = useState(0);
     const [opponentCrowns, setOpponentCrowns] = useState(0);
@@ -50,6 +56,16 @@ export const GameWrapper = () => {
             });
         }
 
+        // --- Delegation Logic ---
+        const handleBattleStarted = () => {
+            console.log('GameWrapper: Battle Started!');
+            setIsBattleActive(true);
+            toast.success('Battle Started! Good luck!', { duration: 4000 });
+        };
+
+        EventBus.on(EVENTS.BATTLE_STARTED, handleBattleStarted);
+
+
         // Listen for troop deployment requests from Phaser
         const handleDeployRequest = async (data: {
             cardIdx: number;
@@ -61,12 +77,29 @@ export const GameWrapper = () => {
                 return;
             }
 
+            // Block if not active (double check)
+            if (!isBattleActive) {
+                console.warn('Battle not active yet');
+                toast.error('Wait for battle to start!');
+                return;
+            }
+
             try {
                 const gameId = new PublicKey(gameData.gameId);
                 const battleId = new PublicKey(gameData.battleId);
 
                 console.log('Deploying troop on-chain:', data);
-                await deployTroop(gameId, battleId, data.cardIdx, data.x, data.y);
+                
+                // Show toast for deployment
+                const deployPromise = deployTroop(gameData.gameId ? new PublicKey(gameData.gameId) : gameId, battleId, data.cardIdx, data.x, data.y);
+                
+                toast.promise(deployPromise, {
+                    loading: 'Deploying...',
+                    success: 'Troop Deployed!',
+                    error: (err) => `Failed: ${err.message}`
+                });
+
+                await deployPromise;
                 console.log('Troop deployed successfully');
             } catch (err) {
                 console.error('Failed to deploy troop on-chain:', err);
@@ -87,7 +120,7 @@ export const GameWrapper = () => {
         };
 
         // Listen for game end
-        const handleGameEnd = (data: {
+        const handleGameEnd = async (data: {
             winner: string,
             playerCrowns: number,
             opponentCrowns: number,
@@ -102,12 +135,57 @@ export const GameWrapper = () => {
             setPlayerTowersDestroyed(data.playerTowersDestroyed || 0);
             setOpponentTowersDestroyed(data.opponentTowersDestroyed || 0);
             setVictoryReason(data.victoryReason || '');
+            
+            if (data.winner === gameData?.role) {
+                toast.success('You Won!', { duration: 5000 });
+            } else {
+                toast('Game Over', { icon: '🏁' });
+            }
+
+            // --- Undelegation Logic ---
+            if (gameData?.battleId) {
+                console.log('Undelegating battle...', gameData.battleId);
+                const undelegatePromise = undelegateBattle(new PublicKey(gameData.battleId));
+                
+                toast.promise(undelegatePromise, {
+                    loading: 'Committing Battle State...',
+                    success: 'Battle State Committed!',
+                    error: (err) => `Commit Failed: ${err.message}`
+                });
+
+                try {
+                    await undelegatePromise;
+                    console.log('Battle undelegated successfully');
+                    
+                    // Notify Network/Server that we are done
+                    // Note: winnerIdx calculation logic depends on role. 
+                    // If I am player1 and winner is 'player', winnerIdx=0. 
+                    // If winner is 'opponent', winnerIdx=1.
+                    // If 'draw', winnerIdx=null.
+                    let winnerIdx: number | null = null;
+                    if (data.winner === 'player') {
+                        winnerIdx = gameData.role === 'player1' ? 0 : 1;
+                    } else if (data.winner === 'opponent') {
+                        winnerIdx = gameData.role === 'player1' ? 1 : 0;
+                    }
+
+                    EventBus.emit(EVENTS.CLIENT_UNDELEGATED, {
+                        gameId: gameData.gameId,
+                        battleId: gameData.battleId,
+                        winnerIdx
+                    });
+
+                } catch (err) {
+                    console.error("Failed to undelegate:", err);
+                }
+            }
         };
 
         EventBus.on(EVENTS.CROWN_UPDATE, handleCrownUpdate);
         EventBus.on(EVENTS.GAME_END, handleGameEnd);
 
         return () => {
+            EventBus.off(EVENTS.BATTLE_STARTED, handleBattleStarted);
             EventBus.off(EVENTS.DEPLOY_TROOP_BLOCKCHAIN, handleDeployRequest);
             EventBus.off(EVENTS.CROWN_UPDATE, handleCrownUpdate);
             EventBus.off(EVENTS.GAME_END, handleGameEnd);
@@ -117,10 +195,52 @@ export const GameWrapper = () => {
                 gameRef.current = null;
             }
         };
-    }, [gameData, deployTroop, wallet.publicKey]);
+    }, [gameData, deployTroop, wallet.publicKey, isBattleActive]); // Added isBattleActive dependency if needed, but refs logic implies maybe not. 
+    // Actually handleDeployRequest uses isBattleActive from closure. 
+    // Since handleDeployRequest is defined inside useEffect, it captures the initial state.
+    // We need to use a ref for isBattleActive to be safe, or recreate listener.
+    // Recreating listener on every state change might be expensive for Phaser integration?
+    // Let's use a ref for isBattleActive.
+    
+    // ... wait, I'll allow component re-render to update the closure or just use a ref. Ref is safer.
+    
+    const isBattleActiveRef = useRef(isBattleActive);
+    useEffect(() => {
+        isBattleActiveRef.current = isBattleActive;
+    }, [isBattleActive]);
+
+    const handleDelegate = async () => {
+        if (!gameData) return;
+        setIsDelegating(true);
+        const promise = delegate(new PublicKey(gameData.battleId));
+        
+        toast.promise(promise, {
+             loading: 'Delegating to Ephemeral Rollup...',
+             success: 'Delegation Successful!',
+             error: (err) => `Delegation Failed: ${err.message}`
+        });
+
+        try {
+            await promise;
+            setIsDelegated(true);
+            EventBus.emit(EVENTS.PLAYER_DELEGATED);
+        } catch (err: any) {
+            // alert("Delegation failed: " + err.message); // managed by toast
+        } finally {
+            setIsDelegating(false);
+        }
+    };
+
 
     return (
         <div className="w-screen h-screen bg-[#111] flex justify-center items-center overflow-hidden">
+            <Toaster position="top-center" toastOptions={{
+                style: {
+                    background: '#333',
+                    color: '#fff',
+                    border: '1px solid #444',
+                },
+            }} />
             <div id="app" style={{
                 position: 'relative',
                 width: '100%',
@@ -134,30 +254,64 @@ export const GameWrapper = () => {
                 <div id="game-container" style={{
                     width: '100%',
                     height: '100%',
-                    filter: gameEnded ? 'blur(8px)' : 'none',
+                    filter: (gameEnded || !isBattleActive) ? 'blur(8px)' : 'none',
                     transition: 'filter 0.5s ease-in-out'
                 }}></div>
-                <div className="ui-overlay" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                    <GameHUD
-                        playerName={playerName}
-                        opponentName="Opponent"
-                        playerLevel={1}
-                        opponentLevel={1}
-                        playerCrowns={playerCrowns}
-                        opponentCrowns={opponentCrowns}
-                        timeLeft={timeLeft}
-                        playerTowersDestroyed={playerTowersDestroyed}
-                        opponentTowersDestroyed={opponentTowersDestroyed}
-                    />
 
-                    <div style={{ padding: '10px', pointerEvents: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', marginTop: 'auto' }}>
-                        <div style={{ alignSelf: 'flex-end', marginBottom: '10px' }}>
-                            {/* This could be emote button etc */}
-                        </div>
-                        <CardDeck />
-                        <ElixirBar />
+                {/* Delegation / Waiting Overlay */}
+                {!isBattleActive && !gameEnded && (
+                    <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm">
+                        {!isDelegated ? (
+                            <div className="bg-[#1a1a1a] p-6 rounded-xl border border-white/10 flex flex-col items-center gap-4 shadow-2xl">
+                                <h2 className="text-xl font-bold text-[#64cbff] text-shadow-md">Battle Ready</h2>
+                                <p className="text-sm text-gray-400 text-center max-w-[200px]">Delegate your battle account to the Ephemeral Rollup to play without wallet popups.</p>
+                                <button
+                                    onClick={handleDelegate}
+                                    disabled={isDelegating}
+                                    className="px-6 py-3 bg-[#00d048] hover:bg-[#00e050] text-white font-bold rounded-lg shadow-lg transform active:scale-95 transition-all w-full flex justify-center items-center gap-2"
+                                >
+                                    {isDelegating ? (
+                                        <>
+                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                            Delegating...
+                                        </>
+                                    ) : (
+                                        "START BATTLE"
+                                    )}
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center gap-4 animate-pulse">
+                                <h2 className="text-2xl font-bold text-[#fbce47] text-shadow-md">Waiting for Opponent...</h2>
+                                <div className="w-12 h-12 border-4 border-[#fbce47] border-t-transparent rounded-full animate-spin"></div>
+                            </div>
+                        )}
                     </div>
-                </div>
+                )}
+
+                {isBattleActive && (
+                    <div className="ui-overlay" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                        <GameHUD
+                            playerName={playerName}
+                            opponentName="Opponent"
+                            playerLevel={1}
+                            opponentLevel={1}
+                            playerCrowns={playerCrowns}
+                            opponentCrowns={opponentCrowns}
+                            timeLeft={timeLeft}
+                            playerTowersDestroyed={playerTowersDestroyed}
+                            opponentTowersDestroyed={opponentTowersDestroyed}
+                        />
+
+                        <div style={{ padding: '10px', pointerEvents: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', marginTop: 'auto' }}>
+                            <div style={{ alignSelf: 'flex-end', marginBottom: '10px' }}>
+                                {/* This could be emote button etc */}
+                            </div>
+                            <CardDeck />
+                            <ElixirBar />
+                        </div>
+                    </div>
+                )}
 
                 {gameEnded && (
                     <VictoryScreen
@@ -174,4 +328,5 @@ export const GameWrapper = () => {
         </div>
     );
 };
+
 

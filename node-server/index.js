@@ -4,7 +4,7 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 require('dotenv').config();
-const bs58 = require('bs58');
+const bs58 = require('bs58').default || require('bs58');
 
 // Solana/Anchor imports
 const { Connection, PublicKey, Keypair, SystemProgram } = require('@solana/web3.js');
@@ -95,6 +95,7 @@ io.on('connection', (socket) => {
     }
 
     socket.emit('connect_ack', { id: socket.id, wallet: walletPublicKey });
+    socket.delegated = false;
 
     // Handle Matchmaking
     socket.on('find-match', async () => {
@@ -149,9 +150,12 @@ io.on('connection', (socket) => {
                     s1.gameId = gameKeypair.publicKey.toBase58();
                     s1.battleId = battleKeypair.publicKey.toBase58();
                     s1.roomId = roomId;
+                    s1.role = 'player1';
+
                     s2.gameId = gameKeypair.publicKey.toBase58();
                     s2.battleId = battleKeypair.publicKey.toBase58();
                     s2.roomId = roomId;
+                    s2.role = 'player2';
 
                     // Notify both players
                     io.to(player1Id).emit('game-start', {
@@ -202,59 +206,87 @@ io.on('connection', (socket) => {
         }
     });
 
+    // Handle Delegation Signal
+    socket.on('delegated', async () => {
+        console.log('🛡️  Player delegated:', socket.id);
+        socket.delegated = true;
+
+        if (socket.roomId) {
+            const socketsInRoom = await io.in(socket.roomId).fetchSockets();
+            const allDelegated = socketsInRoom.every(s => s.delegated);
+
+            if (allDelegated && socketsInRoom.length === 2) {
+                console.log('⚔️  Both players delegated! Starting battle in', socket.roomId);
+                io.to(socket.roomId).emit('battle-started');
+            }
+        }
+    });
+
     // Handle Game End (resolve game on-chain)
-    socket.on('game-end', async (data) => {
-        console.log('🏁 Game ended:', socket.id, data);
+    // Handle Client Undelegation (Wait for both to commit battle state)
+    socket.on('client-undelegated', async (data) => {
+        console.log('🏁 Player undelegated:', socket.id, data);
+        socket.undelegated = true;
+        socket.reportedWinnerIdx = data.winnerIdx;
 
-        try {
-            const gameId = new PublicKey(socket.gameId);
-            const battleId = new PublicKey(socket.battleId);
+        if (socket.roomId) {
+            const socketsInRoom = await io.in(socket.roomId).fetchSockets(); // Note: fetchSockets() returns remote instances, but properties set on 'socket' in this process are persistent if single node. 
+            // Actually, fetchSockets() returns stripped objects. 
+            // But since we are likely running single node, we can access io.sockets.sockets.get(id).
+            // Let's use io.sockets.sockets.get() for reliability in local dev.
 
-            // Find opponent in room
-            let opponentSocket = null;
-            for (const room of socket.rooms) {
-                if (room !== socket.id && room === socket.roomId) {
-                    const socketsInRoom = await io.in(room).fetchSockets();
-                    opponentSocket = socketsInRoom.find(s => s.id !== socket.id);
-                    break;
+            const roomSocketIds = Array.from(io.sockets.adapter.rooms.get(socket.roomId) || []);
+            const roomSockets = roomSocketIds.map(id => io.sockets.sockets.get(id)).filter(s => s);
+
+            const allUndelegated = roomSockets.every(s => s.undelegated);
+
+            if (allUndelegated && roomSockets.length === 2) {
+                console.log('✅ Both players undelegated. Resolving game...');
+
+                // Identify players by role
+                const p1Socket = roomSockets.find(s => s.role === 'player1');
+                const p2Socket = roomSockets.find(s => s.role === 'player2');
+
+                if (!p1Socket || !p2Socket) {
+                    console.error('❌ Could not identify player roles for resolution');
+                    return;
+                }
+
+                // Use winnerIdx from one of them (or compare). 
+                // Default to p1's report or specific logic.
+                const winnerIdx = p1Socket.reportedWinnerIdx;
+
+                const gameId = new PublicKey(p1Socket.gameId);
+                const battleId = new PublicKey(p1Socket.battleId);
+                const player1Wallet = p1Socket.walletPublicKey;
+                const player2Wallet = p2Socket.walletPublicKey;
+
+                console.log('⏳ Resolving game on-chain...');
+                try {
+                    const tx = await program.methods
+                        .resolveGame(winnerIdx)
+                        .accounts({
+                            game: gameId,
+                            battle: battleId,
+                            playerOne: player1Wallet,
+                            playerTwo: player2Wallet,
+                            authority: serverKeypair.publicKey,
+                        })
+                        .rpc();
+
+                    console.log('✅ Game resolved on-chain. TX:', tx);
+
+                    // Notify both players
+                    io.to(socket.roomId).emit('game-resolved', {
+                        gameId: socket.gameId,
+                        winnerIdx,
+                        tx,
+                    });
+                } catch (err) {
+                    console.error('❌ Error resolving game on-chain:', err);
+                    io.to(socket.roomId).emit('error', { message: 'Failed to resolve game on blockchain' });
                 }
             }
-
-            if (!opponentSocket) {
-                console.log('⚠️  Opponent not found for game resolution');
-                return;
-            }
-
-            const player1Wallet = socket.walletPublicKey;
-            const player2Wallet = opponentSocket.walletPublicKey;
-
-            // Determine winner index (0 or 1, or null for draw)
-            let winnerIdx = data.winnerIdx !== undefined ? data.winnerIdx : null;
-
-            console.log('⏳ Resolving game on-chain...');
-            const tx = await program.methods
-                .resolveGame(winnerIdx)
-                .accounts({
-                    game: gameId,
-                    battle: battleId,
-                    playerOne: player1Wallet,
-                    playerTwo: player2Wallet,
-                    authority: serverKeypair.publicKey,
-                })
-                .rpc();
-
-            console.log('✅ Game resolved on-chain. TX:', tx);
-
-            // Notify both players
-            io.to(socket.roomId).emit('game-resolved', {
-                gameId: socket.gameId,
-                winnerIdx,
-                tx,
-            });
-
-        } catch (err) {
-            console.error('❌ Error resolving game on-chain:', err);
-            socket.emit('error', { message: 'Failed to resolve game on blockchain' });
         }
     });
 
