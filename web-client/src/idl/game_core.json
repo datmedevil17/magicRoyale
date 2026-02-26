@@ -1,5 +1,5 @@
 {
-  "address": "DNsfEAur359Xv18MT1nxfEqh3YGZmhwfnm454wmYkVE1",
+  "address": "EYYaUKGcq2epXWsXk52P7dEXpDMZQpGdkSXVDypzDhYm",
   "metadata": {
     "name": "game_core",
     "version": "0.1.0",
@@ -7,6 +7,64 @@
     "description": "Created with Anchor"
   },
   "instructions": [
+    {
+      "name": "commit_battle",
+      "discriminator": [
+        219,
+        116,
+        150,
+        30,
+        121,
+        105,
+        195,
+        23
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "battle",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  97,
+                  116,
+                  116,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "game_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "magic_program",
+          "address": "Magic11111111111111111111111111111111111111"
+        },
+        {
+          "name": "magic_context",
+          "writable": true,
+          "address": "MagicContext1111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "game_id",
+          "type": "u64"
+        }
+      ]
+    },
     {
       "name": "create_clan",
       "discriminator": [
@@ -206,38 +264,38 @@
             "program": {
               "kind": "const",
               "value": [
-                183,
-                230,
-                184,
-                115,
-                252,
-                219,
-                130,
-                75,
-                127,
-                15,
-                139,
-                9,
-                202,
-                229,
-                242,
-                34,
-                207,
-                66,
-                59,
-                252,
-                127,
-                182,
+                201,
+                60,
+                163,
+                178,
+                222,
                 211,
-                145,
+                170,
                 45,
-                39,
-                236,
-                72,
-                232,
-                89,
-                255,
-                10
+                63,
+                127,
+                183,
+                27,
+                119,
+                174,
+                113,
+                4,
+                116,
+                150,
+                226,
+                136,
+                32,
+                37,
+                213,
+                121,
+                165,
+                196,
+                103,
+                129,
+                155,
+                52,
+                15,
+                162
               ]
             }
           }
@@ -338,7 +396,7 @@
         },
         {
           "name": "owner_program",
-          "address": "DNsfEAur359Xv18MT1nxfEqh3YGZmhwfnm454wmYkVE1"
+          "address": "EYYaUKGcq2epXWsXk52P7dEXpDMZQpGdkSXVDypzDhYm"
         },
         {
           "name": "delegation_program",
@@ -369,6 +427,11 @@
         236
       ],
       "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
         {
           "name": "battle",
           "writable": true,
@@ -409,15 +472,11 @@
               },
               {
                 "kind": "account",
-                "path": "signer"
+                "path": "player_profile.authority",
+                "account": "PlayerProfile"
               }
             ]
           }
-        },
-        {
-          "name": "signer",
-          "writable": true,
-          "signer": true
         },
         {
           "name": "session_token",
@@ -607,7 +666,7 @@
       ],
       "accounts": [
         {
-          "name": "payer",
+          "name": "signer",
           "writable": true,
           "signer": true
         },
@@ -635,13 +694,31 @@
           }
         },
         {
-          "name": "magic_program",
-          "address": "Magic11111111111111111111111111111111111111"
+          "name": "player_profile",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  108,
+                  97,
+                  121,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "player_profile.authority",
+                "account": "PlayerProfile"
+              }
+            ]
+          }
         },
         {
-          "name": "magic_context",
-          "writable": true,
-          "address": "MagicContext1111111111111111111111111111111"
+          "name": "session_token",
+          "optional": true
         }
       ],
       "args": [
@@ -650,8 +727,8 @@
           "type": "u64"
         },
         {
-          "name": "is_timeout",
-          "type": "bool"
+          "name": "winner_idx",
+          "type": "u8"
         }
       ]
     },
@@ -1985,6 +2062,10 @@
                 2
               ]
             }
+          },
+          {
+            "name": "last_update_time",
+            "type": "i64"
           }
         ]
       }

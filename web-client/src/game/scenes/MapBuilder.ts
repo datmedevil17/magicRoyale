@@ -163,11 +163,6 @@ export class MapBuilder {
         const finalScaleX = scaleX !== undefined ? scaleX : scale;
         const finalScaleY = scaleY !== undefined ? scaleY : scale;
 
-        // Debug logging for custom fences
-        if (customTexture) {
-            console.log(`MapBuilder: Creating fence at ${col},${row} with texture: ${texture}, rotate: ${rotate}, scale: ${scale}, scaleX: ${scaleX}, scaleY: ${finalScaleY}`);
-        }
-
         if (this.scene.textures.exists(texture)) {
             const wall = this.scene.add.image(x, y, texture);
             wall.setDisplaySize(ArenaConfig.TILE_SIZE * finalScaleX, ArenaConfig.TILE_SIZE * finalScaleY);
@@ -211,7 +206,6 @@ export class MapBuilder {
                     sprite.setAngle(prop.rotate * 90);
                 }
             } else {
-                console.warn(`Prop texture not found: ${prop.texture}`);
                 // Fallback placeholder
                 this.scene.add.circle(x, y, 10, 0x00FF00).setDepth(1);
             }

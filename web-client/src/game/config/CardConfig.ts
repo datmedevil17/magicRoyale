@@ -4,6 +4,7 @@ export interface CardData {
     name: string;
     cost: number;
     icon: string;
+    deckIndex?: number;
 }
 
 export const CARD_DATA: Record<number, CardData> = {

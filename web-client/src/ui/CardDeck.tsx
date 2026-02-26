@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { EventBus, EVENTS } from '../game/EventBus';
 
 interface CardItem {
-    id: string;
+    id: string;      // This is the asset name (e.g. 'Giant')
     name: string;
     cost: number;
     icon: string;
+    deckIndex?: number;
 }
 
 interface CardDeckProps {
@@ -13,75 +14,96 @@ interface CardDeckProps {
 }
 
 export const CardDeck: React.FC<CardDeckProps> = ({ cards }) => {
-    // Shuffle deck once on mount
+    // deck handles the pool of cards (e.g. 8 cards)
     const [deck] = useState<CardItem[]>(() => {
-        // If we have fewer than 8 cards, we might want to duplicate or handle it
-        // but for now we assume we get a valid array of cards
-        return [...cards].sort(() => 0.5 - Math.random());
+        const shuffled = [...cards].sort(() => 0.5 - Math.random());
+
+        // Ensure the initial 4 cards in the hand are unique types if possible
+        const initialHand: CardItem[] = [];
+        const remainingDeck: CardItem[] = [];
+        const seenTypes = new Set<string>();
+
+        for (const card of shuffled) {
+            if (initialHand.length < 4 && !seenTypes.has(card.id)) {
+                initialHand.push(card);
+                seenTypes.add(card.id);
+            } else {
+                remainingDeck.push(card);
+            }
+        }
+
+        // Fill up to 4 if we couldn't find enough unique types
+        while (initialHand.length < 4 && remainingDeck.length > 0) {
+            initialHand.push(remainingDeck.shift()!);
+        }
+
+        return [...initialHand, ...remainingDeck];
     });
 
-    // Track next card position in deck
+    // Track next card position in deck pool (always the card after the initial hand)
     const [nextCardIndex, setNextCardIndex] = useState(4);
 
-    // visible card slots (indices 0-3 from deck initially)
+    // visible card slots (indices 0-3 from pool)
     const [cardSlots, setCardSlots] = useState<CardItem[]>(() => {
-        return [deck[0] || cards[0], deck[1] || cards[1], deck[2] || cards[2], deck[3] || cards[3]].filter(Boolean);
+        return deck.slice(0, 4);
     });
 
-    // Selected card
-    const [selectedCard, setSelectedCard] = useState<string | null>(null);
+    // Selected slot ID (e.g. 'Giant:0')
+    const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
 
     // Listen for card played event to replace that specific card
     useEffect(() => {
-        const handleCardPlayed = (cardId: string) => {
-            // Find which slot has the played card
-            const slotIndex = cardSlots.findIndex(card => card.id === cardId);
+        const handleCardPlayed = (slotId: string) => {
+            // Find which slot has the played card by name:deckIndex or id:deckIndex
+            const slotIndex = cardSlots.findIndex(card => `${card.id}:${card.deckIndex}` === slotId);
 
             if (slotIndex !== -1) {
-                // Replace only that slot with next card from deck
                 const newSlots = [...cardSlots];
-                newSlots[slotIndex] = deck[nextCardIndex];
+
+                // Safety check for nextCardIndex
+                const safeInx = nextCardIndex % deck.length;
+                newSlots[slotIndex] = deck[safeInx];
                 setCardSlots(newSlots);
 
-                // Move to next card in deck (cycle)
-                const newNextIndex = (nextCardIndex + 1) % deck.length;
+                // Advance the cycle
+                const newNextIndex = (safeInx + 1) % deck.length;
                 setNextCardIndex(newNextIndex);
 
-                // Clear selection
-                setSelectedCard(null);
-
-                console.log(`Card ${cardId} played from slot ${slotIndex}, replaced with ${deck[nextCardIndex].id}. Next card index: ${newNextIndex}`);
+                setSelectedSlotId(null);
             }
         };
 
         EventBus.on(EVENTS.CARD_PLAYED, handleCardPlayed);
-
         return () => {
             EventBus.off(EVENTS.CARD_PLAYED, handleCardPlayed);
         };
     }, [cardSlots, nextCardIndex, deck]);
 
-    const handleCardClick = (cardId: string) => {
-        const newSelected = cardId === selectedCard ? null : cardId;
-        setSelectedCard(newSelected);
+    const handleCardClick = (card: CardItem) => {
+        const slotId = `${card.id}:${card.deckIndex}`;
+        const newSelected = slotId === selectedSlotId ? null : slotId;
+        setSelectedSlotId(newSelected);
         EventBus.emit(EVENTS.CARD_SELECTED, newSelected);
-        console.log(`Selected card: ${cardId}`);
     };
 
     return (
         <div style={{
             position: 'absolute',
-            bottom: '10px', // Moved down to avoid hiding crown counter
+            bottom: '10px',
             left: '50%',
             transform: 'translateX(-50%)',
             display: 'flex',
             gap: '10px',
-            pointerEvents: 'auto' // Enable clicks
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            padding: '10px 20px',
+            borderRadius: '15px',
+            zIndex: 10,
+            pointerEvents: 'auto'
         }}>
             {cardSlots.map((card, index) => (
                 <div
                     key={`slot-${index}`}
-                    onClick={() => handleCardClick(card.id)}
+                    onClick={() => handleCardClick(card)}
                     style={{
                         width: '60px',
                         height: '80px',
@@ -89,30 +111,29 @@ export const CardDeck: React.FC<CardDeckProps> = ({ cards }) => {
                         backgroundSize: 'contain',
                         backgroundRepeat: 'no-repeat',
                         backgroundPosition: 'center',
-                        border: selectedCard === card.id ? '3px solid yellow' : '1px solid #000',
+                        border: selectedSlotId === `${card.id}:${card.deckIndex}` ? '3px solid yellow' : '1px solid #000',
                         borderRadius: '5px',
                         backgroundColor: '#fff',
                         position: 'relative',
                         cursor: 'pointer',
-                        transform: selectedCard === card.id ? 'translateY(-10px)' : 'none',
+                        transform: selectedSlotId === `${card.id}:${card.deckIndex}` ? 'translateY(-10px)' : 'none',
                         transition: 'transform 0.2s',
-                        boxShadow: selectedCard === card.id ? '0 4px 8px rgba(255,255,0,0.5)' : 'none'
+                        boxShadow: selectedSlotId === `${card.id}:${card.deckIndex}` ? '0 4px 8px rgba(255,255,0,0.5)' : 'none'
                     }}
                 >
                     {/* Elixir cost badge */}
                     <div style={{
                         position: 'absolute',
-                        bottom: '-5px',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        backgroundColor: '#d000ff',
+                        top: '-5px',
+                        left: '-5px',
+                        backgroundColor: '#ff00ff',
                         color: 'white',
                         borderRadius: '50%',
                         width: '20px',
                         height: '20px',
                         display: 'flex',
-                        justifyContent: 'center',
                         alignItems: 'center',
+                        justifyContent: 'center',
                         fontSize: '12px',
                         fontWeight: 'bold',
                         border: '1px solid black'
@@ -122,11 +143,11 @@ export const CardDeck: React.FC<CardDeckProps> = ({ cards }) => {
                 </div>
             ))}
 
-            {/* Next card preview (to the right of the deck) */}
+            {/* Next card preview */}
             <div style={{
                 width: '40px',
                 height: '60px',
-                backgroundImage: `url(${deck[nextCardIndex].icon})`,
+                backgroundImage: deck[nextCardIndex % deck.length] ? `url(${deck[nextCardIndex % deck.length].icon})` : 'none',
                 backgroundSize: 'contain',
                 backgroundRepeat: 'no-repeat',
                 backgroundPosition: 'center',
@@ -138,25 +159,40 @@ export const CardDeck: React.FC<CardDeckProps> = ({ cards }) => {
                 marginLeft: '5px',
                 opacity: 0.7
             }}>
-                {/* Next indicator */}
                 <div style={{
                     position: 'absolute',
                     top: '-10px',
                     left: '50%',
                     transform: 'translateX(-50%)',
-                    backgroundColor: '#00ff00',
-                    color: '#000',
+                    backgroundColor: '#333',
+                    color: '#fff',
+                    padding: '1px 4px',
+                    borderRadius: '3px',
+                    fontSize: '8px',
+                    fontWeight: 'bold',
+                    textTransform: 'uppercase',
+                    whiteSpace: 'nowrap'
+                }}>
+                    Next
+                </div>
+
+                <div style={{
+                    position: 'absolute',
+                    bottom: '-5px',
+                    right: '-5px',
+                    backgroundColor: '#ff00ff',
+                    color: 'white',
                     borderRadius: '50%',
                     width: '16px',
                     height: '16px',
                     display: 'flex',
-                    justifyContent: 'center',
                     alignItems: 'center',
+                    justifyContent: 'center',
                     fontSize: '10px',
                     fontWeight: 'bold',
                     border: '1px solid black'
                 }}>
-                    ↻
+                    {deck[nextCardIndex % deck.length]?.cost || 0}
                 </div>
             </div>
         </div>

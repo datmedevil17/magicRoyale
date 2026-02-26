@@ -15,5 +15,8 @@ export const EVENTS = {
     BATTLE_STARTED: 'battle-started',
     PLAYER_DELEGATED: 'player-delegated',
     CLIENT_UNDELEGATED: 'client-undelegated',
-    TEST_DEPLOY: 'test-deploy'
+    TEST_DEPLOY: 'test-deploy',
+    ELIXIR_INSUFFICIENT: 'elixir-insufficient',
+    TRANSACTION_UPDATE: 'transaction-update',
+    TOGGLE_DRAWER: 'toggle-drawer'
 };

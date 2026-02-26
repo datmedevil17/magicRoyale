@@ -2,7 +2,7 @@ import { PublicKey } from "@solana/web3.js";
 
 export const MINT_CONFIG = {
     // Currencies
-    GOLD: new PublicKey("3yrXat8Z6FwEoiPhTFrUw43LHGqnGgNtKVFZ9QRzLyCT"),
+    GOLD: new PublicKey("DeScyr3Thq2Rqf3HaiD52sDFKinRkgzfQUMqS4fXYHQB"),
     GEMS: new PublicKey("23t3mDz1ciDXUo9a1B1LDnExtBLya3Hzswa997ufhV8w"),
     PLATFORM: new PublicKey("GT6jVixgxz55EYGMitA5YKXY5s5XUp1DXk5vPxvyXuBZ"),
 

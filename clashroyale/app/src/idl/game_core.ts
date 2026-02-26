@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/game_core.json`.
  */
 export type GameCore = {
-  "address": "EYYaUKGcq2epXWsXk52P7dEXpDMZQpGdkSXVDypzDhYm",
+  "address": "DNsfEAur359Xv18MT1nxfEqh3YGZmhwfnm454wmYkVE1",
   "metadata": {
     "name": "gameCore",
     "version": "0.1.0",
@@ -13,64 +13,6 @@ export type GameCore = {
     "description": "Created with Anchor"
   },
   "instructions": [
-    {
-      "name": "commitBattle",
-      "discriminator": [
-        219,
-        116,
-        150,
-        30,
-        121,
-        105,
-        195,
-        23
-      ],
-      "accounts": [
-        {
-          "name": "payer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "battle",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  98,
-                  97,
-                  116,
-                  116,
-                  108,
-                  101
-                ]
-              },
-              {
-                "kind": "arg",
-                "path": "gameId"
-              }
-            ]
-          }
-        },
-        {
-          "name": "magicProgram",
-          "address": "Magic11111111111111111111111111111111111111"
-        },
-        {
-          "name": "magicContext",
-          "writable": true,
-          "address": "MagicContext1111111111111111111111111111111"
-        }
-      ],
-      "args": [
-        {
-          "name": "gameId",
-          "type": "u64"
-        }
-      ]
-    },
     {
       "name": "createClan",
       "discriminator": [
@@ -270,38 +212,38 @@ export type GameCore = {
             "program": {
               "kind": "const",
               "value": [
-                201,
-                60,
-                163,
-                178,
-                222,
-                211,
-                170,
-                45,
-                63,
-                127,
                 183,
-                27,
-                119,
-                174,
-                113,
-                4,
-                116,
-                150,
-                226,
-                136,
-                32,
-                37,
-                213,
-                121,
-                165,
-                196,
-                103,
-                129,
-                155,
-                52,
+                230,
+                184,
+                115,
+                252,
+                219,
+                130,
+                75,
+                127,
                 15,
-                162
+                139,
+                9,
+                202,
+                229,
+                242,
+                34,
+                207,
+                66,
+                59,
+                252,
+                127,
+                182,
+                211,
+                145,
+                45,
+                39,
+                236,
+                72,
+                232,
+                89,
+                255,
+                10
               ]
             }
           }
@@ -402,7 +344,7 @@ export type GameCore = {
         },
         {
           "name": "ownerProgram",
-          "address": "EYYaUKGcq2epXWsXk52P7dEXpDMZQpGdkSXVDypzDhYm"
+          "address": "DNsfEAur359Xv18MT1nxfEqh3YGZmhwfnm454wmYkVE1"
         },
         {
           "name": "delegationProgram",
@@ -433,11 +375,6 @@ export type GameCore = {
         236
       ],
       "accounts": [
-        {
-          "name": "signer",
-          "writable": true,
-          "signer": true
-        },
         {
           "name": "battle",
           "writable": true,
@@ -478,11 +415,15 @@ export type GameCore = {
               },
               {
                 "kind": "account",
-                "path": "player_profile.authority",
-                "account": "playerProfile"
+                "path": "signer"
               }
             ]
           }
+        },
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
         },
         {
           "name": "sessionToken",
@@ -672,7 +613,7 @@ export type GameCore = {
       ],
       "accounts": [
         {
-          "name": "signer",
+          "name": "payer",
           "writable": true,
           "signer": true
         },
@@ -700,31 +641,13 @@ export type GameCore = {
           }
         },
         {
-          "name": "playerProfile",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  108,
-                  97,
-                  121,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "player_profile.authority",
-                "account": "playerProfile"
-              }
-            ]
-          }
+          "name": "magicProgram",
+          "address": "Magic11111111111111111111111111111111111111"
         },
         {
-          "name": "sessionToken",
-          "optional": true
+          "name": "magicContext",
+          "writable": true,
+          "address": "MagicContext1111111111111111111111111111111"
         }
       ],
       "args": [
@@ -733,8 +656,8 @@ export type GameCore = {
           "type": "u64"
         },
         {
-          "name": "winnerIdx",
-          "type": "u8"
+          "name": "isTimeout",
+          "type": "bool"
         }
       ]
     },
@@ -2068,10 +1991,6 @@ export type GameCore = {
                 2
               ]
             }
-          },
-          {
-            "name": "lastUpdateTime",
-            "type": "i64"
           }
         ]
       }

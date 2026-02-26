@@ -1,4 +1,5 @@
 import { Entity } from './Entity';
+import { ArenaConfig } from '../config/ArenaConfig';
 import { getTroopStats } from '../config/TroopConfig';
 import { Barbarian } from './troops/Barbarian';
 import { Troop } from './troops/Troop';
@@ -129,7 +130,7 @@ export class GameManager {
         return this.entities;
     }
 
-    public deployCard(cardId: string, position: Point2D, ownerId: string): Entity | null {
+    public deployCard(cardId: string, position: Point2D, ownerId: string, skipElixirCost: boolean = false): Entity | null {
         let entity: Entity | null = null;
 
         const stats = getTroopStats(cardId);
@@ -138,7 +139,7 @@ export class GameManager {
         // Normalize ownerId
         ownerId = ownerId.toLowerCase();
 
-        if (ownerId === 'player' || ownerId.startsWith('player')) {
+        if (!skipElixirCost && (ownerId === 'player' || ownerId.startsWith('player'))) {
             if (this.elixir < cost) return null;
             this.elixir -= cost;
         }
@@ -191,21 +192,16 @@ export class GameManager {
         const isPlayerTeam = ownerLower.startsWith('player');
         const isOpponentTeam = ownerLower.startsWith('opponent');
 
-        // Track tower destruction
-        if (isPlayerTeam) {
-            this.playerTowersDestroyed++;
-        } else if (isOpponentTeam) {
-            this.opponentTowersDestroyed++;
-        }
-
-        // Award crowns
         const crownCount = isKing ? 3 : 1;
 
+        // Track tower destruction
         if (isPlayerTeam) {
-            // Player tower destroyed, opponent gets crowns
+            // Player tower destroyed, opponent gets credit
+            this.opponentTowersDestroyed++;
             this.opponentCrowns += crownCount;
         } else if (isOpponentTeam) {
-            // Opponent tower destroyed, player gets crowns
+            // Opponent tower destroyed, player gets credit
+            this.playerTowersDestroyed++;
             this.playerCrowns += crownCount;
         }
 
@@ -218,8 +214,8 @@ export class GameManager {
         this.playerCrowns = Math.min(3, this.playerCrowns);
         this.opponentCrowns = Math.min(3, this.opponentCrowns);
 
-        // IMMEDIATE victory on 3 crowns OR king tower destruction
-        if (this.playerCrowns >= 3 || this.opponentCrowns >= 3 || isKing) {
+        // ONLY immediate victory on king tower destruction or naturally reaching 3 crowns via king death
+        if (isKing || this.playerCrowns >= 3 || this.opponentCrowns >= 3) {
             this.victoryReason = isKing ? 'King Tower Destroyed!' : 'Three Crown Victory!';
             this.endGame();
         }
@@ -234,6 +230,82 @@ export class GameManager {
             playerCrowns: this.playerCrowns,
             opponentCrowns: this.opponentCrowns
         };
+    }
+
+    /**
+     * Synchronize entity positions and health from the authoritative host (Player 1).
+     * Only applies to troops.
+     */
+    public syncFromHost(payload: any, isLocalHost: boolean = true) {
+        const { entities: snaps, playerCrowns, opponentCrowns, playerTowersDestroyed, opponentTowersDestroyed, gameEnded, winner, victoryReason } = payload;
+        const mapWidth = ArenaConfig.COLS * ArenaConfig.TILE_SIZE;
+        const mapHeight = ArenaConfig.ROWS * ArenaConfig.TILE_SIZE;
+
+        if (snaps) {
+            snaps.forEach((snap: any) => {
+                let entity = this.entities.find(e => e.id === snap.id);
+                let finalX = snap.x;
+                let finalY = snap.y;
+                let finalOwner = snap.ownerId;
+
+                if (!isLocalHost) {
+                    finalX = mapWidth - snap.x;
+                    finalY = mapHeight - snap.y;
+                    finalOwner = snap.ownerId === 'player' ? 'opponent' : 'player';
+                }
+
+                if (!entity && !isLocalHost) {
+                    const typePrefix = snap.id.split('_')[0];
+                    const cardIdMap: Record<string, string> = {
+                        'giant': 'Giant', 'archer': 'Archers', 'minipekka': 'MiniPEKKA',
+                        'valkyrie': 'Valkyrie', 'babydragon': 'BabyDragon', 'wizard': 'Wizard',
+                        'barb': 'Barbarians', 'inferno': 'InfernoTower'
+                    };
+                    const cardId = cardIdMap[typePrefix];
+                    if (cardId) {
+                        entity = this.deployCard(cardId, { x: finalX, y: finalY }, finalOwner, true) as Entity;
+                        if (entity) entity.id = snap.id;
+                    }
+                }
+
+                if (entity) {
+                    if (entity instanceof Troop) {
+                        entity.x = finalX;
+                        entity.y = finalY;
+                        entity.health = snap.health;
+                        entity.state = snap.state;
+                        if (snap.targetId) {
+                            entity.target = this.entities.find(e => e.id === snap.targetId) || null;
+                        }
+                    } else if (entity instanceof TowerEntity) {
+                        entity.health = snap.health;
+                    }
+                }
+            });
+        }
+
+        if (isLocalHost) {
+            if (playerCrowns !== undefined) this.playerCrowns = playerCrowns;
+            if (opponentCrowns !== undefined) this.opponentCrowns = opponentCrowns;
+            if (playerTowersDestroyed !== undefined) this.playerTowersDestroyed = playerTowersDestroyed;
+            if (opponentTowersDestroyed !== undefined) this.opponentTowersDestroyed = opponentTowersDestroyed;
+        } else {
+            if (playerCrowns !== undefined) this.opponentCrowns = playerCrowns;
+            if (opponentCrowns !== undefined) this.playerCrowns = opponentCrowns;
+            if (playerTowersDestroyed !== undefined) this.opponentTowersDestroyed = playerTowersDestroyed;
+            if (opponentTowersDestroyed !== undefined) this.playerTowersDestroyed = opponentTowersDestroyed;
+        }
+
+        if (gameEnded !== undefined) this.gameEnded = gameEnded;
+        if (winner !== undefined) {
+            if (isLocalHost) this.winner = winner;
+            else {
+                if (winner === 'player') this.winner = 'opponent';
+                else if (winner === 'opponent') this.winner = 'player';
+                else this.winner = 'draw';
+            }
+        }
+        if (victoryReason !== undefined) this.victoryReason = victoryReason;
     }
 
     public getRemainingTime(): number {
@@ -286,10 +358,10 @@ export class GameManager {
 
                 if (playerTotalHealth > opponentTotalHealth) {
                     this.winner = 'player';
-                    this.victoryReason = 'Higher Combined Tower Health';
+                    this.victoryReason = `Higher Combined Tower Health (${playerTotalHealth} vs ${opponentTotalHealth})`;
                 } else if (opponentTotalHealth > playerTotalHealth) {
                     this.winner = 'opponent';
-                    this.victoryReason = 'Higher Combined Tower Health';
+                    this.victoryReason = `Higher Combined Tower Health (${opponentTotalHealth} vs ${playerTotalHealth})`;
                 } else {
                     // Perfect draw
                     this.winner = 'draw';

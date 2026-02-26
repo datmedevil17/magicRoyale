@@ -50,7 +50,6 @@ export class Wizard extends Troop {
     }
 
     private attack(target: Entity) {
-        console.log(`[${Date.now()}] Wizard ${this.id} attacks ${target.id} for ${this.damage}`);
         target.takeDamage(this.damage);
     }
 }

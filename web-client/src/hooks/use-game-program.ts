@@ -149,8 +149,19 @@ export function useGameProgram() {
     }, [erProvider]);
 
     // Session Key Manager
+    const sdkWallet = useMemo(() => {
+        if (!wallet.publicKey || !wallet.signTransaction || !wallet.signAllTransactions) {
+            return null;
+        }
+        return {
+            publicKey: wallet.publicKey,
+            signTransaction: wallet.signTransaction,
+            signAllTransactions: wallet.signAllTransactions,
+        };
+    }, [wallet.publicKey, wallet.signTransaction, wallet.signAllTransactions]);
+
     const sessionWallet = useSessionKeyManager(
-        wallet as any,
+        sdkWallet as any,
         connection,
         "devnet"
     );
@@ -250,6 +261,7 @@ export function useGameProgram() {
                         playerTwoProfile: getPlayerProfilePda(wallet.publicKey, program.programId),
                     } as any)
                     .rpc();
+                console.log(`[joinGame] Transaction Hash: https://solscan.io/tx/${tx}?cluster=custom&customUrl=https%3A%2F%2Fdevnet.magicblock.app`);
                 return tx;
             } catch (err: any) {
                 setError(err.message);
@@ -328,7 +340,7 @@ export function useGameProgram() {
                     // Contract requirement: The session_token PDA account MUST exist on-chain.
                     // If it hasn't been created yet or expired/closed, fall back to main wallet
                     // otherwise Anchor will throw "AccountNotInitialized" or "AccountNotFound"
-                    const sessionInfo = await connection.getAccountInfo(sessionPubkey);
+                    const sessionInfo = await erConnection.getAccountInfo(sessionPubkey);
                     if (!sessionInfo) {
                         console.warn("Session token PDA not found on-chain, falling back to main wallet");
                         hasSession = false;
@@ -342,7 +354,7 @@ export function useGameProgram() {
                 const accounts: any = {
                     signer,
                     playerProfile: getPlayerProfilePda(wallet.publicKey, program.programId),
-                    sessionToken: hasSession && sessionPubkey ? sessionPubkey : undefined,
+                    sessionToken: hasSession && sessionPubkey ? sessionPubkey : null,
                 };
 
                 let tx = await program.methods
@@ -363,7 +375,10 @@ export function useGameProgram() {
                 const txHash = await erConnection.sendRawTransaction(tx.serialize(), {
                     skipPreflight: true,
                 });
-                await erConnection.confirmTransaction(txHash, "confirmed");
+
+                console.log(`[deployTroop] Transaction Hash: https://solscan.io/tx/${txHash}?cluster=custom&customUrl=https%3A%2F%2Fdevnet.magicblock.app`);
+
+                // Removed await erConnection.confirmTransaction(txHash, "confirmed") to eliminate latency
 
                 return txHash;
             } catch (err: any) {
@@ -381,27 +396,64 @@ export function useGameProgram() {
     // `isTimeout` = true if the game timed out, false if a winner was determined.
 
     const endGame = useCallback(
-        async (gameId: BN, isTimeout: boolean): Promise<string> => {
+        async (gameId: BN, winnerIdx: number): Promise<string> => {
             if (!program || !erProvider || !wallet.publicKey)
                 throw new Error("Wallet not connected / ER not ready");
             setIsLoading(true);
             try {
+                let hasSession = sessionToken != null && sessionWallet != null;
+                const sessionPubkey = sessionToken ? new PublicKey(sessionToken) : null;
+
+                if (hasSession && sessionPubkey) {
+                    const sessionInfo = await erConnection.getAccountInfo(sessionPubkey);
+                    if (!sessionInfo) {
+                        console.warn("Session token PDA not found on-chain, falling back to main wallet");
+                        hasSession = false;
+                    }
+                }
+
+                const signer = hasSession
+                    ? sessionWallet!.publicKey
+                    : wallet.publicKey;
+
+                const accounts: any = {
+                    signer,
+                    playerProfile: getPlayerProfilePda(wallet.publicKey, program.programId),
+                    sessionToken: hasSession && sessionPubkey ? sessionPubkey : null,
+                };
+
                 let tx = await program.methods
-                    .endGame(gameId, isTimeout)
-                    .accounts({
-                        payer: wallet.publicKey,
-                        // battle, magic_program and magic_context auto-resolved by Anchor
-                    } as any)
+                    .endGame(gameId, winnerIdx)
+                    .accounts(accounts)
                     .transaction();
 
-                tx.feePayer = wallet.publicKey;
+                tx.feePayer = signer || undefined;
                 tx.recentBlockhash = (await erConnection.getLatestBlockhash()).blockhash;
-                tx = await erProvider.wallet.signTransaction(tx);
+
+                if (hasSession && sessionWallet && sessionWallet.signTransaction) {
+                    // @ts-ignore
+                    tx = await sessionWallet.signTransaction(tx);
+                } else {
+                    tx = await erProvider.wallet.signTransaction(tx);
+                }
 
                 const txHash = await erConnection.sendRawTransaction(tx.serialize(), {
                     skipPreflight: true,
                 });
                 await erConnection.confirmTransaction(txHash, "confirmed");
+
+                console.log(`[endGame] Transaction Hash: https://solscan.io/tx/${txHash}?cluster=custom&customUrl=https%3A%2F%2Fdevnet.magicblock.app`);
+
+                // 2) Commit the battle back to the base layer
+                //    We use the base `program` since it interacts with the delegation program
+                const commitTx = await program.methods
+                    .commitBattle(gameId)
+                    .accounts({
+                        payer: wallet.publicKey,
+                    } as any)
+                    .rpc();
+
+                console.log(`[commitBattle] Transaction Hash: https://solscan.io/tx/${commitTx}?cluster=devnet`);
 
                 return txHash;
             } catch (err: any) {
@@ -411,7 +463,7 @@ export function useGameProgram() {
                 setIsLoading(false);
             }
         },
-        [program, erProvider, erConnection, wallet.publicKey]
+        [program, erProvider, erConnection, wallet.publicKey, sessionToken, sessionWallet]
     );
 
     // ─── Mint Trophies (Base Layer) ───────────────────────────────────────────
@@ -452,6 +504,7 @@ export function useGameProgram() {
                     } as any)
                     .preInstructions(preInstructions)
                     .rpc();
+                console.log(`[mintTrophies] Transaction Hash: https://solscan.io/tx/${tx}?cluster=custom&customUrl=https%3A%2F%2Fdevnet.magicblock.app`);
                 return tx;
             } catch (err: any) {
                 setError(err.message);
@@ -496,6 +549,7 @@ export function useGameProgram() {
                     } as any)
                     .preInstructions(preInstructions)
                     .rpc();
+                console.log(`[unlockCard] Transaction Hash: https://solscan.io/tx/${tx}?cluster=custom&customUrl=https%3A%2F%2Fdevnet.magicblock.app`);
                 return tx;
             } catch (err: any) {
                 setError(err.message);
@@ -698,11 +752,23 @@ export function useGameProgram() {
             if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
             setIsLoading(true);
             try {
+                const METADATA_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
+                const [metadata] = PublicKey.findProgramAddressSync(
+                    [
+                        Buffer.from("metadata"),
+                        METADATA_PROGRAM_ID.toBuffer(),
+                        mint.toBuffer()
+                    ],
+                    METADATA_PROGRAM_ID
+                );
+
                 const tx = await program.methods
                     .exportNft(cardId)
                     .accounts({
                         profile: getPlayerProfilePda(wallet.publicKey, program.programId),
                         mint,
+                        metadata,
+                        metadataProgram: METADATA_PROGRAM_ID,
                         authority: wallet.publicKey,
                     } as any)
                     .rpc();
@@ -896,10 +962,16 @@ export function useGameProgram() {
         if (!wallet.publicKey) return;
         try {
             const ata = getAssociatedTokenAddressSync(MINT_CONFIG.PLATFORM, wallet.publicKey);
+            // Check if the account exists first to avoid noisy JSON-RPC errors
+            const accountInfo = await connection.getAccountInfo(ata);
+            if (!accountInfo) {
+                setPlatformBalance(0);
+                return;
+            }
             const balance = await connection.getTokenAccountBalance(ata);
             setPlatformBalance(balance.value.uiAmount || 0);
         } catch (err) {
-            console.log("Error fetching platform balance (likely no ATA):", err);
+            // If it still fails for any reason, quietly set to 0
             setPlatformBalance(0);
         }
     }, [wallet.publicKey, connection]);

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BN } from '@coral-xyz/anchor';
+import { toast } from 'react-hot-toast';
 import { useGameProgram } from '../hooks/use-game-program';
 import { MINT_CONFIG } from '../game/config/MintConfig';
 
@@ -12,6 +13,7 @@ interface VictoryScreenProps {
     opponentTowersDestroyed: number;
     victoryReason?: string;
     gameId?: string; // u64 as decimal string
+    role?: 'player1' | 'player2';
 }
 
 export const VictoryScreen: React.FC<VictoryScreenProps> = ({
@@ -21,11 +23,16 @@ export const VictoryScreen: React.FC<VictoryScreenProps> = ({
     playerTowersDestroyed,
     opponentTowersDestroyed,
     victoryReason,
-    gameId
+    gameId,
+    role
 }) => {
     const navigate = useNavigate();
-    const { mintTrophies, isLoading, error } = useGameProgram();
+    const { mintTrophies, endGame, isLoading, error } = useGameProgram();
     const [countdown, setCountdown] = React.useState(8);
+
+    // New states for the multi-step ending process
+    const [hasEndedGame, setHasEndedGame] = React.useState(false);
+    const [isEndingGame, setIsEndingGame] = React.useState(false);
 
     React.useEffect(() => {
         if (winner === 'opponent') {
@@ -35,6 +42,55 @@ export const VictoryScreen: React.FC<VictoryScreenProps> = ({
             return () => clearInterval(timer);
         }
     }, [winner]);
+
+    // ─── Automated End-Game Sequence ──────────────────────────────────────────
+    const sequenceTriggered = React.useRef(false);
+
+    React.useEffect(() => {
+        if (winner !== 'player' || !gameId || sequenceTriggered.current) return;
+
+        sequenceTriggered.current = true;
+
+        const runSequence = async () => {
+            try {
+                // Step 1: End Game (on-chain)
+                setIsEndingGame(true);
+                let winnerIdx = role === 'player1' ? 0 : 1;
+
+                console.log(`[VictorySequence] Ending Game: ${gameId}, WinnerIdx: ${winnerIdx}`);
+                await endGame(new BN(gameId), winnerIdx);
+                setHasEndedGame(true);
+                setIsEndingGame(false);
+
+                // Step 2: Mint Trophies (Base Layer)
+                // Small delay to ensure Base node has seen the commitment
+                await new Promise(r => setTimeout(r, 2000));
+
+                let mintRetries = 3;
+                while (mintRetries > 0) {
+                    try {
+                        console.log(`[VictorySequence] Minting Trophies, Attempt: ${4 - mintRetries}`);
+                        await mintTrophies(new BN(gameId), MINT_CONFIG.GOLD);
+                        toast.success('🏆 Trophies Minted! 🏆');
+                        break;
+                    } catch (err: any) {
+                        console.warn(`[VictorySequence] Mint failed: ${err.message}`);
+                        mintRetries--;
+                        if (mintRetries > 0) {
+                            await new Promise(r => setTimeout(r, 4000));
+                        } else {
+                            throw err; // Out of retries
+                        }
+                    }
+                }
+            } catch (err: any) {
+                console.error('[VictorySequence] Sequence failed:', err);
+                toast.error(`Automated settlement failed: ${err.message}`);
+            }
+        };
+
+        runSequence();
+    }, [winner, gameId, role, endGame, mintTrophies]);
 
     const getTitle = () => {
         if (winner === 'player') return 'VICTORY!';
@@ -127,25 +183,53 @@ export const VictoryScreen: React.FC<VictoryScreenProps> = ({
                     </button>
                 </div>
 
-                {/* Mint Trophies — only shown to winner */}
+                {/* Multi-Step Blockchain Actions for Winner */}
                 {winner === 'player' && gameId && (
                     <div className="mt-6 flex flex-col items-center gap-2">
-                        <button
-                            onClick={async () => {
-                                try {
-                                    await mintTrophies(new BN(gameId), MINT_CONFIG.GOLD);
-                                    alert('Trophies minted successfully!');
-                                } catch (err: any) {
-                                    console.error('Mint trophies failed:', err);
-                                    alert(`Mint failed: ${err.message}`);
-                                }
-                            }}
-                            disabled={isLoading}
-                            className="w-full bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white font-black py-4 px-8 rounded-xl transition-all active:scale-95 shadow-[0_5px_15px_rgba(249,115,22,0.4)] border-b-4 border-orange-800 disabled:opacity-50"
-                        >
-                            {isLoading ? 'Minting...' : '🏆 CLAIM TROPHIES 🏆'}
-                        </button>
-                        {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
+                        <div className="w-full bg-black/40 rounded-xl p-4 border border-blue-500/30">
+                            <div className="flex flex-col gap-3">
+                                {/* Step 1: Commitment */}
+                                <div className="flex items-center justify-between text-sm">
+                                    <span className="text-gray-300">1. Committing Battle</span>
+                                    {hasEndedGame ? (
+                                        <span className="text-green-400 font-bold">✓ DONE</span>
+                                    ) : isEndingGame ? (
+                                        <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                                    ) : (
+                                        <span className="text-gray-500">PENDING</span>
+                                    )}
+                                </div>
+
+                                {/* Step 2: Minting */}
+                                <div className="flex items-center justify-between text-sm">
+                                    <span className="text-gray-300">2. Claiming Trophies</span>
+                                    {isLoading && hasEndedGame ? (
+                                        <div className="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin"></div>
+                                    ) : hasEndedGame && error ? (
+                                        <span className="text-red-400 font-bold">FAILED</span>
+                                    ) : hasEndedGame && !isLoading ? (
+                                        <span className="text-yellow-400 font-bold">✓ DONE</span>
+                                    ) : (
+                                        <span className="text-gray-500">WAITING</span>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {error && (
+                            <div className="mt-3 text-red-400 text-xs flex flex-col items-center gap-2">
+                                <p>{error}</p>
+                                <button
+                                    onClick={() => {
+                                        sequenceTriggered.current = false;
+                                        window.location.reload(); // Simplest way to reset all states and hooks correctly
+                                    }}
+                                    className="text-white bg-red-600/50 hover:bg-red-600 px-4 py-1 rounded text-[10px] uppercase font-bold"
+                                >
+                                    Try Sequence Again
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

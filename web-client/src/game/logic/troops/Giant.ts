@@ -60,7 +60,6 @@ export class Giant extends Troop {
                         this.damageTime = time + this.impactDelay;
                         this.pendingTarget = this.target;
                         this.lastAttackTime = time;
-                        console.log(`[${Date.now()}] Giant ${this.id} starts attack animation... (Damage in ${this.impactDelay}ms)`);
                     }
                 }
             } else {
@@ -95,8 +94,6 @@ export class Giant extends Troop {
     }
 
     private performAttack(target: Entity) {
-        console.log(`[${Date.now()}] Giant ${this.id} deals IMPACT damage to ${target.id}`);
         target.takeDamage(this.damage);
-        console.log(`[${Date.now()}] Target ${target.id} remaining HP: ${target.health}`);
     }
 }

@@ -66,29 +66,34 @@ export const ProfilePage: React.FC = () => {
 
                             return (
                                 <div key={idx} className="flex flex-col items-center">
-                                    <div className="relative w-full aspect-[3/4] bg-[#333] rounded-lg overflow-hidden border border-[#555] mb-1 group">
-                                        <img
-                                            src={imageUrl}
-                                            alt={cardName}
-                                            className="w-full h-full object-cover"
-                                            onError={(e) => (e.currentTarget.src = '/assets/cards/unknown.png')}
-                                        />
-                                        {/* Level Badge */}
-                                        <div className="absolute bottom-0 inset-x-0 bg-black/70 text-center text-[0.6rem] font-bold py-0.5 text-[#fbce47]">
+                                    {/* Card Container */}
+                                    <div className="relative w-full aspect-[3/4] bg-[#333] rounded-lg overflow-hidden border border-[#555] mb-1 group flex flex-col cursor-pointer">
+
+                                        {/* Image Area (Takes most space) */}
+                                        <div className="flex-1 w-full bg-[#222] flex justify-center items-center overflow-hidden">
+                                            <img
+                                                src={imageUrl}
+                                                alt={cardName}
+                                                className="w-full h-full object-cover"
+                                                onError={(e) => (e.currentTarget.src = '/assets/cards/unknown.png')}
+                                            />
+                                        </div>
+
+                                        {/* Level Badge Area (Bottom block) */}
+                                        <div className="w-full bg-black/90 text-center text-[0.6rem] font-bold py-0.5 text-[#fbce47] z-10">
                                             Lvl {card.level}
                                         </div>
 
-                                        {/* Upgrade Overlay */}
+                                        {/* Hover Overlay */}
                                         {canUpgrade && (
-                                            <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <div className="absolute top-0 left-0 right-0 bottom-4 bg-black/80 flex flex-col items-center justify-center p-1 opacity-0 group-hover:opacity-100 transition-opacity z-20">
                                                 <button
-                                                    className="bg-[#00d048] hover:bg-[#00e050] text-white text-[0.5rem] font-bold px-1 py-1 rounded shadow-md w-full mb-1 animate-pulse leading-tight"
+                                                    className="bg-[#00d048] hover:bg-[#00e050] text-white text-[0.5rem] font-bold px-1 py-1 rounded shadow-md w-full mb-1 leading-tight transform hover:scale-105 active:scale-95 transition-transform"
                                                     onClick={async (e) => {
                                                         e.stopPropagation();
                                                         if (window.confirm(`Upgrade ${cardName} to Level ${card.level + 1} for ${upgradeCost} Tokens?`)) {
                                                             try {
                                                                 await upgradeCard(card.cardId, MINT_CONFIG.PLATFORM);
-                                                                // Refresh profile
                                                                 if (profile && playerProfilePda) fetchPlayerProfile(playerProfilePda).then(setProfile);
                                                             } catch (err: any) {
                                                                 alert("Upgrade Failed: " + err.message);
@@ -98,19 +103,21 @@ export const ProfilePage: React.FC = () => {
                                                 >
                                                     UPGRADE
                                                 </button>
-                                                <span className="text-[0.5rem] text-[#fbce47] font-bold">{upgradeCost} T</span>
+                                                <span className="text-[0.5rem] text-[#fbce47] font-bold drop-shadow-md">{upgradeCost} T</span>
                                             </div>
                                         )}
                                     </div>
 
-                                    {/* Progress Bar */}
-                                    <div className="w-full bg-[#111] h-1.5 rounded-full overflow-hidden border border-[#333] relative mt-1">
+                                    {/* Progress Bar Container */}
+                                    <div className="w-full bg-[#111] h-1.5 rounded-full overflow-hidden border border-[#333] relative">
                                         <div
-                                            className={`h-full ${canUpgrade ? 'bg-[#00d048]' : 'bg-[#4da6ff]'}`}
+                                            className={`h-full transition-all duration-300 ${canUpgrade ? 'bg-[#00d048] animate-pulse' : 'bg-[#4da6ff]'}`}
                                             style={{ width: `${Math.min((card.amount / cardsNeeded) * 100, 100)}%` }}
                                         ></div>
                                     </div>
-                                    <span className="text-[0.5rem] text-gray-400 mt-0.5 leading-none">{card.amount}/{cardsNeeded}</span>
+                                    <span className="text-[0.45rem] font-bold text-gray-400 mt-0.5 leading-none">
+                                        {card.amount} / {cardsNeeded}
+                                    </span>
                                 </div>
                             );
                         })

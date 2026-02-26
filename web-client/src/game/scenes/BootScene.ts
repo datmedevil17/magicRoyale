@@ -63,8 +63,6 @@ export class BootScene extends Scene {
     }
 
     async create() {
-        console.log('BootScene: Loading GIFs...');
-
         const gifPath = 'assets/gifs/';
 
         const gifs = [
@@ -140,10 +138,8 @@ export class BootScene extends Scene {
             }
         }
 
-        console.log('BootScene: GIFs Loaded');
         const data = this.registry.get('data') || {};
         const nextScene = data.nextScene || 'MainScene';
-        console.log(`BootScene: Transitioning to ${nextScene}`);
         this.scene.start(nextScene, data);
     }
 }

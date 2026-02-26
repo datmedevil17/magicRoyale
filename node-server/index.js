@@ -220,6 +220,15 @@ io.on('connection', (socket) => {
         });
     });
 
+    // ── Continuous Sync (Host-based) ──────────────────────────────────────────
+    // Player 1 sends the snapshots of all entities periodically.
+    socket.on('sync-units', (data) => {
+        const roomId = getGameRoom(socket);
+        if (!roomId) return;
+        // Relay to other players
+        socket.to(roomId).emit('sync-units', data);
+    });
+
     // ── Clan Chat ─────────────────────────────────────────────────────────────
     socket.on('join-clan', (data) => {
         const { clanKey } = data;

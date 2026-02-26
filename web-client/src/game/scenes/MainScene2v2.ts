@@ -55,7 +55,6 @@ export class MainScene2v2 extends Scene {
         EventBus.on(EVENTS.CARD_SELECTED, this._onCardSelected);
 
         this._onBattleStarted = () => {
-            console.log(`[MainScene2v2] Battle Started`);
             this.input.enabled = true;
             this.gameManager.startGame();
         };
@@ -63,7 +62,6 @@ export class MainScene2v2 extends Scene {
 
         // Test Deploy Listener (4 owners support)
         this._onTestDeploy = (data) => {
-            console.log(`[MainScene2v2] Test Deploy:`, data);
             this.gameManager.deployCard(data.cardId, { x: data.x, y: data.y }, data.ownerId);
         };
         EventBus.on(EVENTS.TEST_DEPLOY, this._onTestDeploy);

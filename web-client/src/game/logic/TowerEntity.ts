@@ -55,8 +55,6 @@ export class TowerEntity extends Entity {
 
     private attack(target: Entity) {
         // Deal damage
-        console.log(`[${Date.now()}] Tower ${this.id} attacks ${target.id} for ${this.damage} damage`);
         target.takeDamage(this.damage);
-        console.log(`[${Date.now()}] Target ${target.id} HP: ${target.health}`);
     }
 }

@@ -83,7 +83,7 @@ export const TroopTestPage = () => {
                         TEST MODE: Unlimited Elixir & High HP Towers
                     </div>
                     <ElixirBar />
-                    <CardDeck />
+                    <CardDeck cards={[]} />
                 </div>
             </div>
 

@@ -8,7 +8,6 @@ import { Tower } from '../entities/Tower';
 import { TowerEntity } from '../logic/TowerEntity';
 import { Unit } from '../entities/Unit';
 import { ArenaConfig } from '../config/ArenaConfig';
-import { CARD_NAME_TO_ID } from '../config/CardConfig';
 
 export class MainScene extends Scene {
     private gameManager!: GameManager;
@@ -58,6 +57,7 @@ export class MainScene extends Scene {
         }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(1000).setAlpha(0);
 
         const showDebug = (msg: string) => {
+            if (!debugText || !debugText.active) return;
             debugText.setText(msg).setAlpha(1);
             this.tweens.add({ targets: debugText, alpha: 0, duration: 2000, delay: 1000 });
         };
@@ -111,9 +111,55 @@ export class MainScene extends Scene {
         this._onOpponentDisconnected = () => { showDebug('Opponent disconnected!'); };
         EventBus.on('opponent-disconnected', this._onOpponentDisconnected);
 
+        // ── Continuous Sync (Host-based) ──────────────────────────────────────
+        const gameData = this.registry.get('data');
+        const isHost = gameData?.role === 'player1';
+
+        // Listener for incoming syncs (for non-hosts)
+        const onSyncUnits = (data: any) => {
+            if (!isHost) {
+                this.gameManager.syncFromHost(data, isHost);
+            }
+        };
+        EventBus.on('sync-units', onSyncUnits);
+
+        // Broadcaster for host
+        if (isHost) {
+            this.time.addEvent({
+                delay: 500, // Every 500ms
+                loop: true,
+                callback: () => {
+                    const entities = this.gameManager.getEntities()
+                        .filter(e => e instanceof Troop || e instanceof TowerEntity)
+                        .map(e => ({
+                            id: e.id,
+                            x: e.x,
+                            y: e.y,
+                            health: e.health,
+                            ownerId: e.ownerId,
+                            state: (e as any).state,
+                            targetId: (e as any).target?.id
+                        }));
+
+                    if (entities.length > 0) {
+                        const socket = this.registry.get('socket');
+                        socket?.emit('sync-units', {
+                            units: entities,
+                            playerCrowns: this.gameManager.playerCrowns,
+                            opponentCrowns: this.gameManager.opponentCrowns,
+                            playerTowersDestroyed: this.gameManager.playerTowersDestroyed,
+                            opponentTowersDestroyed: this.gameManager.opponentTowersDestroyed,
+                            gameEnded: this.gameManager.gameEnded,
+                            winner: this.gameManager.winner,
+                            victoryReason: this.gameManager.victoryReason
+                        });
+                    }
+                }
+            });
+        }
+
         // ── EventBus: test deploy (from TestArena devtools) ──────────────────
         this._onTestDeploy = (data) => {
-            console.log(`[MainScene] Processing test deploy:`, data);
             // World coordinates are already precise from TestArena map click/input
             this.gameManager.deployCard(data.cardId, { x: data.x, y: data.y }, data.ownerId);
         };
@@ -134,9 +180,9 @@ export class MainScene extends Scene {
         EventBus.once(EVENTS.BATTLE_STARTED, removeWaiting);
 
         // ── Test-mode auto-start ─────────────────────────────────────────────
-        if (this.isTestMode) {
+        if (this.isTestMode || this.gameManager.gameStarted) {
             this.input.enabled = true;
-            this.gameManager.startGame();
+            this.gameManager.startGame(); // Ensure it's started in GM
             waitingText.destroy();
         }
 
@@ -154,26 +200,30 @@ export class MainScene extends Scene {
 
             if (!this.selectedCardId) return;
 
+            const [assetId, deckIdxStr] = (this.selectedCardId || "").split(':');
+            const deckIdx = parseInt(deckIdxStr || '0');
+
             const entity = this.gameManager.deployCard(
-                this.selectedCardId,
+                assetId,
                 { x: worldPoint.x, y: worldPoint.y },
                 'player'
             );
 
             if (entity) {
-                showDebug(`${this.selectedCardId} deployed`);
+                showDebug(`${assetId} deployed`);
                 EventBus.emit(EVENTS.CARD_PLAYED, this.selectedCardId);
 
                 // ── Single path for troop relay + on-chain submission ─────────
                 // Request on-chain submission via EventBus → GameWrapper (which also relays socket)
                 EventBus.emit(EVENTS.DEPLOY_TROOP_BLOCKCHAIN, {
-                    cardIdx: CARD_NAME_TO_ID[this.selectedCardId] ?? 0,
-                    cardId: this.selectedCardId,
+                    cardIdx: deckIdx,
+                    cardId: assetId,
                     x: Math.floor(worldPoint.x),
                     y: Math.floor(worldPoint.y),
                 });
             } else {
                 showDebug('Not enough elixir');
+                EventBus.emit(EVENTS.ELIXIR_INSUFFICIENT);
             }
         });
     }
@@ -261,13 +311,37 @@ export class MainScene extends Scene {
         id: string, x: number, y: number, texture: string,
         isKing: boolean, ownerId: string, pixelScale: number
     ): TowerEntity {
+        const gameData = this.registry.get('data');
+        const isHost = gameData?.role === 'player1';
+        const mapWidth = ArenaConfig.COLS * ArenaConfig.TILE_SIZE;
+        const mapHeight = ArenaConfig.ROWS * ArenaConfig.TILE_SIZE;
+
+        let finalX = x;
+        let finalY = y;
+        let finalOwner = ownerId;
+        let finalTexture = texture;
+
+        if (!isHost) {
+            // Mirror for Player 2 POV
+            finalX = mapWidth - x;
+            finalY = mapHeight - y;
+            finalOwner = ownerId === 'player' ? 'opponent' : 'player';
+
+            // Texture swap: Red <-> Blue to maintain team-color POV
+            if (finalTexture.includes('blue')) {
+                finalTexture = finalTexture.replace('blue', 'red');
+            } else if (finalTexture.includes('red')) {
+                finalTexture = finalTexture.replace('red', 'blue');
+            }
+        }
+
         const maxHealth = isKing ? 4000 : 2500;
-        const towerSprite = new Tower(this, x, y, texture, maxHealth);
+        const towerSprite = new Tower(this, finalX, finalY, finalTexture, maxHealth);
         towerSprite.setScale(pixelScale);
         this.towerSprites.set(id, towerSprite);
 
         const radius = isKing ? 33 : 22;
-        const towerEntity = new TowerEntity(id, x, y, ownerId, isKing, radius);
+        const towerEntity = new TowerEntity(id, finalX, finalY, finalOwner, isKing, radius);
         this.gameManager.addEntity(towerEntity);
         return towerEntity;
     }

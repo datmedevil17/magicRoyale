@@ -91,7 +91,6 @@ export class Archer extends Troop {
     }
 
     private attack(target: Entity) {
-        console.log(`[${Date.now()}] Archer ${this.id} attacks ${target.id} for ${this.damage} damage`);
         target.takeDamage(this.damage);
     }
 }

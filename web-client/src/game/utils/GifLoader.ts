@@ -61,7 +61,6 @@ export const loadGif = async (scene: Phaser.Scene, key: string, url: string, opt
                 const animDuration = (frames.length / frameRate) * 1000;
                 if (options.hitSpeed > animDuration) {
                     repeatDelay = options.hitSpeed - animDuration;
-                    // console.log(`[GifLoader] Adding pause of ${Math.round(repeatDelay)}ms to ${key}`);
                 }
             }
 
@@ -74,10 +73,8 @@ export const loadGif = async (scene: Phaser.Scene, key: string, url: string, opt
             });
         }
 
-        console.log(`Loaded GIF animation: ${key} with ${frames.length} frames`);
         return true;
     } catch (e) {
-        console.error(`Failed to load GIF ${key} from ${url}`, e);
         return false;
     }
 };

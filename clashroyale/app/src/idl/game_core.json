@@ -1,78 +1,14 @@
-/**
- * Program IDL in camelCase format in order to be used in JS/TS.
- *
- * Note that this is only a type helper and is not the actual IDL. The original
- * IDL can be found at `target/idl/game_core.json`.
- */
-export type GameCore = {
-  "address": "EYYaUKGcq2epXWsXk52P7dEXpDMZQpGdkSXVDypzDhYm",
+{
+  "address": "DNsfEAur359Xv18MT1nxfEqh3YGZmhwfnm454wmYkVE1",
   "metadata": {
-    "name": "gameCore",
+    "name": "game_core",
     "version": "0.1.0",
     "spec": "0.1.0",
     "description": "Created with Anchor"
   },
   "instructions": [
     {
-      "name": "commitBattle",
-      "discriminator": [
-        219,
-        116,
-        150,
-        30,
-        121,
-        105,
-        195,
-        23
-      ],
-      "accounts": [
-        {
-          "name": "payer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "battle",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  98,
-                  97,
-                  116,
-                  116,
-                  108,
-                  101
-                ]
-              },
-              {
-                "kind": "arg",
-                "path": "gameId"
-              }
-            ]
-          }
-        },
-        {
-          "name": "magicProgram",
-          "address": "Magic11111111111111111111111111111111111111"
-        },
-        {
-          "name": "magicContext",
-          "writable": true,
-          "address": "MagicContext1111111111111111111111111111111"
-        }
-      ],
-      "args": [
-        {
-          "name": "gameId",
-          "type": "u64"
-        }
-      ]
-    },
-    {
-      "name": "createClan",
+      "name": "create_clan",
       "discriminator": [
         89,
         254,
@@ -106,7 +42,7 @@ export type GameCore = {
           }
         },
         {
-          "name": "clanMember",
+          "name": "clan_member",
           "writable": true,
           "pda": {
             "seeds": [
@@ -143,7 +79,7 @@ export type GameCore = {
           "signer": true
         },
         {
-          "name": "systemProgram",
+          "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
       ],
@@ -155,7 +91,7 @@ export type GameCore = {
       ]
     },
     {
-      "name": "createGame",
+      "name": "create_game",
       "discriminator": [
         124,
         69,
@@ -185,13 +121,13 @@ export type GameCore = {
               },
               {
                 "kind": "arg",
-                "path": "gameId"
+                "path": "game_id"
               }
             ]
           }
         },
         {
-          "name": "playerOneProfile",
+          "name": "player_one_profile",
           "pda": {
             "seeds": [
               {
@@ -207,30 +143,30 @@ export type GameCore = {
               },
               {
                 "kind": "account",
-                "path": "playerOne"
+                "path": "player_one"
               }
             ]
           }
         },
         {
-          "name": "playerOne",
+          "name": "player_one",
           "writable": true,
           "signer": true
         },
         {
-          "name": "systemProgram",
+          "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
         {
-          "name": "gameId",
+          "name": "game_id",
           "type": "u64"
         }
       ]
     },
     {
-      "name": "delegateGame",
+      "name": "delegate_game",
       "discriminator": [
         116,
         183,
@@ -247,7 +183,7 @@ export type GameCore = {
           "signer": true
         },
         {
-          "name": "bufferPda",
+          "name": "buffer_pda",
           "writable": true,
           "pda": {
             "seeds": [
@@ -270,44 +206,44 @@ export type GameCore = {
             "program": {
               "kind": "const",
               "value": [
-                201,
-                60,
-                163,
-                178,
-                222,
-                211,
-                170,
-                45,
-                63,
-                127,
                 183,
-                27,
-                119,
-                174,
-                113,
-                4,
-                116,
-                150,
-                226,
-                136,
-                32,
-                37,
-                213,
-                121,
-                165,
-                196,
-                103,
-                129,
-                155,
-                52,
+                230,
+                184,
+                115,
+                252,
+                219,
+                130,
+                75,
+                127,
                 15,
-                162
+                139,
+                9,
+                202,
+                229,
+                242,
+                34,
+                207,
+                66,
+                59,
+                252,
+                127,
+                182,
+                211,
+                145,
+                45,
+                39,
+                236,
+                72,
+                232,
+                89,
+                255,
+                10
               ]
             }
           }
         },
         {
-          "name": "delegationRecordPda",
+          "name": "delegation_record_pda",
           "writable": true,
           "pda": {
             "seeds": [
@@ -333,12 +269,12 @@ export type GameCore = {
             ],
             "program": {
               "kind": "account",
-              "path": "delegationProgram"
+              "path": "delegation_program"
             }
           }
         },
         {
-          "name": "delegationMetadataPda",
+          "name": "delegation_metadata_pda",
           "writable": true,
           "pda": {
             "seeds": [
@@ -373,7 +309,7 @@ export type GameCore = {
             ],
             "program": {
               "kind": "account",
-              "path": "delegationProgram"
+              "path": "delegation_program"
             }
           }
         },
@@ -395,33 +331,33 @@ export type GameCore = {
               },
               {
                 "kind": "arg",
-                "path": "gameId"
+                "path": "game_id"
               }
             ]
           }
         },
         {
-          "name": "ownerProgram",
-          "address": "EYYaUKGcq2epXWsXk52P7dEXpDMZQpGdkSXVDypzDhYm"
+          "name": "owner_program",
+          "address": "DNsfEAur359Xv18MT1nxfEqh3YGZmhwfnm454wmYkVE1"
         },
         {
-          "name": "delegationProgram",
+          "name": "delegation_program",
           "address": "DELeGGvXpWV2fqJUhqcF5ZSYMS4JTLjteaAMARRSaeSh"
         },
         {
-          "name": "systemProgram",
+          "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
         {
-          "name": "gameId",
+          "name": "game_id",
           "type": "u64"
         }
       ]
     },
     {
-      "name": "deployTroop",
+      "name": "deploy_troop",
       "discriminator": [
         158,
         193,
@@ -433,11 +369,6 @@ export type GameCore = {
         236
       ],
       "accounts": [
-        {
-          "name": "signer",
-          "writable": true,
-          "signer": true
-        },
         {
           "name": "battle",
           "writable": true,
@@ -456,13 +387,13 @@ export type GameCore = {
               },
               {
                 "kind": "arg",
-                "path": "gameId"
+                "path": "game_id"
               }
             ]
           }
         },
         {
-          "name": "playerProfile",
+          "name": "player_profile",
           "pda": {
             "seeds": [
               {
@@ -478,24 +409,28 @@ export type GameCore = {
               },
               {
                 "kind": "account",
-                "path": "player_profile.authority",
-                "account": "playerProfile"
+                "path": "signer"
               }
             ]
           }
         },
         {
-          "name": "sessionToken",
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "session_token",
           "optional": true
         }
       ],
       "args": [
         {
-          "name": "gameId",
+          "name": "game_id",
           "type": "u64"
         },
         {
-          "name": "cardIdx",
+          "name": "card_idx",
           "type": "u8"
         },
         {
@@ -509,7 +444,7 @@ export type GameCore = {
       ]
     },
     {
-      "name": "donateCards",
+      "name": "donate_cards",
       "discriminator": [
         89,
         151,
@@ -526,7 +461,7 @@ export type GameCore = {
           "writable": true
         },
         {
-          "name": "donorProfile",
+          "name": "donor_profile",
           "writable": true,
           "pda": {
             "seeds": [
@@ -549,7 +484,7 @@ export type GameCore = {
           }
         },
         {
-          "name": "donorMember",
+          "name": "donor_member",
           "pda": {
             "seeds": [
               {
@@ -580,7 +515,7 @@ export type GameCore = {
           }
         },
         {
-          "name": "requesterProfile",
+          "name": "requester_profile",
           "writable": true
         },
         {
@@ -607,7 +542,7 @@ export type GameCore = {
               {
                 "kind": "account",
                 "path": "requester_profile.authority",
-                "account": "playerProfile"
+                "account": "PlayerProfile"
               }
             ]
           }
@@ -617,11 +552,11 @@ export type GameCore = {
           "writable": true
         },
         {
-          "name": "donorTokenAccount",
+          "name": "donor_token_account",
           "writable": true
         },
         {
-          "name": "mintAuthority",
+          "name": "mint_authority",
           "pda": {
             "seeds": [
               {
@@ -647,7 +582,7 @@ export type GameCore = {
           }
         },
         {
-          "name": "tokenProgram",
+          "name": "token_program",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         },
         {
@@ -659,7 +594,7 @@ export type GameCore = {
       "args": []
     },
     {
-      "name": "endGame",
+      "name": "end_game",
       "discriminator": [
         224,
         135,
@@ -672,7 +607,7 @@ export type GameCore = {
       ],
       "accounts": [
         {
-          "name": "signer",
+          "name": "payer",
           "writable": true,
           "signer": true
         },
@@ -694,52 +629,34 @@ export type GameCore = {
               },
               {
                 "kind": "arg",
-                "path": "gameId"
+                "path": "game_id"
               }
             ]
           }
         },
         {
-          "name": "playerProfile",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  108,
-                  97,
-                  121,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "player_profile.authority",
-                "account": "playerProfile"
-              }
-            ]
-          }
+          "name": "magic_program",
+          "address": "Magic11111111111111111111111111111111111111"
         },
         {
-          "name": "sessionToken",
-          "optional": true
+          "name": "magic_context",
+          "writable": true,
+          "address": "MagicContext1111111111111111111111111111111"
         }
       ],
       "args": [
         {
-          "name": "gameId",
+          "name": "game_id",
           "type": "u64"
         },
         {
-          "name": "winnerIdx",
-          "type": "u8"
+          "name": "is_timeout",
+          "type": "bool"
         }
       ]
     },
     {
-      "name": "exportNft",
+      "name": "export_nft",
       "discriminator": [
         158,
         245,
@@ -870,7 +787,7 @@ export type GameCore = {
           }
         },
         {
-          "name": "cardMintState",
+          "name": "card_mint_state",
           "writable": true,
           "pda": {
             "seeds": [
@@ -900,7 +817,7 @@ export type GameCore = {
           "writable": true
         },
         {
-          "name": "nftAuthority",
+          "name": "nft_authority",
           "pda": {
             "seeds": [
               {
@@ -925,18 +842,18 @@ export type GameCore = {
           }
         },
         {
-          "name": "tokenProgram",
+          "name": "token_program",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         },
         {
-          "name": "associatedTokenProgram",
+          "name": "associated_token_program",
           "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
         },
         {
-          "name": "metadataProgram"
+          "name": "metadata_program"
         },
         {
-          "name": "systemProgram",
+          "name": "system_program",
           "address": "11111111111111111111111111111111"
         },
         {
@@ -951,13 +868,13 @@ export type GameCore = {
       ],
       "args": [
         {
-          "name": "cardId",
+          "name": "card_id",
           "type": "u8"
         }
       ]
     },
     {
-      "name": "exportResource",
+      "name": "export_resource",
       "discriminator": [
         141,
         59,
@@ -993,7 +910,7 @@ export type GameCore = {
           }
         },
         {
-          "name": "resourceMint",
+          "name": "resource_mint",
           "writable": true
         },
         {
@@ -1001,7 +918,7 @@ export type GameCore = {
           "writable": true
         },
         {
-          "name": "resourceAuthority",
+          "name": "resource_authority",
           "pda": {
             "seeds": [
               {
@@ -1031,7 +948,7 @@ export type GameCore = {
           }
         },
         {
-          "name": "tokenProgram",
+          "name": "token_program",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         },
         {
@@ -1042,7 +959,7 @@ export type GameCore = {
       ],
       "args": [
         {
-          "name": "cardId",
+          "name": "card_id",
           "type": "u8"
         },
         {
@@ -1052,7 +969,7 @@ export type GameCore = {
       ]
     },
     {
-      "name": "importResource",
+      "name": "import_resource",
       "discriminator": [
         215,
         192,
@@ -1088,7 +1005,7 @@ export type GameCore = {
           }
         },
         {
-          "name": "resourceMint",
+          "name": "resource_mint",
           "writable": true
         },
         {
@@ -1096,7 +1013,7 @@ export type GameCore = {
           "writable": true
         },
         {
-          "name": "tokenProgram",
+          "name": "token_program",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         },
         {
@@ -1107,7 +1024,7 @@ export type GameCore = {
       ],
       "args": [
         {
-          "name": "cardId",
+          "name": "card_id",
           "type": "u8"
         },
         {
@@ -1117,7 +1034,7 @@ export type GameCore = {
       ]
     },
     {
-      "name": "initializePlayer",
+      "name": "initialize_player",
       "discriminator": [
         79,
         249,
@@ -1158,7 +1075,7 @@ export type GameCore = {
           "signer": true
         },
         {
-          "name": "systemProgram",
+          "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
       ],
@@ -1170,7 +1087,7 @@ export type GameCore = {
       ]
     },
     {
-      "name": "joinClan",
+      "name": "join_clan",
       "discriminator": [
         218,
         113,
@@ -1187,7 +1104,7 @@ export type GameCore = {
           "writable": true
         },
         {
-          "name": "clanMember",
+          "name": "clan_member",
           "writable": true,
           "pda": {
             "seeds": [
@@ -1224,14 +1141,14 @@ export type GameCore = {
           "signer": true
         },
         {
-          "name": "systemProgram",
+          "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
       ],
       "args": []
     },
     {
-      "name": "joinGame",
+      "name": "join_game",
       "discriminator": [
         107,
         112,
@@ -1261,13 +1178,13 @@ export type GameCore = {
               },
               {
                 "kind": "arg",
-                "path": "gameId"
+                "path": "game_id"
               }
             ]
           }
         },
         {
-          "name": "playerTwoProfile",
+          "name": "player_two_profile",
           "pda": {
             "seeds": [
               {
@@ -1283,26 +1200,26 @@ export type GameCore = {
               },
               {
                 "kind": "account",
-                "path": "playerTwo"
+                "path": "player_two"
               }
             ]
           }
         },
         {
-          "name": "playerTwo",
+          "name": "player_two",
           "writable": true,
           "signer": true
         }
       ],
       "args": [
         {
-          "name": "gameId",
+          "name": "game_id",
           "type": "u64"
         }
       ]
     },
     {
-      "name": "mintTrophies",
+      "name": "mint_trophies",
       "discriminator": [
         43,
         167,
@@ -1332,7 +1249,7 @@ export type GameCore = {
               },
               {
                 "kind": "arg",
-                "path": "gameId"
+                "path": "game_id"
               }
             ]
           }
@@ -1369,7 +1286,7 @@ export type GameCore = {
           "writable": true
         },
         {
-          "name": "mintAuthority",
+          "name": "mint_authority",
           "pda": {
             "seeds": [
               {
@@ -1395,7 +1312,7 @@ export type GameCore = {
           }
         },
         {
-          "name": "tokenProgram",
+          "name": "token_program",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         },
         {
@@ -1406,13 +1323,13 @@ export type GameCore = {
       ],
       "args": [
         {
-          "name": "gameId",
+          "name": "game_id",
           "type": "u64"
         }
       ]
     },
     {
-      "name": "processUndelegation",
+      "name": "process_undelegation",
       "discriminator": [
         196,
         28,
@@ -1425,7 +1342,7 @@ export type GameCore = {
       ],
       "accounts": [
         {
-          "name": "baseAccount",
+          "name": "base_account",
           "writable": true
         },
         {
@@ -1436,12 +1353,12 @@ export type GameCore = {
           "writable": true
         },
         {
-          "name": "systemProgram"
+          "name": "system_program"
         }
       ],
       "args": [
         {
-          "name": "accountSeeds",
+          "name": "account_seeds",
           "type": {
             "vec": "bytes"
           }
@@ -1449,7 +1366,7 @@ export type GameCore = {
       ]
     },
     {
-      "name": "requestCards",
+      "name": "request_cards",
       "discriminator": [
         7,
         238,
@@ -1465,7 +1382,7 @@ export type GameCore = {
           "name": "clan"
         },
         {
-          "name": "clanMember",
+          "name": "clan_member",
           "writable": true,
           "pda": {
             "seeds": [
@@ -1530,19 +1447,19 @@ export type GameCore = {
           "signer": true
         },
         {
-          "name": "systemProgram",
+          "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
         {
-          "name": "cardId",
+          "name": "card_id",
           "type": "u8"
         }
       ]
     },
     {
-      "name": "setDeck",
+      "name": "set_deck",
       "discriminator": [
         27,
         187,
@@ -1582,11 +1499,11 @@ export type GameCore = {
           "writable": true
         },
         {
-          "name": "userTokenAccount",
+          "name": "user_token_account",
           "writable": true
         },
         {
-          "name": "tokenProgram",
+          "name": "token_program",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         },
         {
@@ -1596,7 +1513,7 @@ export type GameCore = {
       ],
       "args": [
         {
-          "name": "newDeck",
+          "name": "new_deck",
           "type": {
             "array": [
               "u8",
@@ -1607,7 +1524,7 @@ export type GameCore = {
       ]
     },
     {
-      "name": "unlockCard",
+      "name": "unlock_card",
       "discriminator": [
         50,
         235,
@@ -1647,11 +1564,11 @@ export type GameCore = {
           "writable": true
         },
         {
-          "name": "userTokenAccount",
+          "name": "user_token_account",
           "writable": true
         },
         {
-          "name": "tokenProgram",
+          "name": "token_program",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         },
         {
@@ -1661,13 +1578,13 @@ export type GameCore = {
       ],
       "args": [
         {
-          "name": "cardId",
+          "name": "card_id",
           "type": "u8"
         }
       ]
     },
     {
-      "name": "upgradeCard",
+      "name": "upgrade_card",
       "discriminator": [
         192,
         16,
@@ -1707,11 +1624,11 @@ export type GameCore = {
           "writable": true
         },
         {
-          "name": "userTokenAccount",
+          "name": "user_token_account",
           "writable": true
         },
         {
-          "name": "tokenProgram",
+          "name": "token_program",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         },
         {
@@ -1721,7 +1638,7 @@ export type GameCore = {
       ],
       "args": [
         {
-          "name": "cardId",
+          "name": "card_id",
           "type": "u8"
         }
       ]
@@ -1729,7 +1646,7 @@ export type GameCore = {
   ],
   "accounts": [
     {
-      "name": "battleState",
+      "name": "BattleState",
       "discriminator": [
         106,
         85,
@@ -1742,7 +1659,7 @@ export type GameCore = {
       ]
     },
     {
-      "name": "cardMintState",
+      "name": "CardMintState",
       "discriminator": [
         251,
         17,
@@ -1755,7 +1672,7 @@ export type GameCore = {
       ]
     },
     {
-      "name": "clan",
+      "name": "Clan",
       "discriminator": [
         179,
         33,
@@ -1768,7 +1685,7 @@ export type GameCore = {
       ]
     },
     {
-      "name": "clanMember",
+      "name": "ClanMember",
       "discriminator": [
         40,
         179,
@@ -1781,7 +1698,7 @@ export type GameCore = {
       ]
     },
     {
-      "name": "donationRequest",
+      "name": "DonationRequest",
       "discriminator": [
         93,
         127,
@@ -1794,7 +1711,7 @@ export type GameCore = {
       ]
     },
     {
-      "name": "playerProfile",
+      "name": "PlayerProfile",
       "discriminator": [
         82,
         226,
@@ -1807,7 +1724,7 @@ export type GameCore = {
       ]
     },
     {
-      "name": "sessionToken",
+      "name": "SessionToken",
       "discriminator": [
         233,
         4,
@@ -1823,163 +1740,163 @@ export type GameCore = {
   "errors": [
     {
       "code": 6000,
-      "name": "notEnoughTokens",
+      "name": "NotEnoughTokens",
       "msg": "Not enough currency"
     },
     {
       "code": 6001,
-      "name": "cardAlreadyUnlocked",
+      "name": "CardAlreadyUnlocked",
       "msg": "Card already unlocked"
     },
     {
       "code": 6002,
-      "name": "inventoryFull",
+      "name": "InventoryFull",
       "msg": "Inventory full"
     },
     {
       "code": 6003,
-      "name": "cardNotOwned",
+      "name": "CardNotOwned",
       "msg": "Card not owned"
     },
     {
       "code": 6004,
-      "name": "invalidCardIdx",
+      "name": "InvalidCardIdx",
       "msg": "Invalid card index"
     },
     {
       "code": 6005,
-      "name": "emptyCardSlot",
+      "name": "EmptyCardSlot",
       "msg": "Empty card slot"
     },
     {
       "code": 6006,
-      "name": "invalidCardId",
+      "name": "InvalidCardId",
       "msg": "Invalid card ID"
     },
     {
       "code": 6007,
-      "name": "notEnoughElixir",
+      "name": "NotEnoughElixir",
       "msg": "Not enough elixir"
     },
     {
       "code": 6008,
-      "name": "tooManyEntities",
+      "name": "TooManyEntities",
       "msg": "Too many entities"
     },
     {
       "code": 6009,
-      "name": "gameNotFinished",
+      "name": "GameNotFinished",
       "msg": "Game not finished"
     },
     {
       "code": 6010,
-      "name": "notWinner",
+      "name": "NotWinner",
       "msg": "Not winner"
     },
     {
       "code": 6011,
-      "name": "alreadyClaimed",
+      "name": "AlreadyClaimed",
       "msg": "Already claimed"
     },
     {
       "code": 6012,
-      "name": "invalidAuth",
+      "name": "InvalidAuth",
       "msg": "Invalid auth"
     },
     {
       "code": 6013,
-      "name": "maxLevelReached",
+      "name": "MaxLevelReached",
       "msg": "Max level reached"
     },
     {
       "code": 6014,
-      "name": "notEnoughCards",
+      "name": "NotEnoughCards",
       "msg": "Not enough cards"
     },
     {
       "code": 6015,
-      "name": "clanFull",
+      "name": "ClanFull",
       "msg": "Clan full"
     },
     {
       "code": 6016,
-      "name": "alreadyInClan",
+      "name": "AlreadyInClan",
       "msg": "Already in clan"
     },
     {
       "code": 6017,
-      "name": "clanNameTooLong",
+      "name": "ClanNameTooLong",
       "msg": "Clan name too long"
     },
     {
       "code": 6018,
-      "name": "requestCooldown",
+      "name": "RequestCooldown",
       "msg": "Request cooldown active"
     },
     {
       "code": 6019,
-      "name": "requestNotActive",
+      "name": "RequestNotActive",
       "msg": "Request not active"
     },
     {
       "code": 6020,
-      "name": "requestFull",
+      "name": "RequestFull",
       "msg": "Request full"
     },
     {
       "code": 6021,
-      "name": "cannotDonateToSelf",
+      "name": "CannotDonateToSelf",
       "msg": "Cannot donate to self"
     },
     {
       "code": 6022,
-      "name": "invalidPlayer",
+      "name": "InvalidPlayer",
       "msg": "Invalid player"
     },
     {
       "code": 6023,
-      "name": "unauthorized",
-      "msg": "unauthorized"
+      "name": "Unauthorized",
+      "msg": "Unauthorized"
     },
     {
       "code": 6024,
-      "name": "gameAlreadyFull",
+      "name": "GameAlreadyFull",
       "msg": "Game is already full"
     },
     {
       "code": 6025,
-      "name": "gameNotActive",
+      "name": "GameNotActive",
       "msg": "Game is not active"
     },
     {
       "code": 6026,
-      "name": "gameNotWaiting",
+      "name": "GameNotWaiting",
       "msg": "Game is not in waiting state"
     },
     {
       "code": 6027,
-      "name": "notAPlayer",
+      "name": "NotAPlayer",
       "msg": "You are not a player in this game"
     },
     {
       "code": 6028,
-      "name": "winnerNotDetermined",
+      "name": "WinnerNotDetermined",
       "msg": "Winner has not been determined yet"
     },
     {
       "code": 6029,
-      "name": "alreadyMinted",
+      "name": "AlreadyMinted",
       "msg": "Trophies already minted for this game"
     }
   ],
   "types": [
     {
-      "name": "battleState",
+      "name": "BattleState",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "gameId",
+            "name": "game_id",
             "type": "u64"
           },
           {
@@ -1995,12 +1912,12 @@ export type GameCore = {
             "name": "status",
             "type": {
               "defined": {
-                "name": "gameStatus"
+                "name": "GameStatus"
               }
             }
           },
           {
-            "name": "tickCount",
+            "name": "tick_count",
             "type": "u64"
           },
           {
@@ -2018,7 +1935,7 @@ export type GameCore = {
               "array": [
                 {
                   "defined": {
-                    "name": "tower"
+                    "name": "Tower"
                   }
                 },
                 6
@@ -2030,7 +1947,7 @@ export type GameCore = {
             "type": {
               "vec": {
                 "defined": {
-                  "name": "entity"
+                  "name": "Entity"
                 }
               }
             }
@@ -2042,11 +1959,11 @@ export type GameCore = {
             }
           },
           {
-            "name": "trophiesMinted",
+            "name": "trophies_minted",
             "type": "bool"
           },
           {
-            "name": "towersDestroyed",
+            "name": "towers_destroyed",
             "docs": [
               "How many of the enemy's towers each player has destroyed (princess only)"
             ],
@@ -2058,7 +1975,7 @@ export type GameCore = {
             }
           },
           {
-            "name": "damageDealt",
+            "name": "damage_dealt",
             "docs": [
               "Total HP damage dealt to enemy towers by each player"
             ],
@@ -2068,21 +1985,17 @@ export type GameCore = {
                 2
               ]
             }
-          },
-          {
-            "name": "lastUpdateTime",
-            "type": "i64"
           }
         ]
       }
     },
     {
-      "name": "cardMintState",
+      "name": "CardMintState",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "cardId",
+            "name": "card_id",
             "type": "u8"
           },
           {
@@ -2101,12 +2014,12 @@ export type GameCore = {
       }
     },
     {
-      "name": "cardProgress",
+      "name": "CardProgress",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "cardId",
+            "name": "card_id",
             "type": "u8"
           },
           {
@@ -2125,7 +2038,7 @@ export type GameCore = {
       }
     },
     {
-      "name": "clan",
+      "name": "Clan",
       "type": {
         "kind": "struct",
         "fields": [
@@ -2138,11 +2051,11 @@ export type GameCore = {
             "type": "pubkey"
           },
           {
-            "name": "memberCount",
+            "name": "member_count",
             "type": "u8"
           },
           {
-            "name": "minTrophies",
+            "name": "min_trophies",
             "type": "u32"
           },
           {
@@ -2153,7 +2066,7 @@ export type GameCore = {
       }
     },
     {
-      "name": "clanMember",
+      "name": "ClanMember",
       "type": {
         "kind": "struct",
         "fields": [
@@ -2169,16 +2082,16 @@ export type GameCore = {
             "name": "role",
             "type": {
               "defined": {
-                "name": "clanRole"
+                "name": "ClanRole"
               }
             }
           },
           {
-            "name": "lastRequestTime",
+            "name": "last_request_time",
             "type": "i64"
           },
           {
-            "name": "donationsGiven",
+            "name": "donations_given",
             "type": "u32"
           },
           {
@@ -2189,27 +2102,27 @@ export type GameCore = {
       }
     },
     {
-      "name": "clanRole",
+      "name": "ClanRole",
       "type": {
         "kind": "enum",
         "variants": [
           {
-            "name": "member"
+            "name": "Member"
           },
           {
-            "name": "elder"
+            "name": "Elder"
           },
           {
-            "name": "coLeader"
+            "name": "CoLeader"
           },
           {
-            "name": "leader"
+            "name": "Leader"
           }
         ]
       }
     },
     {
-      "name": "donationRequest",
+      "name": "DonationRequest",
       "type": {
         "kind": "struct",
         "fields": [
@@ -2222,19 +2135,19 @@ export type GameCore = {
             "type": "pubkey"
           },
           {
-            "name": "cardId",
+            "name": "card_id",
             "type": "u8"
           },
           {
-            "name": "amountNeeded",
+            "name": "amount_needed",
             "type": "u8"
           },
           {
-            "name": "amountFilled",
+            "name": "amount_filled",
             "type": "u8"
           },
           {
-            "name": "isActive",
+            "name": "is_active",
             "type": "bool"
           },
           {
@@ -2245,7 +2158,7 @@ export type GameCore = {
       }
     },
     {
-      "name": "entity",
+      "name": "Entity",
       "type": {
         "kind": "struct",
         "fields": [
@@ -2254,11 +2167,11 @@ export type GameCore = {
             "type": "u32"
           },
           {
-            "name": "ownerIdx",
+            "name": "owner_idx",
             "type": "u8"
           },
           {
-            "name": "cardId",
+            "name": "card_id",
             "type": "u8"
           },
           {
@@ -2281,12 +2194,12 @@ export type GameCore = {
             "name": "state",
             "type": {
               "defined": {
-                "name": "entityState"
+                "name": "EntityState"
               }
             }
           },
           {
-            "name": "targetId",
+            "name": "target_id",
             "type": {
               "option": "u32"
             }
@@ -2295,44 +2208,44 @@ export type GameCore = {
       }
     },
     {
-      "name": "entityState",
+      "name": "EntityState",
       "type": {
         "kind": "enum",
         "variants": [
           {
-            "name": "idle"
+            "name": "Idle"
           },
           {
-            "name": "moving"
+            "name": "Moving"
           },
           {
-            "name": "attacking"
+            "name": "Attacking"
           },
           {
-            "name": "dead"
+            "name": "Dead"
           }
         ]
       }
     },
     {
-      "name": "gameStatus",
+      "name": "GameStatus",
       "type": {
         "kind": "enum",
         "variants": [
           {
-            "name": "waiting"
+            "name": "Waiting"
           },
           {
-            "name": "active"
+            "name": "Active"
           },
           {
-            "name": "completed"
+            "name": "Completed"
           }
         ]
       }
     },
     {
-      "name": "playerProfile",
+      "name": "PlayerProfile",
       "type": {
         "kind": "struct",
         "fields": [
@@ -2358,7 +2271,7 @@ export type GameCore = {
             "type": {
               "vec": {
                 "defined": {
-                  "name": "cardProgress"
+                  "name": "CardProgress"
                 }
               }
             }
@@ -2375,7 +2288,7 @@ export type GameCore = {
       }
     },
     {
-      "name": "sessionToken",
+      "name": "SessionToken",
       "type": {
         "kind": "struct",
         "fields": [
@@ -2384,22 +2297,22 @@ export type GameCore = {
             "type": "pubkey"
           },
           {
-            "name": "targetProgram",
+            "name": "target_program",
             "type": "pubkey"
           },
           {
-            "name": "sessionSigner",
+            "name": "session_signer",
             "type": "pubkey"
           },
           {
-            "name": "validUntil",
+            "name": "valid_until",
             "type": "i64"
           }
         ]
       }
     },
     {
-      "name": "tower",
+      "name": "Tower",
       "type": {
         "kind": "struct",
         "fields": [
@@ -2416,15 +2329,15 @@ export type GameCore = {
             "type": "i32"
           },
           {
-            "name": "ownerIdx",
+            "name": "owner_idx",
             "type": "u8"
           },
           {
-            "name": "isKing",
+            "name": "is_king",
             "type": "bool"
           }
         ]
       }
     }
   ]
-};
+}

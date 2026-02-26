@@ -88,7 +88,6 @@ export class MiniPekka extends Troop {
     }
 
     private attack(target: Entity) {
-        console.log(`[${Date.now()}] MiniPEKKA ${this.id} attacks ${target.id} for ${this.damage}`);
         target.takeDamage(this.damage);
     }
 }
