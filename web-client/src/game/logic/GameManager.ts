@@ -52,14 +52,31 @@ export class GameManager {
         this.gameStarted = true;
     }
 
+    /**
+     * Called every server tick — syncs the authoritative elapsed time.
+     * This lets both clients share the same clock regardless of frame rate.
+     */
+    public setElapsedFromServer(serverElapsedMs: number) {
+        const drift = Math.abs(this.elapsedTime - serverElapsedMs);
+        if (drift > 500 && this.elapsedTime > 0) { // Log significant drift only after first sync
+            console.log(`[GameManager] Syncing clock. Drift was ${drift}ms. Local=${this.elapsedTime}, Server=${serverElapsedMs}`);
+        }
+        this.elapsedTime = serverElapsedMs;
+
+        if (this.elapsedTime >= this.matchDuration && !this.gameEnded) {
+            console.log(`[GameManager] Match duration reached (${this.elapsedTime}ms). Triggering endGame().`);
+            this.endGame();
+        }
+    }
+
     public update(time: number, delta: number) {
         if (!this.gameStarted || this.gameEnded) return;
 
-        // Track elapsed time
+        // elapsedTime is primarily driven by setElapsedFromServer().
+        // We also accumulate delta locally so the game ticks smoothly between
+        // server ticks (100ms gap). Note: endGame() via server tick is authoritative.
         this.elapsedTime += delta;
-
-        // Check for time-based victory
-        if (this.elapsedTime >= this.matchDuration) {
+        if (this.elapsedTime >= this.matchDuration && !this.gameEnded) {
             this.endGame();
             return;
         }
@@ -72,7 +89,10 @@ export class GameManager {
             if (this.elixir > this.maxElixir) this.elixir = this.maxElixir;
         }
 
-        // Update all entities
+        // Remove already-dead entities from last frame first
+        this.entities = this.entities.filter(e => e.health > 0 || e instanceof TowerEntity);
+
+        // Update all troop entities
         for (const entity of this.entities) {
             if (entity instanceof Troop) {
                 entity.updateBase(this.layout);
@@ -80,18 +100,10 @@ export class GameManager {
             }
         }
 
-        // Check for destroyed towers BEFORE removing dead entities
-        for (const entity of this.entities) {
-            if (entity instanceof TowerEntity && entity.health <= 0 && !entity.destroyed) {
-                entity.destroyed = true; // Mark as destroyed to avoid calling onTowerDestroyed multiple times
-                const isKing = entity.id.includes('King');
-                console.log(`Tower ${entity.id} destroyed! IsKing: ${isKing}, Owner: ${entity.ownerId}`);
-                this.onTowerDestroyed(isKing, entity.ownerId);
-            }
-        }
-
-        // Remove dead entities
-        this.entities = this.entities.filter(e => e.health > 0);
+        // Remove dead troops (TowerEntity destruction handled in MainScene)
+        this.entities = this.entities.filter(e =>
+            e instanceof TowerEntity || e.health > 0
+        );
     }
 
     public getEntities(): Entity[] {
@@ -146,6 +158,10 @@ export class GameManager {
         this.entities.push(entity);
     }
 
+    /**
+     * Called from MainScene when a tower sprite detects health <= 0.
+     * MainScene is the single owner of tower destruction detection.
+     */
     public onTowerDestroyed(isKing: boolean, ownerId: string) {
         if (this.gameEnded) return;
 

@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { Program, AnchorProvider, BN, setProvider } from "@coral-xyz/anchor";
-import { Connection, PublicKey, SystemProgram, Keypair } from "@solana/web3.js";
+import { Connection, PublicKey, SystemProgram } from "@solana/web3.js";
 import { type GameCore } from "../idl/game_core";
 import IDL from "../idl/game_core.json";
 import { useSessionKeyManager } from "@magicblock-labs/gum-react-sdk";
-import { TOKEN_PROGRAM_ID, createAssociatedTokenAccountInstruction, getAssociatedTokenAddressSync } from "@solana/spl-token";
+import {
+    TOKEN_PROGRAM_ID,
+    createAssociatedTokenAccountInstruction,
+    getAssociatedTokenAddressSync,
+} from "@solana/spl-token";
 import { MINT_CONFIG } from "../game/config/MintConfig";
 
 // Ephemeral Rollup endpoints - configurable via environment
@@ -13,58 +17,57 @@ const ER_ENDPOINT = "https://devnet.magicblock.app";
 const ER_WS_ENDPOINT = "wss://devnet.magicblock.app";
 const API_URL = "http://localhost:3000";
 
+const DELEGATION_PROGRAM_ID = new PublicKey(
+    "DELeGGvXpWV2fqJUhqcF5ZSYMS4JTLjteaAMARRSaeSh"
+);
 
+// Helper: derive the battle PDA from a u64 gameId
+export const getBattlePda = (gameId: BN, programId: PublicKey): PublicKey => {
+    const idBuffer = gameId.toArrayLike(Buffer, "le", 8);
+    return PublicKey.findProgramAddressSync(
+        [Buffer.from("battle"), idBuffer],
+        programId
+    )[0];
+};
 
-// Note: magic_program and magic_context are auto-resolved by Anchor
-// because they have fixed addresses in the IDL
-
-// Helper functions for PDA derivation
-const getPlayerProfilePda = (authority: PublicKey, programId: PublicKey) => {
+// Helper: derive player profile PDA
+const getPlayerProfilePda = (authority: PublicKey, programId: PublicKey): PublicKey => {
     return PublicKey.findProgramAddressSync(
         [Buffer.from("player"), authority.toBuffer()],
         programId
     )[0];
 };
 
-const getClanPda = (name: string, programId: PublicKey) => {
+const getClanPda = (name: string, programId: PublicKey): PublicKey => {
     return PublicKey.findProgramAddressSync(
         [Buffer.from("clan"), Buffer.from(name)],
         programId
     )[0];
 };
 
-const getClanMemberPda = (clan: PublicKey, authority: PublicKey, programId: PublicKey) => {
+const getClanMemberPda = (
+    clan: PublicKey,
+    authority: PublicKey,
+    programId: PublicKey
+): PublicKey => {
     return PublicKey.findProgramAddressSync(
         [Buffer.from("clan_member"), clan.toBuffer(), authority.toBuffer()],
         programId
     )[0];
 };
 
-
-
-const getRequestPda = (clan: PublicKey, requesterAuthority: PublicKey, programId: PublicKey) => {
-    // requester_profile.authority is the requesterAuthority
+const getRequestPda = (
+    clan: PublicKey,
+    requesterAuthority: PublicKey,
+    programId: PublicKey
+): PublicKey => {
     return PublicKey.findProgramAddressSync(
         [Buffer.from("request"), clan.toBuffer(), requesterAuthority.toBuffer()],
         programId
     )[0];
 };
 
-// ... existing code ...
 export type DelegationStatus = "undelegated" | "delegated" | "checking";
-
-// Game State Interfaces (matching IDL)
-export interface GameState {
-    id: BN;
-    players: PublicKey[];
-    winner: PublicKey | null;
-    status: any; // Enum in IDL
-    // ... add other fields from IDL if needed
-}
-
-export interface BattleState {
-    // ... add fields from IDL
-}
 
 export interface CardProgress {
     cardId: number;
@@ -140,10 +143,7 @@ export function useGameProgram() {
     }, [erConnection, wallet.publicKey, wallet.signTransaction, wallet.signAllTransactions]);
 
     const erProgram = useMemo(() => {
-        if (!erProvider) {
-            return null;
-        }
-
+        if (!erProvider) return null;
         return new Program<GameCore>(IDL as unknown as GameCore, erProvider);
     }, [erProvider]);
 
@@ -163,515 +163,656 @@ export function useGameProgram() {
     // Derive PDAs
     useEffect(() => {
         if (wallet.publicKey && program) {
-            const [pda] = PublicKey.findProgramAddressSync(
-                [Buffer.from("player"), wallet.publicKey.toBuffer()],
-                program.programId
-            );
+            const pda = getPlayerProfilePda(wallet.publicKey, program.programId);
             setPlayerProfilePda(pda);
         } else {
             setPlayerProfilePda(null);
         }
     }, [wallet.publicKey, program]);
 
-    // Initialize Player (Base Layer)
-    const initializePlayer = useCallback(async (username: string): Promise<string> => {
-        if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
+    // ─── Initialize Player (Base Layer) ───────────────────────────────────────
 
-        setIsLoading(true);
-        try {
-            const tx = await program.methods
-                .initializePlayer(username)
-                .accounts({
-                    profile: getPlayerProfilePda(wallet.publicKey, program.programId),
-                    authority: wallet.publicKey,
-                    systemProgram: SystemProgram.programId,
-                } as any)
-                .rpc();
-            return tx;
-        } catch (err: any) {
-            setError(err.message);
-            throw err;
-        } finally {
-            setIsLoading(false);
-        }
-    }, [program, wallet.publicKey]);
+    const initializePlayer = useCallback(
+        async (username: string): Promise<string> => {
+            if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
+            setIsLoading(true);
+            try {
+                const tx = await program.methods
+                    .initializePlayer(username)
+                    .accounts({
+                        profile: getPlayerProfilePda(wallet.publicKey, program.programId),
+                        authority: wallet.publicKey,
+                        systemProgram: SystemProgram.programId,
+                    } as any)
+                    .rpc();
+                return tx;
+            } catch (err: any) {
+                setError(err.message);
+                throw err;
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [program, wallet.publicKey]
+    );
 
-    // Start Game (Base Layer)
-    const startGame = useCallback(async (opponent: PublicKey): Promise<string> => {
-        if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
+    // ─── Create Game (Base Layer) ─────────────────────────────────────────────
+    // Player One creates a game with a given gameId. The battle PDA is derived
+    // from the gameId seed automatically by Anchor.
 
-        setIsLoading(true);
-        try {
-            // Generate Keypairs for Game and Battle
-            const gameKeypair = Keypair.generate();
-            const battleKeypair = Keypair.generate();
+    const createGame = useCallback(
+        async (gameId: BN): Promise<string> => {
+            if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
+            setIsLoading(true);
+            try {
+                const tx = await program.methods
+                    .createGame(gameId)
+                    .accounts({
+                        playerOne: wallet.publicKey,
+                        playerOneProfile: getPlayerProfilePda(wallet.publicKey, program.programId),
+                        systemProgram: SystemProgram.programId,
+                    } as any)
+                    .rpc();
+                return tx;
+            } catch (err: any) {
+                setError(err.message);
+                throw err;
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [program, wallet.publicKey]
+    );
 
-            const tx = await program.methods
-                .startGame()
-                .accounts({
-                    game: gameKeypair.publicKey,
-                    battle: battleKeypair.publicKey,
-                    playerOne: wallet.publicKey,
-                    playerTwo: opponent,
-                    authority: wallet.publicKey,
-                    systemProgram: SystemProgram.programId,
-                } as any)
-                .signers([gameKeypair, battleKeypair])
-                .rpc();
-            return tx;
-        } catch (err: any) {
-            setError(err.message);
-            throw err;
-        } finally {
-            setIsLoading(false);
-        }
-    }, [program, wallet.publicKey]);
+    // ─── Join Game (Base Layer) ───────────────────────────────────────────────
+    // Player Two joins an existing game by its gameId.
 
-    // Deploy Troop (ER - High Frequency)
-    const deployTroop = useCallback(async (gameId: PublicKey, battleId: PublicKey, cardIdx: number, x: number, y: number): Promise<string> => {
-        if (!program || !erProvider || !wallet.publicKey) throw new Error("Game not ready");
+    const joinGame = useCallback(
+        async (gameId: BN): Promise<string> => {
+            if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
+            setIsLoading(true);
+            try {
+                const tx = await program.methods
+                    .joinGame(gameId)
+                    .accounts({
+                        playerTwo: wallet.publicKey,
+                        playerTwoProfile: getPlayerProfilePda(wallet.publicKey, program.programId),
+                    } as any)
+                    .rpc();
+                return tx;
+            } catch (err: any) {
+                setError(err.message);
+                throw err;
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [program, wallet.publicKey]
+    );
 
-        setIsLoading(true);
-        try {
-            const hasSession = sessionToken != null && sessionWallet != null;
-            const signer = hasSession ? sessionWallet.publicKey : wallet.publicKey;
+    // ─── Delegate Game (Base Layer) ───────────────────────────────────────────
+    // Delegates the battle PDA to the Ephemeral Rollup.
 
-            const accounts: any = {
-                battle: battleId,
-                game: gameId,
-                playerProfile: getPlayerProfilePda(wallet.publicKey, program.programId),
-                signer: signer,
-                sessionToken: (hasSession && sessionToken) ? sessionToken : undefined,
-            };
+    const delegateGame = useCallback(
+        async (gameId: BN): Promise<string> => {
+            if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
+            setIsLoading(true);
+            try {
+                const battlePda = getBattlePda(gameId, program.programId);
 
-            let tx = await program.methods
-                .deployTroop(cardIdx, x, y)
-                .accounts(accounts)
-                .transaction();
+                const [delegationRecordPda] = PublicKey.findProgramAddressSync(
+                    [Buffer.from("delegation"), battlePda.toBuffer()],
+                    DELEGATION_PROGRAM_ID
+                );
+                const [delegationMetadataPda] = PublicKey.findProgramAddressSync(
+                    [Buffer.from("delegation-metadata"), battlePda.toBuffer()],
+                    DELEGATION_PROGRAM_ID
+                );
+                // bufferPda is derived inside the program, but we pass `pda` = battlePda
+                // Anchor resolves `buffer_pda` automatically via the IDL seeds.
 
-            tx.feePayer = (hasSession && sessionWallet ? sessionWallet.publicKey : wallet.publicKey) || undefined;
-            tx.recentBlockhash = (await erConnection.getLatestBlockhash()).blockhash;
+                const tx = await program.methods
+                    .delegateGame(gameId)
+                    .accounts({
+                        payer: wallet.publicKey,
+                        pda: battlePda,
+                        delegationRecordPda,
+                        delegationMetadataPda,
+                        delegationProgram: DELEGATION_PROGRAM_ID,
+                        ownerProgram: program.programId,
+                        systemProgram: SystemProgram.programId,
+                    } as any)
+                    .rpc();
+                return tx;
+            } catch (err: any) {
+                console.error("Delegation Error:", err);
+                setError(err.message);
+                throw err;
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [program, wallet.publicKey]
+    );
 
-            if (hasSession && sessionWallet && sessionWallet.signTransaction) {
-                // @ts-ignore
-                tx = await sessionWallet.signTransaction(tx);
-            } else {
+    // ─── Deploy Troop (ER – High Frequency) ──────────────────────────────────
+    // Sends a troop deployment via the Ephemeral Rollup.
+    // gameId is a u64 arg; the battle PDA is derived on-chain from that seed.
+
+    const deployTroop = useCallback(
+        async (
+            gameId: BN,
+            cardIdx: number,
+            x: number,
+            y: number
+        ): Promise<string> => {
+            if (!program || !erProvider || !wallet.publicKey)
+                throw new Error("Game not ready");
+            setIsLoading(true);
+            try {
+                let hasSession = sessionToken != null && sessionWallet != null;
+                const sessionPubkey = sessionToken ? new PublicKey(sessionToken) : null;
+
+                if (hasSession && sessionPubkey) {
+                    // Contract requirement: The session_token PDA account MUST exist on-chain.
+                    // If it hasn't been created yet or expired/closed, fall back to main wallet
+                    // otherwise Anchor will throw "AccountNotInitialized" or "AccountNotFound"
+                    const sessionInfo = await connection.getAccountInfo(sessionPubkey);
+                    if (!sessionInfo) {
+                        console.warn("Session token PDA not found on-chain, falling back to main wallet");
+                        hasSession = false;
+                    }
+                }
+
+                const signer = hasSession
+                    ? sessionWallet!.publicKey
+                    : wallet.publicKey;
+
+                const accounts: any = {
+                    signer,
+                    playerProfile: getPlayerProfilePda(wallet.publicKey, program.programId),
+                    sessionToken: hasSession && sessionPubkey ? sessionPubkey : undefined,
+                };
+
+                let tx = await program.methods
+                    .deployTroop(gameId, cardIdx, x, y)
+                    .accounts(accounts)
+                    .transaction();
+
+                tx.feePayer = signer || undefined;
+                tx.recentBlockhash = (await erConnection.getLatestBlockhash()).blockhash;
+
+                if (hasSession && sessionWallet && sessionWallet.signTransaction) {
+                    // @ts-ignore
+                    tx = await sessionWallet.signTransaction(tx);
+                } else {
+                    tx = await erProvider.wallet.signTransaction(tx);
+                }
+
+                const txHash = await erConnection.sendRawTransaction(tx.serialize(), {
+                    skipPreflight: true,
+                });
+                await erConnection.confirmTransaction(txHash, "confirmed");
+
+                return txHash;
+            } catch (err: any) {
+                setError(err.message);
+                throw err;
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [program, erProvider, erConnection, wallet.publicKey, sessionToken, sessionWallet]
+    );
+
+    // ─── End Game (ER) ────────────────────────────────────────────────────────
+    // Called on the Ephemeral Rollup to finalize and undelegate the battle state.
+    // `isTimeout` = true if the game timed out, false if a winner was determined.
+
+    const endGame = useCallback(
+        async (gameId: BN, isTimeout: boolean): Promise<string> => {
+            if (!program || !erProvider || !wallet.publicKey)
+                throw new Error("Wallet not connected / ER not ready");
+            setIsLoading(true);
+            try {
+                let tx = await program.methods
+                    .endGame(gameId, isTimeout)
+                    .accounts({
+                        payer: wallet.publicKey,
+                        // battle, magic_program and magic_context auto-resolved by Anchor
+                    } as any)
+                    .transaction();
+
+                tx.feePayer = wallet.publicKey;
+                tx.recentBlockhash = (await erConnection.getLatestBlockhash()).blockhash;
                 tx = await erProvider.wallet.signTransaction(tx);
+
+                const txHash = await erConnection.sendRawTransaction(tx.serialize(), {
+                    skipPreflight: true,
+                });
+                await erConnection.confirmTransaction(txHash, "confirmed");
+
+                return txHash;
+            } catch (err: any) {
+                setError(err.message);
+                throw err;
+            } finally {
+                setIsLoading(false);
             }
+        },
+        [program, erProvider, erConnection, wallet.publicKey]
+    );
 
-            const txHash = await erConnection.sendRawTransaction(tx.serialize(), { skipPreflight: true });
-            await erConnection.confirmTransaction(txHash, "confirmed");
+    // ─── Mint Trophies (Base Layer) ───────────────────────────────────────────
+    // Called after endGame has committed back to base. Mints trophy tokens
+    // for the calling player if they were the winner.
 
-            return txHash;
+    const mintTrophies = useCallback(
+        async (gameId: BN, mint: PublicKey): Promise<string> => {
+            if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
+            setIsLoading(true);
+            try {
+                const destination = getAssociatedTokenAddressSync(mint, wallet.publicKey);
 
-        } catch (err: any) {
-            setError(err.message);
-            throw err;
-        } finally {
-            setIsLoading(false);
-        }
-    }, [program, erProvider, erConnection, wallet.publicKey, sessionToken, sessionWallet, playerProfilePda]);
+                const preInstructions = [];
+                const destInfo = await connection.getAccountInfo(destination);
+                if (!destInfo) {
+                    preInstructions.push(
+                        createAssociatedTokenAccountInstruction(
+                            wallet.publicKey,
+                            destination,
+                            wallet.publicKey,
+                            mint
+                        )
+                    );
+                }
 
-    // Delegate Profile/Game to ER
-    const delegate = useCallback(async (pdaToDelegate: PublicKey): Promise<string> => {
-        if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
-
-        setIsLoading(true);
-
-        try {
-            console.log("Delegating PDA:", pdaToDelegate.toBase58());
-            console.log("Program Methods:", Object.keys(program.methods));
-
-            // Explicitly derive PDAs to avoid resolution errors
-            const DELEGATION_PROGRAM_ID = new PublicKey("DELeGGvXpWV2fqJUhqcF5ZSYMS4JTLjteaAMARRSaeSh");
-            const [delegationRecordPda] = PublicKey.findProgramAddressSync(
-                [Buffer.from("delegation"), pdaToDelegate.toBuffer()],
-                DELEGATION_PROGRAM_ID
-            );
-            const [delegationMetadataPda] = PublicKey.findProgramAddressSync(
-                [Buffer.from("delegation-metadata"), pdaToDelegate.toBuffer()],
-                DELEGATION_PROGRAM_ID
-            );
-            const [bufferPda] = PublicKey.findProgramAddressSync(
-                [Buffer.from("buffer"), pdaToDelegate.toBuffer()],
-                program.programId
-            );
-
-            const tx = await program.methods
-                .delegate()
-                .accounts({
-                    payer: wallet.publicKey,
-                    pda: pdaToDelegate,
-                    delegationRecordPda: delegationRecordPda,
-                    delegationMetadataPda: delegationMetadataPda,
-                    bufferPda: bufferPda,
-                    delegationProgram: DELEGATION_PROGRAM_ID,
-                    ownerProgram: program.programId,
-                    systemProgram: new PublicKey("11111111111111111111111111111111"),
-                } as any)
-                .rpc();
-
-            return tx;
-        } catch (err: any) {
-            console.error("Delegation Error:", err);
-            setError(err.message);
-            throw err;
-        } finally {
-            setIsLoading(false);
-        }
-    }, [program, wallet.publicKey]);
-
-    // Unlock Card (Base Layer)
-    const unlockCard = useCallback(async (cardId: number, mint: PublicKey): Promise<string> => {
-        if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
-        setIsLoading(true);
-        try {
-            const ata = getAssociatedTokenAddressSync(mint, wallet.publicKey);
-
-            const preInstructions = [];
-            const ataInfo = await connection.getAccountInfo(ata);
-            if (!ataInfo) {
-                console.log("Creating ATA for", mint.toBase58());
-                preInstructions.push(
-                    createAssociatedTokenAccountInstruction(
-                        wallet.publicKey,
-                        ata,
-                        wallet.publicKey,
-                        mint
-                    )
-                );
-            }
-
-            const tx = await program.methods
-                .unlockCard(cardId)
-                .accounts({
-                    profile: getPlayerProfilePda(wallet.publicKey, program.programId),
-                    mint: mint,
-                    userTokenAccount: ata,
-                    tokenProgram: TOKEN_PROGRAM_ID,
-                    authority: wallet.publicKey,
-                } as any)
-                .preInstructions(preInstructions)
-                .rpc();
-            return tx;
-        } catch (err: any) {
-            setError(err.message);
-            throw err;
-        } finally {
-            setIsLoading(false);
-        }
-    }, [program, wallet.publicKey, connection]);
-
-    // Upgrade Card (Base Layer)
-    const upgradeCard = useCallback(async (cardId: number, mint: PublicKey): Promise<string> => {
-        if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
-        setIsLoading(true);
-        try {
-            const ata = getAssociatedTokenAddressSync(mint, wallet.publicKey);
-
-            const tx = await program.methods
-                .upgradeCard(cardId)
-                .accounts({
-                    profile: getPlayerProfilePda(wallet.publicKey, program.programId),
-                    mint: mint,
-                    userTokenAccount: ata,
-                    tokenProgram: TOKEN_PROGRAM_ID,
-                    authority: wallet.publicKey,
-                } as any)
-                .rpc();
-            return tx;
-        } catch (err: any) {
-            setError(err.message);
-            throw err;
-        } finally {
-            setIsLoading(false);
-        }
-    }, [program, wallet.publicKey]);
-
-    // Set Deck (Base Layer)
-    const setDeck = useCallback(async (newDeck: number[], mint: PublicKey): Promise<string> => {
-        if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
-        setIsLoading(true);
-        try {
-            const userTokenAccount = getAssociatedTokenAddressSync(mint, wallet.publicKey);
-            const tx = await program.methods
-                .setDeck(newDeck)
-                .accounts({
-                    profile: getPlayerProfilePda(wallet.publicKey, program.programId),
-                    mint: mint,
-                    userTokenAccount: userTokenAccount,
-                    tokenProgram: TOKEN_PROGRAM_ID,
-                    authority: wallet.publicKey,
-                } as any)
-                .rpc();
-            return tx;
-        } catch (err: any) {
-            setError(err.message);
-            throw err;
-        } finally {
-            setIsLoading(false);
-        }
-    }, [program, wallet.publicKey]);
-
-    // Create Clan (Base Layer)
-    const createClan = useCallback(async (name: string): Promise<string> => {
-        if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
-        setIsLoading(true);
-        try {
-            const clanPda = getClanPda(name, program.programId); // We need to derive this based on name
-            const tx = await program.methods
-                .createClan(name)
-                .accounts({
-                    clan: clanPda,
-                    clanMember: getClanMemberPda(clanPda, wallet.publicKey, program.programId),
-                    authority: wallet.publicKey,
-                    systemProgram: SystemProgram.programId,
-                } as any)
-                .rpc();
-            return tx;
-        } catch (err: any) {
-            setError(err.message);
-            throw err;
-        } finally {
-            setIsLoading(false);
-        }
-    }, [program, wallet.publicKey]);
-
-    // Join Clan (Base Layer)
-    const joinClan = useCallback(async (clan: PublicKey): Promise<string> => {
-        if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
-        setIsLoading(true);
-        try {
-            const tx = await program.methods
-                .joinClan()
-                .accounts({
-                    clan: clan,
-                    clanMember: getClanMemberPda(clan, wallet.publicKey, program.programId),
-                    authority: wallet.publicKey,
-                    systemProgram: SystemProgram.programId,
-                } as any)
-                .rpc();
-            return tx;
-        } catch (err: any) {
-            setError(err.message);
-            throw err;
-        } finally {
-            setIsLoading(false);
-        }
-    }, [program, wallet.publicKey]);
-
-    // Request Cards (Base Layer)
-    const requestCards = useCallback(async (clan: PublicKey, cardId: number): Promise<string> => {
-        if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
-        setIsLoading(true);
-        try {
-            const tx = await program.methods
-                .requestCards(cardId)
-                .accounts({
-                    clan: clan,
-                    clanMember: getClanMemberPda(clan, wallet.publicKey, program.programId),
-                    request: getRequestPda(clan, wallet.publicKey, program.programId),
-                    authority: wallet.publicKey,
-                    systemProgram: SystemProgram.programId,
-                } as any)
-                .rpc();
-            return tx;
-        } catch (err: any) {
-            setError(err.message);
-            throw err;
-        } finally {
-            setIsLoading(false);
-        }
-    }, [program, wallet.publicKey]);
-
-    // Donate Cards (Base Layer)
-    const donateCards = useCallback(async (clan: PublicKey, requesterAuthority: PublicKey, mint: PublicKey): Promise<string> => {
-        if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
-        setIsLoading(true);
-        try {
-            const donorTokenAccount = getAssociatedTokenAddressSync(mint, wallet.publicKey);
-
-            const tx = await program.methods
-                .donateCards()
-                .accounts({
-                    clan: clan,
-                    donorProfile: getPlayerProfilePda(wallet.publicKey, program.programId),
-                    donorMember: getClanMemberPda(clan, wallet.publicKey, program.programId),
-                    requesterProfile: getPlayerProfilePda(requesterAuthority, program.programId),
-                    request: getRequestPda(clan, requesterAuthority, program.programId),
-                    mint: mint,
-                    donorTokenAccount: donorTokenAccount,
-                    mintAuthority: PublicKey.findProgramAddressSync([Buffer.from("mint_authority")], program.programId)[0],
-                    tokenProgram: TOKEN_PROGRAM_ID,
-                    authority: wallet.publicKey,
-                } as any)
-                .rpc();
-            return tx;
-        } catch (err: any) {
-            setError(err.message);
-            throw err;
-        } finally {
-            setIsLoading(false);
-        }
-    }, [program, wallet.publicKey]);
-
-    // Resolve Game (Base Layer)
-    const resolveGame = useCallback(async (game: PublicKey, battle: PublicKey, playerOne: PublicKey, playerTwo: PublicKey, winnerIdx?: number): Promise<string> => {
-        if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
-        setIsLoading(true);
-        try {
-            const tx = await program.methods
-                .resolveGame(winnerIdx !== undefined ? winnerIdx : null)
-                .accounts({
-                    game: game,
-                    battle: battle,
-                    playerOne: playerOne,
-                    playerTwo: playerTwo,
-                    authority: wallet.publicKey,
-                } as any)
-                .rpc();
-            return tx;
-        } catch (err: any) {
-            setError(err.message);
-            throw err;
-        } finally {
-            setIsLoading(false);
-        }
-    }, [program, wallet.publicKey]);
-
-    // Claim Rewards (Base Layer)
-    const claimRewards = useCallback(async (game: PublicKey, mint: PublicKey): Promise<string> => {
-        if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
-        setIsLoading(true);
-        try {
-            const destination = getAssociatedTokenAddressSync(mint, wallet.publicKey);
-
-            const preInstructions = [];
-            const destInfo = await connection.getAccountInfo(destination);
-            if (!destInfo) {
-                console.log("Creating ATA for rewards", mint.toBase58());
-                preInstructions.push(
-                    createAssociatedTokenAccountInstruction(
-                        wallet.publicKey,
+                const tx = await program.methods
+                    .mintTrophies(gameId)
+                    .accounts({
+                        signer: wallet.publicKey,
+                        mint,
                         destination,
-                        wallet.publicKey,
-                        mint
-                    )
-                );
+                        mintAuthority: PublicKey.findProgramAddressSync(
+                            [Buffer.from("mint_authority")],
+                            program.programId
+                        )[0],
+                        tokenProgram: TOKEN_PROGRAM_ID,
+                    } as any)
+                    .preInstructions(preInstructions)
+                    .rpc();
+                return tx;
+            } catch (err: any) {
+                setError(err.message);
+                throw err;
+            } finally {
+                setIsLoading(false);
             }
+        },
+        [program, wallet.publicKey, connection]
+    );
 
-            const tx = await program.methods
-                .claimRewards()
-                .accounts({
-                    game: game,
-                    profile: getPlayerProfilePda(wallet.publicKey, program.programId),
-                    mint: mint,
-                    destination: destination,
-                    mintAuthority: PublicKey.findProgramAddressSync([Buffer.from("mint_authority")], program.programId)[0],
-                    tokenProgram: TOKEN_PROGRAM_ID,
-                    signer: wallet.publicKey,
-                    systemProgram: SystemProgram.programId, // Just in case
-                } as any)
-                .preInstructions(preInstructions)
-                .rpc();
-            return tx;
-        } catch (err: any) {
-            setError(err.message);
-            throw err;
-        } finally {
-            setIsLoading(false);
-        }
-    }, [program, wallet.publicKey, connection]);
+    // ─── Unlock Card (Base Layer) ─────────────────────────────────────────────
 
-    // Commit Battle (ER -> Base)
-    const commitBattle = useCallback(async (battle: PublicKey): Promise<string> => {
-        if (!program || !erProvider || !wallet.publicKey) throw new Error("Wallet not connected / ER not ready");
-        setIsLoading(true);
-        try {
-            let tx = await program.methods
-                .commitBattle()
-                .accounts({
-                    payer: wallet.publicKey,
-                    battle: battle,
-                    // magic_program and magic_context auto-resolved by Anchor
-                } as any)
-                .transaction();
+    const unlockCard = useCallback(
+        async (cardId: number, mint: PublicKey): Promise<string> => {
+            if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
+            setIsLoading(true);
+            try {
+                const ata = getAssociatedTokenAddressSync(mint, wallet.publicKey);
 
-            tx.feePayer = wallet.publicKey;
-            tx.recentBlockhash = (await erConnection.getLatestBlockhash()).blockhash;
-            tx = await erProvider.wallet.signTransaction(tx);
+                const preInstructions = [];
+                const ataInfo = await connection.getAccountInfo(ata);
+                if (!ataInfo) {
+                    preInstructions.push(
+                        createAssociatedTokenAccountInstruction(
+                            wallet.publicKey,
+                            ata,
+                            wallet.publicKey,
+                            mint
+                        )
+                    );
+                }
 
-            const txHash = await erConnection.sendRawTransaction(tx.serialize(), { skipPreflight: true });
-            await erConnection.confirmTransaction(txHash, "confirmed");
+                const tx = await program.methods
+                    .unlockCard(cardId)
+                    .accounts({
+                        profile: getPlayerProfilePda(wallet.publicKey, program.programId),
+                        mint,
+                        userTokenAccount: ata,
+                        tokenProgram: TOKEN_PROGRAM_ID,
+                        authority: wallet.publicKey,
+                    } as any)
+                    .preInstructions(preInstructions)
+                    .rpc();
+                return tx;
+            } catch (err: any) {
+                setError(err.message);
+                throw err;
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [program, wallet.publicKey, connection]
+    );
 
-            // Try to get commitment signature (optional/advanced)
-            // Commitment signature fetch removed to avoid import errors
+    // ─── Upgrade Card (Base Layer) ────────────────────────────────────────────
 
-            return txHash;
-        } catch (err: any) {
-            setError(err.message);
-            throw err;
-        } finally {
-            setIsLoading(false);
-        }
-    }, [program, erProvider, erConnection, wallet.publicKey]);
+    const upgradeCard = useCallback(
+        async (cardId: number, mint: PublicKey): Promise<string> => {
+            if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
+            setIsLoading(true);
+            try {
+                const ata = getAssociatedTokenAddressSync(mint, wallet.publicKey);
 
-    // Undelegate Battle (ER -> Base)
-    const undelegateBattle = useCallback(async (battle: PublicKey): Promise<string> => {
-        if (!program || !erProvider || !wallet.publicKey) throw new Error("Wallet not connected / ER not ready");
-        setIsLoading(true);
-        try {
-            let tx = await program.methods
-                .undelegateBattle()
-                .accounts({
-                    payer: wallet.publicKey,
-                    battle: battle,
-                    // magic_program and magic_context auto-resolved by Anchor
-                } as any)
-                .transaction();
+                const tx = await program.methods
+                    .upgradeCard(cardId)
+                    .accounts({
+                        profile: getPlayerProfilePda(wallet.publicKey, program.programId),
+                        mint,
+                        userTokenAccount: ata,
+                        tokenProgram: TOKEN_PROGRAM_ID,
+                        authority: wallet.publicKey,
+                    } as any)
+                    .rpc();
+                return tx;
+            } catch (err: any) {
+                setError(err.message);
+                throw err;
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [program, wallet.publicKey]
+    );
 
-            tx.feePayer = wallet.publicKey;
-            tx.recentBlockhash = (await erConnection.getLatestBlockhash()).blockhash;
-            tx = await erProvider.wallet.signTransaction(tx);
+    // ─── Set Deck (Base Layer) ────────────────────────────────────────────────
 
-            const txHash = await erConnection.sendRawTransaction(tx.serialize(), { skipPreflight: true });
-            await erConnection.confirmTransaction(txHash, "confirmed");
+    const setDeck = useCallback(
+        async (newDeck: number[], mint: PublicKey): Promise<string> => {
+            if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
+            setIsLoading(true);
+            try {
+                const userTokenAccount = getAssociatedTokenAddressSync(mint, wallet.publicKey);
+                const tx = await program.methods
+                    .setDeck(newDeck as any)
+                    .accounts({
+                        profile: getPlayerProfilePda(wallet.publicKey, program.programId),
+                        mint,
+                        userTokenAccount,
+                        tokenProgram: TOKEN_PROGRAM_ID,
+                        authority: wallet.publicKey,
+                    } as any)
+                    .rpc();
+                return tx;
+            } catch (err: any) {
+                setError(err.message);
+                throw err;
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [program, wallet.publicKey]
+    );
 
-            return txHash;
-        } catch (err: any) {
-            setError(err.message);
-            throw err;
-        } finally {
-            setIsLoading(false);
-        }
-    }, [program, erProvider, erConnection, wallet.publicKey]);
+    // ─── Create Clan (Base Layer) ─────────────────────────────────────────────
 
+    const createClan = useCallback(
+        async (name: string): Promise<string> => {
+            if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
+            setIsLoading(true);
+            try {
+                const clanPda = getClanPda(name, program.programId);
+                const tx = await program.methods
+                    .createClan(name)
+                    .accounts({
+                        clan: clanPda,
+                        clanMember: getClanMemberPda(clanPda, wallet.publicKey, program.programId),
+                        authority: wallet.publicKey,
+                        systemProgram: SystemProgram.programId,
+                    } as any)
+                    .rpc();
+                return tx;
+            } catch (err: any) {
+                setError(err.message);
+                throw err;
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [program, wallet.publicKey]
+    );
 
-    // Fetch all clans
+    // ─── Join Clan (Base Layer) ───────────────────────────────────────────────
+
+    const joinClan = useCallback(
+        async (clan: PublicKey): Promise<string> => {
+            if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
+            setIsLoading(true);
+            try {
+                const tx = await program.methods
+                    .joinClan()
+                    .accounts({
+                        clan,
+                        clanMember: getClanMemberPda(clan, wallet.publicKey, program.programId),
+                        authority: wallet.publicKey,
+                        systemProgram: SystemProgram.programId,
+                    } as any)
+                    .rpc();
+                return tx;
+            } catch (err: any) {
+                setError(err.message);
+                throw err;
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [program, wallet.publicKey]
+    );
+
+    // ─── Request Cards (Base Layer) ───────────────────────────────────────────
+
+    const requestCards = useCallback(
+        async (clan: PublicKey, cardId: number): Promise<string> => {
+            if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
+            setIsLoading(true);
+            try {
+                const tx = await program.methods
+                    .requestCards(cardId)
+                    .accounts({
+                        clan,
+                        clanMember: getClanMemberPda(clan, wallet.publicKey, program.programId),
+                        request: getRequestPda(clan, wallet.publicKey, program.programId),
+                        authority: wallet.publicKey,
+                        systemProgram: SystemProgram.programId,
+                    } as any)
+                    .rpc();
+                return tx;
+            } catch (err: any) {
+                setError(err.message);
+                throw err;
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [program, wallet.publicKey]
+    );
+
+    // ─── Donate Cards (Base Layer) ────────────────────────────────────────────
+
+    const donateCards = useCallback(
+        async (
+            clan: PublicKey,
+            requesterProfile: PublicKey,
+            mint: PublicKey
+        ): Promise<string> => {
+            if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
+            setIsLoading(true);
+            try {
+                const donorTokenAccount = getAssociatedTokenAddressSync(mint, wallet.publicKey);
+
+                const tx = await program.methods
+                    .donateCards()
+                    .accounts({
+                        clan,
+                        donorProfile: getPlayerProfilePda(wallet.publicKey, program.programId),
+                        donorMember: getClanMemberPda(clan, wallet.publicKey, program.programId),
+                        requesterProfile,
+                        // request PDA derived by Anchor from clan + requester_profile.authority
+                        mint,
+                        donorTokenAccount,
+                        mintAuthority: PublicKey.findProgramAddressSync(
+                            [Buffer.from("mint_authority")],
+                            program.programId
+                        )[0],
+                        tokenProgram: TOKEN_PROGRAM_ID,
+                        authority: wallet.publicKey,
+                    } as any)
+                    .rpc();
+                return tx;
+            } catch (err: any) {
+                setError(err.message);
+                throw err;
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [program, wallet.publicKey]
+    );
+
+    // ─── Export NFT (Base Layer) ──────────────────────────────────────────────
+
+    const exportNft = useCallback(
+        async (cardId: number, mint: PublicKey): Promise<string> => {
+            if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
+            setIsLoading(true);
+            try {
+                const tx = await program.methods
+                    .exportNft(cardId)
+                    .accounts({
+                        profile: getPlayerProfilePda(wallet.publicKey, program.programId),
+                        mint,
+                        authority: wallet.publicKey,
+                    } as any)
+                    .rpc();
+                return tx;
+            } catch (err: any) {
+                setError(err.message);
+                throw err;
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [program, wallet.publicKey]
+    );
+
+    // ─── Export Resource (Base Layer) ─────────────────────────────────────────
+
+    const exportResource = useCallback(
+        async (cardId: number, amount: number, resourceMint: PublicKey, destination: PublicKey): Promise<string> => {
+            if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
+            setIsLoading(true);
+            try {
+                const tx = await program.methods
+                    .exportResource(cardId, amount)
+                    .accounts({
+                        profile: getPlayerProfilePda(wallet.publicKey, program.programId),
+                        resourceMint,
+                        destination,
+                        resourceAuthority: PublicKey.findProgramAddressSync(
+                            [Buffer.from("resource_authority")],
+                            program.programId
+                        )[0],
+                        tokenProgram: TOKEN_PROGRAM_ID,
+                        authority: wallet.publicKey,
+                    } as any)
+                    .rpc();
+                return tx;
+            } catch (err: any) {
+                setError(err.message);
+                throw err;
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [program, wallet.publicKey]
+    );
+
+    // ─── Import Resource (Base Layer) ─────────────────────────────────────────
+
+    const importResource = useCallback(
+        async (cardId: number, amount: number, resourceMint: PublicKey, source: PublicKey): Promise<string> => {
+            if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
+            setIsLoading(true);
+            try {
+                const tx = await program.methods
+                    .importResource(cardId, amount)
+                    .accounts({
+                        profile: getPlayerProfilePda(wallet.publicKey, program.programId),
+                        resourceMint,
+                        source,
+                        tokenProgram: TOKEN_PROGRAM_ID,
+                        authority: wallet.publicKey,
+                    } as any)
+                    .rpc();
+                return tx;
+            } catch (err: any) {
+                setError(err.message);
+                throw err;
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [program, wallet.publicKey]
+    );
+
+    // ─── Fetch / Read helpers ─────────────────────────────────────────────────
+
+    const fetchPlayerProfile = useCallback(
+        async (pda: PublicKey) => {
+            if (!program) return null;
+            try {
+                return await program.account.playerProfile.fetch(pda);
+            } catch (err) {
+                console.log("Profile not found or error fetching:", err);
+                return null;
+            }
+        },
+        [program]
+    );
+
+    const fetchBattleState = useCallback(
+        async (gameId: BN) => {
+            if (!program) return null;
+            try {
+                const pda = getBattlePda(gameId, program.programId);
+                return await program.account.battleState.fetch(pda);
+            } catch (err) {
+                console.log("Battle not found or error fetching:", err);
+                return null;
+            }
+        },
+        [program]
+    );
+
     const fetchAllClans = useCallback(async () => {
         if (!program) return [];
         try {
             const clans = await program.account.clan.all();
-            return clans.map(c => ({
-                publicKey: c.publicKey,
-                account: c.account
-            }));
+            return clans.map((c) => ({ publicKey: c.publicKey, account: c.account }));
         } catch (err) {
             console.error("Error fetching clans:", err);
             return [];
         }
     }, [program]);
 
-    // Fetch User's Clan
     const fetchUserClan = useCallback(async () => {
         if (!program || !wallet.publicKey) return null;
         try {
-            // ClanMember layout: discriminator(8) + clan(32) + player(32)
-            // We filter by player matches wallet.publicKey
             const memberAccounts = await program.account.clanMember.all([
                 {
                     memcmp: {
-                        offset: 40, // 8 + 32
+                        offset: 40, // discriminator(8) + clan(32)
                         bytes: wallet.publicKey.toBase58(),
                     },
                 },
@@ -684,7 +825,7 @@ export function useGameProgram() {
                     memberKey: member.publicKey,
                     memberAccount: member.account,
                     clanKey: member.account.clan,
-                    clanAccount: clan
+                    clanAccount: clan,
                 };
             }
             return null;
@@ -694,28 +835,16 @@ export function useGameProgram() {
         }
     }, [program, wallet.publicKey]);
 
-    // Leave Clan (Mock)
     const leaveClan = useCallback(async () => {
-        // No instruction for this yet.
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        console.log("Mock Left Clan");
+        // No on-chain instruction yet — placeholder
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        console.log("Mock Leave Clan");
     }, []);
 
-    // Fetch Player Profile
-    const fetchPlayerProfile = useCallback(async (pda: PublicKey) => {
-        if (!program) return null;
-        try {
-            const profile = await program.account.playerProfile.fetch(pda);
-            return profile;
-        } catch (err) {
-            console.log("Profile not found or error fetching:", err);
-            return null;
-        }
-    }, [program]);
+    // ─── Platform Token Balance ───────────────────────────────────────────────
 
     const [platformBalance, setPlatformBalance] = useState<number>(0);
 
-    // Fetch Platform Token Balance
     const fetchPlatformBalance = useCallback(async () => {
         if (!wallet.publicKey) return;
         try {
@@ -728,68 +857,84 @@ export function useGameProgram() {
         }
     }, [wallet.publicKey, connection]);
 
-    // Initial fetch
     useEffect(() => {
         fetchPlatformBalance();
     }, [fetchPlatformBalance]);
 
-    // Market API (Node Server)
-    const fetchMarketListings = useCallback(async (): Promise<{ cardId: number; price: number; }[]> => {
+    // ─── Off-chain Market API (Node Server) ──────────────────────────────────
+
+    const fetchMarketListings = useCallback(async (): Promise<{ cardId: number; price: number }[]> => {
         try {
             const res = await fetch(`${API_URL}/market`);
-            if (!res.ok) throw new Error('Failed to fetch market listings');
+            if (!res.ok) throw new Error("Failed to fetch market listings");
             return await res.json();
         } catch (err) {
-            console.error('Error fetching market:', err);
+            console.error("Error fetching market:", err);
             return [];
         }
     }, []);
 
-    const addMarketListing = useCallback(async (cardId: number, price: number): Promise<boolean> => {
-        try {
-            const res = await fetch(`${API_URL}/market`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ cardId, price })
-            });
-            if (!res.ok) throw new Error('Failed to add listing');
-            return true;
-        } catch (err) {
-            console.error('Error adding listing:', err);
-            return false;
-        }
-    }, []);
+    const addMarketListing = useCallback(
+        async (cardId: number, price: number): Promise<boolean> => {
+            try {
+                const res = await fetch(`${API_URL}/market`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ cardId, price }),
+                });
+                if (!res.ok) throw new Error("Failed to add listing");
+                return true;
+            } catch (err) {
+                console.error("Error adding listing:", err);
+                return false;
+            }
+        },
+        []
+    );
+
+    // ─── Exports ──────────────────────────────────────────────────────────────
 
     return {
         program,
         erProgram,
+        erConnection,
+        erProvider,
         isLoading,
         error,
         platformBalance,
         fetchPlatformBalance,
-        // ... (rest of exports)
+        playerProfilePda,
+        // Player
         initializePlayer,
         fetchPlayerProfile,
+        // Cards
         unlockCard,
         upgradeCard,
         setDeck,
-        startGame,
+        // Game flow
+        createGame,
+        joinGame,
+        delegateGame,
         deployTroop,
-        resolveGame,
-        claimRewards,
+        endGame,
+        mintTrophies,
+        fetchBattleState,
+        // NFT / Resources
+        exportNft,
+        exportResource,
+        importResource,
+        // Clan
         createClan,
         joinClan,
         requestCards,
         donateCards,
-        delegate,
-        commitBattle,
-        undelegateBattle,
-        createSession,
-        sessionToken,
-        playerProfilePda,
         fetchAllClans,
         fetchUserClan,
         leaveClan,
+        // Session keys
+        createSession,
+        sessionToken,
+        // Market (off-chain)
         fetchMarketListings,
         addMarketListing,
     };

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useGameProgram, type PlayerProfile } from '../hooks/use-game-program';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 import { BottomNav } from '../ui/BottomNav';
 import { MobileLayout } from '../ui/MobileLayout';
 
@@ -8,7 +9,7 @@ export const MainMenuPage: React.FC = () => {
     const navigate = useNavigate();
     const { fetchPlayerProfile, playerProfilePda, platformBalance, createSession, sessionToken } = useGameProgram();
     const [profile, setProfile] = useState<PlayerProfile | null>(null);
-    
+
     useEffect(() => {
         if (playerProfilePda) {
             fetchPlayerProfile(playerProfilePda).then(setProfile);
@@ -24,7 +25,7 @@ export const MainMenuPage: React.FC = () => {
             <div className="absolute inset-0 bg-gradient-to-b from-[#334d85] to-[#12192b] z-0 pointer-events-none"></div>
 
             {/* Top Bar / Stats */}
-            <div 
+            <div
                 className="relative z-10 w-full mt-4 px-4 flex justify-between items-center bg-black/30 rounded-full py-2 border border-white/10 backdrop-blur-sm shadow-md mx-auto max-w-[95%] cursor-pointer hover:bg-black/40 transition-colors"
                 onClick={() => navigate('/profile')}
             >
@@ -34,7 +35,7 @@ export const MainMenuPage: React.FC = () => {
                     </div>
                     <div className="text-[#64cbff] text-shadow-sm">{username}</div>
                 </div>
-                
+
                 <div className="flex items-center gap-4">
                     {/* Session Key Status */}
                     {sessionToken ? (
@@ -43,7 +44,7 @@ export const MainMenuPage: React.FC = () => {
                             <span className="text-[0.6rem] text-green-400 font-bold uppercase tracking-wider">Session Active</span>
                         </div>
                     ) : (
-                        <button 
+                        <button
                             className="flex items-center gap-1 px-2 py-1 bg-blue-600/80 hover:bg-blue-500 rounded border border-blue-400/50 transition-colors"
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -54,8 +55,8 @@ export const MainMenuPage: React.FC = () => {
                         </button>
                     )}
 
-                     {/* Coins / Balance */}
-                     <div className="flex items-center gap-1">
+                    {/* Coins / Balance */}
+                    <div className="flex items-center gap-1">
                         <span className="text-[#fbce47] font-bold text-shadow-sm text-sm">{platformBalance.toLocaleString()}</span>
                         <div className="w-4 h-4 rounded-full bg-[#fbce47] border border-[#d4af37] shadow-sm"></div>
                     </div>
@@ -82,11 +83,19 @@ export const MainMenuPage: React.FC = () => {
                 {/* Main Action Buttons */}
                 <div className="flex gap-6 mt-8">
                     <div
-                        className="relative w-40 h-24 flex justify-center items-center cursor-pointer transition-transform active:scale-95 hover:brightness-110"
-                        onClick={() => navigate('/waiting')}
+                        className={`relative w-40 h-24 flex justify-center items-center transition-transform ${profile
+                                ? 'cursor-pointer active:scale-95 hover:brightness-110'
+                                : 'cursor-not-allowed grayscale opacity-70'
+                            }`}
+                        onClick={() => {
+                            if (profile) navigate('/waiting');
+                            else toast.error('Profile not found yet. Please wait...');
+                        }}
                     >
                         <img src="/assets/button_yellow.png" alt="Battle" className="absolute w-full h-full drop-shadow-xl" />
-                        <span className="relative z-10 text-xl text-white drop-shadow-[2px_2px_0_rgba(0,0,0,0.5)]">Battle</span>
+                        <span className="relative z-10 text-xl text-white drop-shadow-[2px_2px_0_rgba(0,0,0,0.5)]">
+                            {profile ? 'Battle' : 'Loading...'}
+                        </span>
                     </div>
                     <div className="relative w-40 h-24 flex justify-center items-center cursor-pointer transition-transform active:scale-95 hover:brightness-110">
                         <img src="/assets/button_blue.png" alt="2v2" className="absolute w-full h-full drop-shadow-xl" />

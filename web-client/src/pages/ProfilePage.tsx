@@ -3,21 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import { BottomNav } from '../ui/BottomNav';
 import { MobileLayout } from '../ui/MobileLayout';
 import { useGameProgram, type PlayerProfile } from '../hooks/use-game-program';
-import { CARD_ID_TO_NAME, getCardName } from '../game/config/CardConfig';
+import { CARD_ID_TO_NAME } from '../game/config/CardConfig';
 import { MINT_CONFIG } from '../game/config/MintConfig';
 
 export const ProfilePage: React.FC = () => {
     const navigate = useNavigate();
     const { fetchPlayerProfile, playerProfilePda, platformBalance, upgradeCard } = useGameProgram();
     const [profile, setProfile] = useState<PlayerProfile | null>(null);
-    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         if (playerProfilePda) {
-            fetchPlayerProfile(playerProfilePda).then(p => {
-                setProfile(p);
-                setLoading(false);
-            });
+            fetchPlayerProfile(playerProfilePda).then(setProfile);
         }
     }, [playerProfilePda, fetchPlayerProfile]);
 
@@ -35,7 +31,7 @@ export const ProfilePage: React.FC = () => {
                         &lt; Back
                     </button>
                     <h1 className="text-xl text-shadow-md">Player Profile</h1>
-                    
+
                     {/* Token Balance */}
                     <div className="flex flex-col items-end">
                         <span className="text-[0.5rem] text-gray-400 uppercase">Balance</span>
@@ -45,15 +41,15 @@ export const ProfilePage: React.FC = () => {
 
                 {/* Profile Hero Section */}
                 <div className="bg-[#1a3a6e] border-2 border-[#4da6ff] rounded-xl p-6 mb-6 relative overflow-hidden shadow-lg flex flex-col items-center justify-center">
-                     {/* Username and Trophies Row */}
-                     <div className="flex items-center gap-4 mb-2 z-10">
+                    {/* Username and Trophies Row */}
+                    <div className="flex items-center gap-4 mb-2 z-10">
                         <h2 className="text-2xl text-[#64cbff] text-shadow-md font-bold">{username}</h2>
                         <div className="w-px h-6 bg-white/30"></div>
                         <div className="flex items-center gap-2">
-                             <img src="/assets/cup_icon.png" alt="Trophies" className="h-8 drop-shadow-md" />
-                             <span className="text-2xl text-[#ffce4b] font-bold text-shadow-sm">{trophies}</span>
+                            <img src="/assets/cup_icon.png" alt="Trophies" className="h-8 drop-shadow-md" />
+                            <span className="text-2xl text-[#ffce4b] font-bold text-shadow-sm">{trophies}</span>
                         </div>
-                     </div>
+                    </div>
                 </div>
 
                 {/* Cards Collection */}
@@ -63,17 +59,17 @@ export const ProfilePage: React.FC = () => {
                         profile.inventory.map((card, idx) => {
                             const cardName = CARD_ID_TO_NAME[card.cardId] || `Card ${card.cardId}`;
                             const imageUrl = `/assets/cards/${cardName.toLowerCase()}.png`;
-                            
+
                             const cardsNeeded = card.level * 2;
-                            const canUpgrade = card.amount >= cardsNeeded; 
+                            const canUpgrade = card.amount >= cardsNeeded;
                             const upgradeCost = 50 * Math.pow(card.level, 2);
 
                             return (
                                 <div key={idx} className="flex flex-col items-center">
                                     <div className="relative w-full aspect-[3/4] bg-[#333] rounded-lg overflow-hidden border border-[#555] mb-1 group">
-                                        <img 
-                                            src={imageUrl} 
-                                            alt={cardName} 
+                                        <img
+                                            src={imageUrl}
+                                            alt={cardName}
                                             className="w-full h-full object-cover"
                                             onError={(e) => (e.currentTarget.src = '/assets/cards/unknown.png')}
                                         />
@@ -81,11 +77,11 @@ export const ProfilePage: React.FC = () => {
                                         <div className="absolute bottom-0 inset-x-0 bg-black/70 text-center text-[0.6rem] font-bold py-0.5 text-[#fbce47]">
                                             Lvl {card.level}
                                         </div>
-                                        
+
                                         {/* Upgrade Overlay */}
                                         {canUpgrade && (
                                             <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center p-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button 
+                                                <button
                                                     className="bg-[#00d048] hover:bg-[#00e050] text-white text-[0.5rem] font-bold px-1 py-1 rounded shadow-md w-full mb-1 animate-pulse leading-tight"
                                                     onClick={async (e) => {
                                                         e.stopPropagation();
@@ -93,8 +89,8 @@ export const ProfilePage: React.FC = () => {
                                                             try {
                                                                 await upgradeCard(card.cardId, MINT_CONFIG.PLATFORM);
                                                                 // Refresh profile
-                                                                if (profile && playerProfilePda) fetchPlayerProfile(playerProfilePda).then(setProfile); 
-                                                            } catch(err: any) {
+                                                                if (profile && playerProfilePda) fetchPlayerProfile(playerProfilePda).then(setProfile);
+                                                            } catch (err: any) {
                                                                 alert("Upgrade Failed: " + err.message);
                                                             }
                                                         }
@@ -106,11 +102,11 @@ export const ProfilePage: React.FC = () => {
                                             </div>
                                         )}
                                     </div>
-                                    
+
                                     {/* Progress Bar */}
                                     <div className="w-full bg-[#111] h-1.5 rounded-full overflow-hidden border border-[#333] relative mt-1">
-                                        <div 
-                                            className={`h-full ${canUpgrade ? 'bg-[#00d048]' : 'bg-[#4da6ff]'}`} 
+                                        <div
+                                            className={`h-full ${canUpgrade ? 'bg-[#00d048]' : 'bg-[#4da6ff]'}`}
                                             style={{ width: `${Math.min((card.amount / cardsNeeded) * 100, 100)}%` }}
                                         ></div>
                                     </div>
@@ -123,7 +119,7 @@ export const ProfilePage: React.FC = () => {
                     )}
                 </div>
             </div>
-            
+
             <BottomNav />
         </MobileLayout>
     );

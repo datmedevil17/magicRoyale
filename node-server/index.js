@@ -3,13 +3,8 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-require('dotenv').config();
-const bs58 = require('bs58').default || require('bs58');
-
-// Solana/Anchor imports
-const { Connection, PublicKey, Keypair, SystemProgram } = require('@solana/web3.js');
-const { Program, AnchorProvider, Wallet, BN } = require('@coral-xyz/anchor');
-const IDL = require('./game_core.json');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 app.use(cors());
@@ -17,337 +12,253 @@ app.use(bodyParser.json());
 
 const server = http.createServer(app);
 const io = new Server(server, {
-    cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
-    }
+    cors: { origin: '*', methods: ['GET', 'POST'] }
 });
 
-// --- Blockchain Setup ---
-const PROGRAM_ID = new PublicKey(IDL.address);
-const RPC_URL = process.env.ANCHOR_PROVIDER_URL || 'https://api.devnet.solana.com';
+// For tracking disconnect grace periods
+const disconnectTimers = new Map();
 
-// Parse server private key from env
-let serverKeypair;
-try {
-    const rawKey = process.env.SERVER_PRIVATE_KEY;
-    if (!rawKey) {
-        console.warn('⚠️  SERVER_PRIVATE_KEY not set in .env. Please add a funded keypair.');
-        serverKeypair = Keypair.generate(); // Temporary fallback
-    } else {
-        // Try parsing as JSON array first
-        try {
-            const privateKeyArray = JSON.parse(rawKey);
-            serverKeypair = Keypair.fromSecretKey(Uint8Array.from(privateKeyArray));
-        } catch (jsonErr) {
-            // Fallback to Base58 parsing
-            try {
-                const decoded = bs58.decode(rawKey);
-                serverKeypair = Keypair.fromSecretKey(decoded);
-            } catch (bs58Err) {
-                throw new Error('Invalid SERVER_PRIVATE_KEY format. Must be JSON array or Base58 string.');
-            }
-        }
+// ─── Constants ────────────────────────────────────────────────────────────────
+const GAME_DURATION_MS = 3 * 60 * 1000; // 3 minutes
+const TICK_INTERVAL_MS = 100;           // 10 ticks/sec
+
+// ─── State ────────────────────────────────────────────────────────────────────
+// gameId → { roomId, gameId, tickInterval, timer, startTime, delegated: Set<socketId>, player1: Socket, player2: Socket }
+const activeGames = new Map();
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function getGameRoom(socket) {
+    for (const room of socket.rooms) {
+        if (room !== socket.id) return room;
     }
-    console.log('✅ Server Authority Wallet:', serverKeypair.publicKey.toBase58());
-} catch (err) {
-    console.error('❌ Error parsing SERVER_PRIVATE_KEY:', err.message);
-    process.exit(1);
+    return null;
 }
 
-// Initialize Anchor Provider
-const connection = new Connection(RPC_URL, { commitment: 'confirmed' });
-const wallet = new Wallet(serverKeypair);
-const provider = new AnchorProvider(connection, wallet, { commitment: 'confirmed' });
-const program = new Program(IDL, provider);
-
-console.log('✅ Connected to Solana:', RPC_URL);
-console.log('✅ Program ID:', PROGRAM_ID.toBase58());
-
-// --- Helper Functions ---
-function getPlayerProfilePda(authority) {
-    return PublicKey.findProgramAddressSync(
-        [Buffer.from("player"), authority.toBuffer()],
-        PROGRAM_ID
-    )[0];
+function cleanupGame(gameId) {
+    const game = activeGames.get(gameId);
+    if (!game) return;
+    clearInterval(game.tickInterval);
+    clearTimeout(game.timer);
+    activeGames.delete(gameId);
+    console.log(`🧹 Cleaned up game ${gameId}`);
 }
 
-// --- Socket.IO Game Logic ---
-let waitingPlayers = [];
+function startBattleClock(gameId, roomId) {
+    const game = activeGames.get(gameId);
+    if (!game || game.tickInterval) return; // already started
 
+    const startTime = Date.now();
+    game.startTime = startTime;
+    console.log(`⚔️  Battle clock started — room ${roomId}`);
+
+    const tickInterval = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const remaining = Math.max(0, GAME_DURATION_MS - elapsed);
+        io.to(roomId).emit('tick', { elapsed, remaining });
+        if (remaining <= 0) clearInterval(tickInterval);
+    }, TICK_INTERVAL_MS);
+
+    const timer = setTimeout(() => {
+        console.log(`⏰ Game ${gameId} timed out`);
+        io.to(roomId).emit('game-timeout', { gameId });
+        cleanupGame(gameId);
+    }, GAME_DURATION_MS);
+
+    game.tickInterval = tickInterval;
+    game.timer = timer;
+
+    io.to(roomId).emit('battle-started', { gameId, startTime });
+}
+
+// ─── Socket.IO ────────────────────────────────────────────────────────────────
 io.on('connection', (socket) => {
     const walletPublicKey = socket.handshake.query.walletPublicKey;
+    if (!walletPublicKey) { socket.disconnect(); return; }
 
-    if (!walletPublicKey) {
-        console.log('❌ Connection rejected: No wallet public key provided');
-        socket.disconnect();
-        return;
-    }
-
-    try {
-        const walletPubkey = new PublicKey(walletPublicKey);
-        socket.walletPublicKey = walletPubkey;
-        console.log('✅ User connected:', socket.id, '| Wallet:', walletPublicKey);
-    } catch (err) {
-        console.log('❌ Invalid wallet public key:', walletPublicKey);
-        socket.disconnect();
-        return;
-    }
-
-    socket.emit('connect_ack', { id: socket.id, wallet: walletPublicKey });
+    socket.walletPublicKey = walletPublicKey;
     socket.delegated = false;
+    console.log(`✅ Connected: ${socket.id} | Wallet: ${walletPublicKey}`);
+    socket.emit('connect_ack', { id: socket.id, wallet: walletPublicKey });
 
-    // Handle Matchmaking
-    socket.on('find-match', async () => {
-        console.log('🔍 User searching for match:', socket.id);
+    // ── Manual Game Creation & Joining ───────────────────────────────────────
 
-        waitingPlayers = waitingPlayers.filter(id => id !== socket.id);
-        waitingPlayers.push(socket.id);
+    // Player 1 creates a new room (ID generated by client)
+    socket.on('create-room', (data) => {
+        const { gameId } = data || {};
+        if (!gameId) return;
 
-        if (waitingPlayers.length >= 2) {
-            const player1Id = waitingPlayers.shift();
-            const player2Id = waitingPlayers.shift();
+        // If for some astronomically rare reason a collision occurs locally, just overwrite or reject
+        // We'll trust the client ID here since we assume it's valid if it passed on-chain
+        const roomId = `room_${gameId}`;
 
-            const s1 = io.sockets.sockets.get(player1Id);
-            const s2 = io.sockets.sockets.get(player2Id);
+        socket.join(roomId);
+        socket.gameId = gameId;
+        socket.roomId = roomId;
+        socket.role = 'player1';
 
-            if (s1 && s2) {
-                const player1Wallet = s1.walletPublicKey;
-                const player2Wallet = s2.walletPublicKey;
+        // Register game in pending state (waiting for player2)
+        activeGames.set(gameId, {
+            roomId, gameId,
+            tickInterval: null, timer: null, startTime: null,
+            delegated: new Set(),
+            player1: socket,
+            player2: null
+        });
 
-                console.log(`🎮 Match found: ${player1Wallet.toBase58()} vs ${player2Wallet.toBase58()}`);
+        console.log(`🏠 Room created: ${gameId} by ${socket.walletPublicKey}`);
+    });
 
-                try {
-                    // Generate keypairs for game and battle
-                    const gameKeypair = Keypair.generate();
-                    const battleKeypair = Keypair.generate();
+    // Player 2 joins an existing room
+    socket.on('join-room', (data) => {
+        const { gameId } = data;
+        const game = activeGames.get(gameId);
 
-                    console.log('⏳ Creating game on-chain...');
-                    console.log('  Game PDA:', gameKeypair.publicKey.toBase58());
-                    console.log('  Battle PDA:', battleKeypair.publicKey.toBase58());
+        if (!game) {
+            socket.emit('error', { message: 'Game not found / Invalid Code' });
+            return;
+        }
 
-                    // Call startGame instruction
-                    const tx = await program.methods
-                        .startGame()
-                        .accounts({
-                            game: gameKeypair.publicKey,
-                            battle: battleKeypair.publicKey,
-                            playerOne: player1Wallet,
-                            playerTwo: player2Wallet,
-                            authority: serverKeypair.publicKey,
-                            systemProgram: SystemProgram.programId,
-                        })
-                        .signers([gameKeypair, battleKeypair])
-                        .rpc();
+        if (game.player2) {
+            socket.emit('error', { message: 'Game is already full' });
+            return;
+        }
 
-                    console.log('✅ Game created on-chain. TX:', tx);
+        const roomId = game.roomId;
+        socket.join(roomId);
+        socket.gameId = gameId;
+        socket.roomId = roomId;
+        socket.role = 'player2';
 
-                    const roomId = `room_${gameKeypair.publicKey.toBase58()}`;
-                    s1.join(roomId);
-                    s2.join(roomId);
+        game.player2 = socket;
 
-                    // Store game info on sockets
-                    s1.gameId = gameKeypair.publicKey.toBase58();
-                    s1.battleId = battleKeypair.publicKey.toBase58();
-                    s1.roomId = roomId;
-                    s1.role = 'player1';
+        console.log(`🎮 Match: ${game.player1.walletPublicKey} vs ${socket.walletPublicKey} | game=${gameId}`);
 
-                    s2.gameId = gameKeypair.publicKey.toBase58();
-                    s2.battleId = battleKeypair.publicKey.toBase58();
-                    s2.roomId = roomId;
-                    s2.role = 'player2';
+        // Emit game-start to both players so they can do on-chain init & navigate
+        io.to(game.player1.id).emit('game-start', {
+            gameId, role: 'player1', opponentWallet: socket.walletPublicKey, roomId
+        });
+        io.to(socket.id).emit('game-start', {
+            gameId, role: 'player2', opponentWallet: game.player1.walletPublicKey, roomId
+        });
+    });
 
-                    // Notify both players
-                    io.to(player1Id).emit('game-start', {
-                        opponentId: player2Id,
-                        opponentWallet: player2Wallet.toBase58(),
-                        role: 'player1',
-                        roomId,
-                        gameId: gameKeypair.publicKey.toBase58(),
-                        battleId: battleKeypair.publicKey.toBase58(),
-                    });
+    // ── Rejoin after navigation (GameWrapper opens a fresh socket) ───────────
+    // Client emits { gameId, role } so we can re-associate into the room.
+    socket.on('rejoin-game', (data) => {
+        const { gameId, role } = data;
+        const game = activeGames.get(gameId);
+        if (!game) {
+            socket.emit('error', { message: `Game ${gameId} not found` });
+            return;
+        }
 
-                    io.to(player2Id).emit('game-start', {
-                        opponentId: player1Id,
-                        opponentWallet: player1Wallet.toBase58(),
-                        role: 'player2',
-                        roomId,
-                        gameId: gameKeypair.publicKey.toBase58(),
-                        battleId: battleKeypair.publicKey.toBase58(),
-                    });
+        const roomId = game.roomId;
+        socket.join(roomId);
+        socket.gameId = gameId;
+        socket.roomId = roomId;
+        socket.role = role;
+        socket.delegated = false;
 
-                } catch (err) {
-                    console.error('❌ Error creating game on-chain:', err);
-                    s1.emit('error', { message: 'Failed to create game on blockchain' });
-                    s2.emit('error', { message: 'Failed to create game on blockchain' });
-                }
-            }
+        console.log(`🔄 Rejoin: ${socket.id} role=${role} game=${gameId}`);
+
+        // If battle already started, send current tick so client can sync
+        if (game.startTime) {
+            const elapsed = Date.now() - game.startTime;
+            const remaining = Math.max(0, GAME_DURATION_MS - elapsed);
+            socket.emit('tick', { elapsed, remaining });
+            socket.emit('battle-started', { gameId, startTime: game.startTime });
+        }
+
+        // Clear any disconnect timers for this role
+        const graceTimerKey = `${gameId}-${role}`;
+        if (disconnectTimers.has(graceTimerKey)) {
+            clearTimeout(disconnectTimers.get(graceTimerKey));
+            disconnectTimers.delete(graceTimerKey);
+            console.log(`⏱️ Cleared disconnect grace period for ${graceTimerKey}`);
+            socket.to(socket.roomId).emit('opponent-reconnected', { role: socket.role });
         }
     });
 
-    // Relay Card Placement (still useful for optimistic updates)
-    socket.on('card-played', (data) => {
-        console.log('🃏 Card played by', socket.id, data);
+    // ── Only Player 1 delegates the battle PDA to the ER ─────────────────────
+    // Player 2 never calls delegateGame (one-time, one-payer operation).
+    // As soon as player1 signals 'delegated', start the clock for both.
+    socket.on('delegated', () => {
+        console.log(`🛡️  Delegated: ${socket.id} role=${socket.role}`);
 
-        let gameRoom = null;
-        for (const room of socket.rooms) {
-            if (room !== socket.id) {
-                gameRoom = room;
-                break;
+        const roomId = socket.roomId;
+        const gameId = socket.gameId;
+        if (!roomId || !gameId || socket.role !== 'player1') {
+            // Ignore signals from player2 (they shouldn't be calling this)
+            if (socket.role !== 'player1') {
+                console.warn(`⚠️  Unexpected delegated signal from role=${socket.role} — ignored`);
             }
+            return;
         }
 
-        if (gameRoom) {
-            socket.to(gameRoom).emit('opponent-card-played', {
-                id: socket.id,
-                cardId: data.cardId,
-                position: data.position
-            });
-        }
+        const game = activeGames.get(gameId);
+        if (!game || game.tickInterval) return; // already started
+
+        startBattleClock(gameId, roomId);
     });
 
-    // Handle Delegation Signal
-    socket.on('delegated', async () => {
-        console.log('🛡️  Player delegated:', socket.id);
-        socket.delegated = true;
-
-        if (socket.roomId) {
-            const socketsInRoom = await io.in(socket.roomId).fetchSockets();
-            const allDelegated = socketsInRoom.every(s => s.delegated);
-
-            if (allDelegated && socketsInRoom.length === 2) {
-                console.log('⚔️  Both players delegated! Starting battle in', socket.roomId);
-                io.to(socket.roomId).emit('battle-started');
-            }
-        }
+    // ── Troop relay ───────────────────────────────────────────────────────────
+    // Shape: { cardIdx, cardId, x, y }
+    socket.on('deploy-troop', (data) => {
+        const roomId = getGameRoom(socket);
+        if (!roomId) return;
+        console.log(`🪖 ${socket.role} deployed cardIdx=${data.cardIdx} at (${data.x},${data.y})`);
+        socket.to(roomId).emit('opponent-deploy-troop', {
+            cardIdx: data.cardIdx,
+            cardId: data.cardId,   // human-readable name e.g. 'Giant'
+            x: data.x,
+            y: data.y,
+            ownerRole: socket.role,
+        });
     });
 
-    // Handle Game End (resolve game on-chain)
-    // Handle Client Undelegation (Wait for both to commit battle state)
-    socket.on('client-undelegated', async (data) => {
-        console.log('🏁 Player undelegated:', socket.id, data);
-        socket.undelegated = true;
-        socket.reportedWinnerIdx = data.winnerIdx;
-
-        if (socket.roomId) {
-            const socketsInRoom = await io.in(socket.roomId).fetchSockets(); // Note: fetchSockets() returns remote instances, but properties set on 'socket' in this process are persistent if single node. 
-            // Actually, fetchSockets() returns stripped objects. 
-            // But since we are likely running single node, we can access io.sockets.sockets.get(id).
-            // Let's use io.sockets.sockets.get() for reliability in local dev.
-
-            const roomSocketIds = Array.from(io.sockets.adapter.rooms.get(socket.roomId) || []);
-            const roomSockets = roomSocketIds.map(id => io.sockets.sockets.get(id)).filter(s => s);
-
-            const allUndelegated = roomSockets.every(s => s.undelegated);
-
-            if (allUndelegated && roomSockets.length === 2) {
-                console.log('✅ Both players undelegated. Resolving game...');
-
-                // Identify players by role
-                const p1Socket = roomSockets.find(s => s.role === 'player1');
-                const p2Socket = roomSockets.find(s => s.role === 'player2');
-
-                if (!p1Socket || !p2Socket) {
-                    console.error('❌ Could not identify player roles for resolution');
-                    return;
-                }
-
-                // Use winnerIdx from one of them (or compare). 
-                // Default to p1's report or specific logic.
-                const winnerIdx = p1Socket.reportedWinnerIdx;
-
-                const gameId = new PublicKey(p1Socket.gameId);
-                const battleId = new PublicKey(p1Socket.battleId);
-                const player1Wallet = p1Socket.walletPublicKey;
-                const player2Wallet = p2Socket.walletPublicKey;
-
-                console.log('⏳ Resolving game on-chain...');
-                try {
-                    const tx = await program.methods
-                        .resolveGame(winnerIdx)
-                        .accounts({
-                            game: gameId,
-                            battle: battleId,
-                            playerOne: player1Wallet,
-                            playerTwo: player2Wallet,
-                            authority: serverKeypair.publicKey,
-                        })
-                        .rpc();
-
-                    console.log('✅ Game resolved on-chain. TX:', tx);
-
-                    // Notify both players
-                    io.to(socket.roomId).emit('game-resolved', {
-                        gameId: socket.gameId,
-                        winnerIdx,
-                        tx,
-                    });
-                } catch (err) {
-                    console.error('❌ Error resolving game on-chain:', err);
-                    io.to(socket.roomId).emit('error', { message: 'Failed to resolve game on blockchain' });
-                }
-            }
-        }
-    });
-
+    // ── Disconnect ────────────────────────────────────────────────────────────
     socket.on('disconnect', () => {
-        console.log('👋 User disconnected:', socket.id);
-        waitingPlayers = waitingPlayers.filter(id => id !== socket.id);
+        console.log(`👋 Disconnected: ${socket.id} (Role: ${socket.role}, Room: ${socket.roomId})`);
+
+        if (socket.roomId && socket.role) {
+            // Give them 15 seconds to reconnect (e.g. they are navigating from WaitingScreen to GameWrapper)
+            const graceTimerKey = `${socket.gameId}-${socket.role}`;
+
+            const timer = setTimeout(() => {
+                console.log(`☠️ Grace period expired for ${graceTimerKey}. Broadcasting disconnect.`);
+                socket.to(socket.roomId).emit('opponent-disconnected', { role: socket.role });
+                disconnectTimers.delete(graceTimerKey);
+            }, 10000); // 10 seconds grace period
+
+            disconnectTimers.set(graceTimerKey, timer);
+        }
+        // Don't clean up the game completely on disconnect — Game timeout cleans up after GAME_DURATION_MS
     });
 });
 
-// --- Market Logic (JSON File) ---
-const fs = require('fs');
-const path = require('path');
+// ─── Market API ───────────────────────────────────────────────────────────────
 const MARKET_FILE = path.join(__dirname, 'market.json');
+if (!fs.existsSync(MARKET_FILE)) fs.writeFileSync(MARKET_FILE, '[]');
 
-// Ensure market file exists
-if (!fs.existsSync(MARKET_FILE)) {
-    fs.writeFileSync(MARKET_FILE, JSON.stringify([], null, 2));
-}
-
-// GET /market
-app.get('/market', (req, res) => {
-    try {
-        const data = fs.readFileSync(MARKET_FILE, 'utf8');
-        const listings = JSON.parse(data);
-        res.json(listings);
-    } catch (err) {
-        console.error('Error reading market file:', err);
-        res.status(500).json({ error: 'Failed to read market listings' });
-    }
+app.get('/market', (_req, res) => {
+    try { res.json(JSON.parse(fs.readFileSync(MARKET_FILE, 'utf8'))); }
+    catch { res.status(500).json({ error: 'Failed to read market' }); }
 });
 
-// POST /market (Admin add/update listing)
 app.post('/market', (req, res) => {
     const { cardId, price } = req.body;
-
-    if (!cardId || price === undefined) {
+    if (!cardId || price === undefined)
         return res.status(400).json({ error: 'Missing cardId or price' });
-    }
-
     try {
-        const data = fs.readFileSync(MARKET_FILE, 'utf8');
-        let listings = JSON.parse(data);
-
-        // Check if listing exists, update or add
-        const existingIndex = listings.findIndex(item => item.cardId === cardId);
-        if (existingIndex !== -1) {
-            listings[existingIndex].price = price;
-        } else {
-            listings.push({ cardId, price });
-        }
-
+        const listings = JSON.parse(fs.readFileSync(MARKET_FILE, 'utf8'));
+        const idx = listings.findIndex(l => l.cardId === cardId);
+        if (idx !== -1) listings[idx].price = price;
+        else listings.push({ cardId, price });
         fs.writeFileSync(MARKET_FILE, JSON.stringify(listings, null, 2));
-        console.log(`✅ Market listing updated: Card ${cardId} -> ${price}`);
         res.json({ success: true, listings });
-    } catch (err) {
-        console.error('Error updating market file:', err);
-        res.status(500).json({ error: 'Failed to update market listing' });
-    }
+    } catch { res.status(500).json({ error: 'Failed to update market' }); }
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-});
+server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

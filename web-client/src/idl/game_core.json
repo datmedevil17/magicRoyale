@@ -1,5 +1,5 @@
 {
-  "address": "HMwmTSa6tG42K7Es9Fhnj8ufD9jktSSxihtU3cmZsVyb",
+  "address": "DNsfEAur359Xv18MT1nxfEqh3YGZmhwfnm454wmYkVE1",
   "metadata": {
     "name": "game_core",
     "version": "0.1.0",
@@ -7,126 +7,6 @@
     "description": "Created with Anchor"
   },
   "instructions": [
-    {
-      "name": "claim_rewards",
-      "discriminator": [
-        4,
-        144,
-        132,
-        71,
-        116,
-        23,
-        151,
-        80
-      ],
-      "accounts": [
-        {
-          "name": "game",
-          "writable": true
-        },
-        {
-          "name": "profile",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  108,
-                  97,
-                  121,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "signer"
-              }
-            ]
-          }
-        },
-        {
-          "name": "mint",
-          "writable": true
-        },
-        {
-          "name": "destination",
-          "writable": true
-        },
-        {
-          "name": "mint_authority",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  109,
-                  105,
-                  110,
-                  116,
-                  95,
-                  97,
-                  117,
-                  116,
-                  104,
-                  111,
-                  114,
-                  105,
-                  116,
-                  121
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "token_program",
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-        },
-        {
-          "name": "signer",
-          "writable": true,
-          "signer": true
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "commit_battle",
-      "discriminator": [
-        219,
-        116,
-        150,
-        30,
-        121,
-        105,
-        195,
-        23
-      ],
-      "accounts": [
-        {
-          "name": "payer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "battle",
-          "writable": true
-        },
-        {
-          "name": "magic_program",
-          "address": "Magic11111111111111111111111111111111111111"
-        },
-        {
-          "name": "magic_context",
-          "writable": true,
-          "address": "MagicContext1111111111111111111111111111111"
-        }
-      ],
-      "args": []
-    },
     {
       "name": "create_clan",
       "discriminator": [
@@ -211,16 +91,91 @@
       ]
     },
     {
-      "name": "delegate",
+      "name": "create_game",
       "discriminator": [
-        90,
-        147,
+        124,
+        69,
         75,
-        178,
-        85,
-        88,
-        4,
-        137
+        66,
+        184,
+        220,
+        72,
+        206
+      ],
+      "accounts": [
+        {
+          "name": "battle",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  97,
+                  116,
+                  116,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "game_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "player_one_profile",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  108,
+                  97,
+                  121,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "player_one"
+              }
+            ]
+          }
+        },
+        {
+          "name": "player_one",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "game_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "delegate_game",
+      "discriminator": [
+        116,
+        183,
+        70,
+        107,
+        112,
+        223,
+        122,
+        210
       ],
       "accounts": [
         {
@@ -251,38 +206,38 @@
             "program": {
               "kind": "const",
               "value": [
-                243,
-                24,
-                136,
-                26,
-                226,
-                80,
+                183,
+                230,
+                184,
+                115,
+                252,
+                219,
+                130,
+                75,
+                127,
+                15,
+                139,
+                9,
+                202,
                 229,
-                43,
-                13,
-                35,
-                175,
-                22,
-                155,
-                253,
-                208,
-                209,
-                225,
-                41,
-                249,
-                224,
-                179,
-                192,
-                222,
-                71,
-                16,
-                220,
-                254,
-                19,
-                175,
-                99,
-                226,
-                210
+                242,
+                34,
+                207,
+                66,
+                59,
+                252,
+                127,
+                182,
+                211,
+                145,
+                45,
+                39,
+                236,
+                72,
+                232,
+                89,
+                255,
+                10
               ]
             }
           }
@@ -366,24 +321,24 @@
               {
                 "kind": "const",
                 "value": [
-                  112,
-                  108,
+                  98,
                   97,
-                  121,
-                  101,
-                  114
+                  116,
+                  116,
+                  108,
+                  101
                 ]
               },
               {
-                "kind": "account",
-                "path": "payer"
+                "kind": "arg",
+                "path": "game_id"
               }
             ]
           }
         },
         {
           "name": "owner_program",
-          "address": "HMwmTSa6tG42K7Es9Fhnj8ufD9jktSSxihtU3cmZsVyb"
+          "address": "DNsfEAur359Xv18MT1nxfEqh3YGZmhwfnm454wmYkVE1"
         },
         {
           "name": "delegation_program",
@@ -394,7 +349,12 @@
           "address": "11111111111111111111111111111111"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "game_id",
+          "type": "u64"
+        }
+      ]
     },
     {
       "name": "deploy_troop",
@@ -411,10 +371,26 @@
       "accounts": [
         {
           "name": "battle",
-          "writable": true
-        },
-        {
-          "name": "game"
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  97,
+                  116,
+                  116,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "game_id"
+              }
+            ]
+          }
         },
         {
           "name": "player_profile",
@@ -449,6 +425,10 @@
         }
       ],
       "args": [
+        {
+          "name": "game_id",
+          "type": "u64"
+        },
         {
           "name": "card_idx",
           "type": "u8"
@@ -612,6 +592,68 @@
         }
       ],
       "args": []
+    },
+    {
+      "name": "end_game",
+      "discriminator": [
+        224,
+        135,
+        245,
+        99,
+        67,
+        175,
+        121,
+        252
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "battle",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  97,
+                  116,
+                  116,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "game_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "magic_program",
+          "address": "Magic11111111111111111111111111111111111111"
+        },
+        {
+          "name": "magic_context",
+          "writable": true,
+          "address": "MagicContext1111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "game_id",
+          "type": "u64"
+        },
+        {
+          "name": "is_timeout",
+          "type": "bool"
+        }
+      ]
     },
     {
       "name": "export_nft",
@@ -1106,6 +1148,187 @@
       "args": []
     },
     {
+      "name": "join_game",
+      "discriminator": [
+        107,
+        112,
+        18,
+        38,
+        56,
+        173,
+        60,
+        128
+      ],
+      "accounts": [
+        {
+          "name": "battle",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  97,
+                  116,
+                  116,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "game_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "player_two_profile",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  108,
+                  97,
+                  121,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "player_two"
+              }
+            ]
+          }
+        },
+        {
+          "name": "player_two",
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "game_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "mint_trophies",
+      "discriminator": [
+        43,
+        167,
+        115,
+        22,
+        194,
+        59,
+        61,
+        99
+      ],
+      "accounts": [
+        {
+          "name": "battle",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  97,
+                  116,
+                  116,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "game_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  108,
+                  97,
+                  121,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "signer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint",
+          "writable": true
+        },
+        {
+          "name": "destination",
+          "writable": true
+        },
+        {
+          "name": "mint_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "game_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "process_undelegation",
       "discriminator": [
         196,
@@ -1236,50 +1459,6 @@
       ]
     },
     {
-      "name": "resolve_game",
-      "discriminator": [
-        25,
-        119,
-        183,
-        229,
-        196,
-        69,
-        169,
-        79
-      ],
-      "accounts": [
-        {
-          "name": "game",
-          "writable": true
-        },
-        {
-          "name": "battle",
-          "writable": true
-        },
-        {
-          "name": "player_one",
-          "writable": true
-        },
-        {
-          "name": "player_two",
-          "writable": true
-        },
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true
-        }
-      ],
-      "args": [
-        {
-          "name": "winner_idx",
-          "type": {
-            "option": "u8"
-          }
-        }
-      ]
-    },
-    {
       "name": "set_deck",
       "discriminator": [
         27,
@@ -1343,81 +1522,6 @@
           }
         }
       ]
-    },
-    {
-      "name": "start_game",
-      "discriminator": [
-        249,
-        47,
-        252,
-        172,
-        184,
-        162,
-        245,
-        14
-      ],
-      "accounts": [
-        {
-          "name": "game",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "battle",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "player_one"
-        },
-        {
-          "name": "player_two"
-        },
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "undelegate_battle",
-      "discriminator": [
-        23,
-        85,
-        150,
-        83,
-        141,
-        171,
-        46,
-        224
-      ],
-      "accounts": [
-        {
-          "name": "payer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "battle",
-          "writable": true
-        },
-        {
-          "name": "magic_program",
-          "address": "Magic11111111111111111111111111111111111111"
-        },
-        {
-          "name": "magic_context",
-          "writable": true,
-          "address": "MagicContext1111111111111111111111111111111"
-        }
-      ],
-      "args": []
     },
     {
       "name": "unlock_card",
@@ -1607,19 +1711,6 @@
       ]
     },
     {
-      "name": "GameState",
-      "discriminator": [
-        144,
-        94,
-        208,
-        172,
-        248,
-        99,
-        134,
-        120
-      ]
-    },
-    {
       "name": "PlayerProfile",
       "discriminator": [
         82,
@@ -1766,6 +1857,36 @@
       "code": 6023,
       "name": "Unauthorized",
       "msg": "Unauthorized"
+    },
+    {
+      "code": 6024,
+      "name": "GameAlreadyFull",
+      "msg": "Game is already full"
+    },
+    {
+      "code": 6025,
+      "name": "GameNotActive",
+      "msg": "Game is not active"
+    },
+    {
+      "code": 6026,
+      "name": "GameNotWaiting",
+      "msg": "Game is not in waiting state"
+    },
+    {
+      "code": 6027,
+      "name": "NotAPlayer",
+      "msg": "You are not a player in this game"
+    },
+    {
+      "code": 6028,
+      "name": "WinnerNotDetermined",
+      "msg": "Winner has not been determined yet"
+    },
+    {
+      "code": 6029,
+      "name": "AlreadyMinted",
+      "msg": "Trophies already minted for this game"
     }
   ],
   "types": [
@@ -1774,6 +1895,27 @@
       "type": {
         "kind": "struct",
         "fields": [
+          {
+            "name": "game_id",
+            "type": "u64"
+          },
+          {
+            "name": "players",
+            "type": {
+              "array": [
+                "pubkey",
+                2
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "type": {
+              "defined": {
+                "name": "GameStatus"
+              }
+            }
+          },
           {
             "name": "tick_count",
             "type": "u64"
@@ -1814,6 +1956,34 @@
             "name": "winner",
             "type": {
               "option": "u8"
+            }
+          },
+          {
+            "name": "trophies_minted",
+            "type": "bool"
+          },
+          {
+            "name": "towers_destroyed",
+            "docs": [
+              "How many of the enemy's towers each player has destroyed (princess only)"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                2
+              ]
+            }
+          },
+          {
+            "name": "damage_dealt",
+            "docs": [
+              "Total HP damage dealt to enemy towers by each player"
+            ],
+            "type": {
+              "array": [
+                "u64",
+                2
+              ]
             }
           }
         ]
@@ -2053,50 +2223,6 @@
           },
           {
             "name": "Dead"
-          }
-        ]
-      }
-    },
-    {
-      "name": "GameState",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "players",
-            "type": {
-              "array": [
-                "pubkey",
-                2
-              ]
-            }
-          },
-          {
-            "name": "winner",
-            "type": {
-              "option": "pubkey"
-            }
-          },
-          {
-            "name": "rewards_claimed",
-            "type": {
-              "array": [
-                "bool",
-                2
-              ]
-            }
-          },
-          {
-            "name": "created_at",
-            "type": "i64"
-          },
-          {
-            "name": "status",
-            "type": {
-              "defined": {
-                "name": "GameStatus"
-              }
-            }
           }
         ]
       }

@@ -1,8 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { BN } from '@coral-xyz/anchor';
 import { useGameProgram } from '../hooks/use-game-program';
 import { MINT_CONFIG } from '../game/config/MintConfig';
-import { PublicKey } from '@solana/web3.js';
 
 interface VictoryScreenProps {
     winner: 'player' | 'opponent' | 'draw';
@@ -11,7 +11,7 @@ interface VictoryScreenProps {
     playerTowersDestroyed: number;
     opponentTowersDestroyed: number;
     victoryReason?: string;
-    gameId?: string;
+    gameId?: string; // u64 as decimal string
 }
 
 export const VictoryScreen: React.FC<VictoryScreenProps> = ({
@@ -24,7 +24,7 @@ export const VictoryScreen: React.FC<VictoryScreenProps> = ({
     gameId
 }) => {
     const navigate = useNavigate();
-    const { claimRewards, isLoading, error } = useGameProgram();
+    const { mintTrophies, isLoading, error } = useGameProgram();
 
     const getTitle = () => {
         if (winner === 'player') return 'VICTORY!';
@@ -110,22 +110,23 @@ export const VictoryScreen: React.FC<VictoryScreenProps> = ({
                     </button>
                 </div>
 
+                {/* Mint Trophies — only shown to winner */}
                 {winner === 'player' && gameId && (
                     <div className="mt-6 flex flex-col items-center gap-2">
                         <button
                             onClick={async () => {
                                 try {
-                                    await claimRewards(new PublicKey(gameId), MINT_CONFIG.GOLD);
-                                    alert('Rewards claimed successfully!');
+                                    await mintTrophies(new BN(gameId), MINT_CONFIG.GOLD);
+                                    alert('Trophies minted successfully!');
                                 } catch (err: any) {
-                                    console.error('Claim rewards failed:', err);
-                                    alert(`Claim failed: ${err.message}`);
+                                    console.error('Mint trophies failed:', err);
+                                    alert(`Mint failed: ${err.message}`);
                                 }
                             }}
                             disabled={isLoading}
                             className="w-full bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white font-black py-4 px-8 rounded-xl transition-all active:scale-95 shadow-[0_5px_15px_rgba(249,115,22,0.4)] border-b-4 border-orange-800 disabled:opacity-50"
                         >
-                            {isLoading ? 'Claiming...' : '🏆 CLAIM REWARDS 🏆'}
+                            {isLoading ? 'Minting...' : '🏆 CLAIM TROPHIES 🏆'}
                         </button>
                         {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
                     </div>

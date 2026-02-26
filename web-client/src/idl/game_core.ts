@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/game_core.json`.
  */
 export type GameCore = {
-  "address": "HMwmTSa6tG42K7Es9Fhnj8ufD9jktSSxihtU3cmZsVyb",
+  "address": "DNsfEAur359Xv18MT1nxfEqh3YGZmhwfnm454wmYkVE1",
   "metadata": {
     "name": "gameCore",
     "version": "0.1.0",
@@ -13,126 +13,6 @@ export type GameCore = {
     "description": "Created with Anchor"
   },
   "instructions": [
-    {
-      "name": "claimRewards",
-      "discriminator": [
-        4,
-        144,
-        132,
-        71,
-        116,
-        23,
-        151,
-        80
-      ],
-      "accounts": [
-        {
-          "name": "game",
-          "writable": true
-        },
-        {
-          "name": "profile",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  108,
-                  97,
-                  121,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "signer"
-              }
-            ]
-          }
-        },
-        {
-          "name": "mint",
-          "writable": true
-        },
-        {
-          "name": "destination",
-          "writable": true
-        },
-        {
-          "name": "mintAuthority",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  109,
-                  105,
-                  110,
-                  116,
-                  95,
-                  97,
-                  117,
-                  116,
-                  104,
-                  111,
-                  114,
-                  105,
-                  116,
-                  121
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "tokenProgram",
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-        },
-        {
-          "name": "signer",
-          "writable": true,
-          "signer": true
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "commitBattle",
-      "discriminator": [
-        219,
-        116,
-        150,
-        30,
-        121,
-        105,
-        195,
-        23
-      ],
-      "accounts": [
-        {
-          "name": "payer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "battle",
-          "writable": true
-        },
-        {
-          "name": "magicProgram",
-          "address": "Magic11111111111111111111111111111111111111"
-        },
-        {
-          "name": "magicContext",
-          "writable": true,
-          "address": "MagicContext1111111111111111111111111111111"
-        }
-      ],
-      "args": []
-    },
     {
       "name": "createClan",
       "discriminator": [
@@ -217,16 +97,91 @@ export type GameCore = {
       ]
     },
     {
-      "name": "delegate",
+      "name": "createGame",
       "discriminator": [
-        90,
-        147,
+        124,
+        69,
         75,
-        178,
-        85,
-        88,
-        4,
-        137
+        66,
+        184,
+        220,
+        72,
+        206
+      ],
+      "accounts": [
+        {
+          "name": "battle",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  97,
+                  116,
+                  116,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "gameId"
+              }
+            ]
+          }
+        },
+        {
+          "name": "playerOneProfile",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  108,
+                  97,
+                  121,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "playerOne"
+              }
+            ]
+          }
+        },
+        {
+          "name": "playerOne",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "gameId",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "delegateGame",
+      "discriminator": [
+        116,
+        183,
+        70,
+        107,
+        112,
+        223,
+        122,
+        210
       ],
       "accounts": [
         {
@@ -257,38 +212,38 @@ export type GameCore = {
             "program": {
               "kind": "const",
               "value": [
-                243,
-                24,
-                136,
-                26,
-                226,
-                80,
+                183,
+                230,
+                184,
+                115,
+                252,
+                219,
+                130,
+                75,
+                127,
+                15,
+                139,
+                9,
+                202,
                 229,
-                43,
-                13,
-                35,
-                175,
-                22,
-                155,
-                253,
-                208,
-                209,
-                225,
-                41,
-                249,
-                224,
-                179,
-                192,
-                222,
-                71,
-                16,
-                220,
-                254,
-                19,
-                175,
-                99,
-                226,
-                210
+                242,
+                34,
+                207,
+                66,
+                59,
+                252,
+                127,
+                182,
+                211,
+                145,
+                45,
+                39,
+                236,
+                72,
+                232,
+                89,
+                255,
+                10
               ]
             }
           }
@@ -372,24 +327,24 @@ export type GameCore = {
               {
                 "kind": "const",
                 "value": [
-                  112,
-                  108,
+                  98,
                   97,
-                  121,
-                  101,
-                  114
+                  116,
+                  116,
+                  108,
+                  101
                 ]
               },
               {
-                "kind": "account",
-                "path": "payer"
+                "kind": "arg",
+                "path": "gameId"
               }
             ]
           }
         },
         {
           "name": "ownerProgram",
-          "address": "HMwmTSa6tG42K7Es9Fhnj8ufD9jktSSxihtU3cmZsVyb"
+          "address": "DNsfEAur359Xv18MT1nxfEqh3YGZmhwfnm454wmYkVE1"
         },
         {
           "name": "delegationProgram",
@@ -400,7 +355,12 @@ export type GameCore = {
           "address": "11111111111111111111111111111111"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "gameId",
+          "type": "u64"
+        }
+      ]
     },
     {
       "name": "deployTroop",
@@ -417,10 +377,26 @@ export type GameCore = {
       "accounts": [
         {
           "name": "battle",
-          "writable": true
-        },
-        {
-          "name": "game"
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  97,
+                  116,
+                  116,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "gameId"
+              }
+            ]
+          }
         },
         {
           "name": "playerProfile",
@@ -455,6 +431,10 @@ export type GameCore = {
         }
       ],
       "args": [
+        {
+          "name": "gameId",
+          "type": "u64"
+        },
         {
           "name": "cardIdx",
           "type": "u8"
@@ -618,6 +598,68 @@ export type GameCore = {
         }
       ],
       "args": []
+    },
+    {
+      "name": "endGame",
+      "discriminator": [
+        224,
+        135,
+        245,
+        99,
+        67,
+        175,
+        121,
+        252
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "battle",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  97,
+                  116,
+                  116,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "gameId"
+              }
+            ]
+          }
+        },
+        {
+          "name": "magicProgram",
+          "address": "Magic11111111111111111111111111111111111111"
+        },
+        {
+          "name": "magicContext",
+          "writable": true,
+          "address": "MagicContext1111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "gameId",
+          "type": "u64"
+        },
+        {
+          "name": "isTimeout",
+          "type": "bool"
+        }
+      ]
     },
     {
       "name": "exportNft",
@@ -1112,6 +1154,187 @@ export type GameCore = {
       "args": []
     },
     {
+      "name": "joinGame",
+      "discriminator": [
+        107,
+        112,
+        18,
+        38,
+        56,
+        173,
+        60,
+        128
+      ],
+      "accounts": [
+        {
+          "name": "battle",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  97,
+                  116,
+                  116,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "gameId"
+              }
+            ]
+          }
+        },
+        {
+          "name": "playerTwoProfile",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  108,
+                  97,
+                  121,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "playerTwo"
+              }
+            ]
+          }
+        },
+        {
+          "name": "playerTwo",
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "gameId",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "mintTrophies",
+      "discriminator": [
+        43,
+        167,
+        115,
+        22,
+        194,
+        59,
+        61,
+        99
+      ],
+      "accounts": [
+        {
+          "name": "battle",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  97,
+                  116,
+                  116,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "gameId"
+              }
+            ]
+          }
+        },
+        {
+          "name": "profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  108,
+                  97,
+                  121,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "signer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint",
+          "writable": true
+        },
+        {
+          "name": "destination",
+          "writable": true
+        },
+        {
+          "name": "mintAuthority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "gameId",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "processUndelegation",
       "discriminator": [
         196,
@@ -1242,50 +1465,6 @@ export type GameCore = {
       ]
     },
     {
-      "name": "resolveGame",
-      "discriminator": [
-        25,
-        119,
-        183,
-        229,
-        196,
-        69,
-        169,
-        79
-      ],
-      "accounts": [
-        {
-          "name": "game",
-          "writable": true
-        },
-        {
-          "name": "battle",
-          "writable": true
-        },
-        {
-          "name": "playerOne",
-          "writable": true
-        },
-        {
-          "name": "playerTwo",
-          "writable": true
-        },
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true
-        }
-      ],
-      "args": [
-        {
-          "name": "winnerIdx",
-          "type": {
-            "option": "u8"
-          }
-        }
-      ]
-    },
-    {
       "name": "setDeck",
       "discriminator": [
         27,
@@ -1349,81 +1528,6 @@ export type GameCore = {
           }
         }
       ]
-    },
-    {
-      "name": "startGame",
-      "discriminator": [
-        249,
-        47,
-        252,
-        172,
-        184,
-        162,
-        245,
-        14
-      ],
-      "accounts": [
-        {
-          "name": "game",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "battle",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "playerOne"
-        },
-        {
-          "name": "playerTwo"
-        },
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "systemProgram",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "undelegateBattle",
-      "discriminator": [
-        23,
-        85,
-        150,
-        83,
-        141,
-        171,
-        46,
-        224
-      ],
-      "accounts": [
-        {
-          "name": "payer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "battle",
-          "writable": true
-        },
-        {
-          "name": "magicProgram",
-          "address": "Magic11111111111111111111111111111111111111"
-        },
-        {
-          "name": "magicContext",
-          "writable": true,
-          "address": "MagicContext1111111111111111111111111111111"
-        }
-      ],
-      "args": []
     },
     {
       "name": "unlockCard",
@@ -1613,19 +1717,6 @@ export type GameCore = {
       ]
     },
     {
-      "name": "gameState",
-      "discriminator": [
-        144,
-        94,
-        208,
-        172,
-        248,
-        99,
-        134,
-        120
-      ]
-    },
-    {
       "name": "playerProfile",
       "discriminator": [
         82,
@@ -1772,6 +1863,36 @@ export type GameCore = {
       "code": 6023,
       "name": "unauthorized",
       "msg": "unauthorized"
+    },
+    {
+      "code": 6024,
+      "name": "gameAlreadyFull",
+      "msg": "Game is already full"
+    },
+    {
+      "code": 6025,
+      "name": "gameNotActive",
+      "msg": "Game is not active"
+    },
+    {
+      "code": 6026,
+      "name": "gameNotWaiting",
+      "msg": "Game is not in waiting state"
+    },
+    {
+      "code": 6027,
+      "name": "notAPlayer",
+      "msg": "You are not a player in this game"
+    },
+    {
+      "code": 6028,
+      "name": "winnerNotDetermined",
+      "msg": "Winner has not been determined yet"
+    },
+    {
+      "code": 6029,
+      "name": "alreadyMinted",
+      "msg": "Trophies already minted for this game"
     }
   ],
   "types": [
@@ -1780,6 +1901,27 @@ export type GameCore = {
       "type": {
         "kind": "struct",
         "fields": [
+          {
+            "name": "gameId",
+            "type": "u64"
+          },
+          {
+            "name": "players",
+            "type": {
+              "array": [
+                "pubkey",
+                2
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "type": {
+              "defined": {
+                "name": "gameStatus"
+              }
+            }
+          },
           {
             "name": "tickCount",
             "type": "u64"
@@ -1820,6 +1962,34 @@ export type GameCore = {
             "name": "winner",
             "type": {
               "option": "u8"
+            }
+          },
+          {
+            "name": "trophiesMinted",
+            "type": "bool"
+          },
+          {
+            "name": "towersDestroyed",
+            "docs": [
+              "How many of the enemy's towers each player has destroyed (princess only)"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                2
+              ]
+            }
+          },
+          {
+            "name": "damageDealt",
+            "docs": [
+              "Total HP damage dealt to enemy towers by each player"
+            ],
+            "type": {
+              "array": [
+                "u64",
+                2
+              ]
             }
           }
         ]
@@ -2059,50 +2229,6 @@ export type GameCore = {
           },
           {
             "name": "dead"
-          }
-        ]
-      }
-    },
-    {
-      "name": "gameState",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "players",
-            "type": {
-              "array": [
-                "pubkey",
-                2
-              ]
-            }
-          },
-          {
-            "name": "winner",
-            "type": {
-              "option": "pubkey"
-            }
-          },
-          {
-            "name": "rewardsClaimed",
-            "type": {
-              "array": [
-                "bool",
-                2
-              ]
-            }
-          },
-          {
-            "name": "createdAt",
-            "type": "i64"
-          },
-          {
-            "name": "status",
-            "type": {
-              "defined": {
-                "name": "gameStatus"
-              }
-            }
           }
         ]
       }
