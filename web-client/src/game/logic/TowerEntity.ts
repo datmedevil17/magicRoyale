@@ -45,6 +45,8 @@ export class TowerEntity extends Entity {
 
         if (closest) {
             this.attack(closest);
+
+
             this.lastAttackTime = time;
             this.isShooting = true;
             this.shootingTimer = time;

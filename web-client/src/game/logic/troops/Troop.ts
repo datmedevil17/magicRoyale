@@ -37,6 +37,7 @@ export abstract class Troop extends Entity {
 
     // Add currentRange property
     public currentRange: number = 0;
+    public currentSightRange: number = 0;
     public currentStopRange: number = 0;
 
     constructor(id: string, x: number, y: number, ownerId: string, cardId: string) {
@@ -70,6 +71,10 @@ export abstract class Troop extends Entity {
         const scaleFactor = layout.tileSize / ArenaConfig.TILE_SIZE;
         this.currentRange = this.range * scaleFactor;
 
+        // Sight Range: Scale it similarly
+        const stats = getTroopStats(this.name); // Re-fetch to get sightRange
+        this.currentSightRange = (stats.sightRange || (this.range * 3)) * scaleFactor;
+
         // Stop Range: If stopRange exists, use it. Otherwise default to range.
         const rawStopRange = this.stopRange || this.range;
         this.currentStopRange = rawStopRange * scaleFactor;
@@ -101,6 +106,12 @@ export abstract class Troop extends Entity {
         }
 
         return dist <= attackRange;
+    }
+
+    public canSee(target: Entity): boolean {
+        const dist = this.getDistanceTo(target);
+        const sightRange = this.currentSightRange + (target.radius || 20) + (this.radius || 20);
+        return dist <= sightRange;
     }
 
     public shouldStopMoving(target: Entity): boolean {
@@ -181,6 +192,8 @@ export abstract class Troop extends Entity {
         }
 
         const angle = Phaser.Math.Angle.Between(this.x, this.y, targetX, targetY);
+        this.rotation = angle;
+
 
         // Scale speed to match map size
         // If map is 2x larger (tileSize 44 vs 22), we need 2x speed to cover same relative distance in same time.
@@ -205,19 +218,11 @@ export abstract class Troop extends Entity {
             targetY = layout.mapStartY + ArenaConfig.ROWS * layout.tileSize; // Bottom of arena
         }
 
-        // Bridge pathfinding logic is handled in moveTowards, so we just pass the ultimate destination
-        // BUT moveTowards needs to know we want to CROSS.
-        // If we just pass x,y, it checks crossing logic.
-
-        // Wait, moveTowards expects targetX/Y.
-        // If targetY is far end, it triggers crossing logic.
-        // Note: Troop.ts is abstract. Attack logic is likely in specific subclasses or a shared method I need to find.
-        // Let me check if Troop.ts has an attack method.
-        // Looking at file view from Step 168... no 'attack' method in Troop.ts base class.
-        // It has `update` abstract method. 
-        // Subclasses like Archer.ts have `attack`.
-        // I need to check a subclass to see where to add logs.
-
         this.moveTowards({ x: targetX, y: targetY }, delta, layout);
     }
+
+    public faceTarget(target: Entity | { x: number, y: number }) {
+        this.rotation = Phaser.Math.Angle.Between(this.x, this.y, target.x, target.y);
+    }
 }
+

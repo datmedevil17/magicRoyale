@@ -25,6 +25,16 @@ export const VictoryScreen: React.FC<VictoryScreenProps> = ({
 }) => {
     const navigate = useNavigate();
     const { mintTrophies, isLoading, error } = useGameProgram();
+    const [countdown, setCountdown] = React.useState(8);
+
+    React.useEffect(() => {
+        if (winner === 'opponent') {
+            const timer = setInterval(() => {
+                setCountdown(prev => Math.max(0, prev - 1));
+            }, 1000);
+            return () => clearInterval(timer);
+        }
+    }, [winner]);
 
     const getTitle = () => {
         if (winner === 'player') return 'VICTORY!';
@@ -92,6 +102,13 @@ export const VictoryScreen: React.FC<VictoryScreenProps> = ({
                         <div className="bg-yellow-500/20 border border-yellow-500 rounded-lg px-4 py-2">
                             <span className="text-yellow-300 font-semibold">{victoryReason}</span>
                         </div>
+                    </div>
+                )}
+
+                {/* Loser Redirection Countdown */}
+                {winner === 'opponent' && (
+                    <div className="mb-6 text-red-400 font-medium animate-pulse">
+                        Returning to menu in {countdown}s...
                     </div>
                 )}
 

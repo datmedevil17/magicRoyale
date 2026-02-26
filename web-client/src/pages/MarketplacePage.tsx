@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BottomNav } from '../ui/BottomNav';
 import { MobileLayout } from '../ui/MobileLayout';
 import { useGameProgram } from '../hooks/use-game-program';
-import { CARD_ID_TO_NAME } from '../game/config/CardConfig';
+import { CARD_ID_TO_NAME, getCardAssetId } from '../game/config/CardConfig';
 import { MINT_CONFIG } from '../game/config/MintConfig';
 
 export const MarketplacePage: React.FC = () => {
@@ -70,7 +70,8 @@ export const MarketplacePage: React.FC = () => {
                             // Skip if name is 'Unknown' or ID is out of bounds
                             if (!name || name === 'Unknown') return null;
 
-                            const imageUrl = `/assets/${name}Card.png`;
+                            const assetId = getCardAssetId(id);
+                            const imageUrl = `/assets/${assetId}Card.png`;
 
                             // Check ownership
                             const isOwned = profile?.inventory?.some((item: any) => item.cardId === id);

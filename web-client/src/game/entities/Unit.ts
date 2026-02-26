@@ -38,7 +38,14 @@ export class Unit extends Phaser.GameObjects.Sprite {
         this.setPosition(entity.x, entity.y);
         this.setDepth(entity.y); // Fix Z-ordering/flickering
 
+        const owner = entity.ownerId.includes('player') ? 'player' : 'opponent';
+        // Offset: Player units face UP (-PI/2) in assets, Opponent units face DOWN (PI/2).
+        // To rotate them correctly, we compensate for their default facing.
+        const offset = owner === 'player' ? Math.PI / 2 : -Math.PI / 2;
+        this.setRotation(entity.rotation + offset);
+
         // Update Animation/Texture based on State
+
         if (entity instanceof Troop) {
             const state = entity.state; // 'walk', 'fight', 'idle'
             const owner = entity.ownerId.includes('player') ? 'player' : 'opponent';
@@ -55,10 +62,19 @@ export class Unit extends Phaser.GameObjects.Sprite {
                 if (this.scene.anims.exists(textureKey)) {
                     this.play(textureKey);
                 } else {
-                    // Fallback for static textures or if animation is missing
-                    // Only set if texture is different to avoid flicker
-                    if (this.texture.key !== textureKey) {
-                        this.setTexture(textureKey);
+                    // Fallback for missing animation: Try action texture, then generic card image
+                    if (this.scene.textures.exists(textureKey)) {
+                        if (this.texture.key !== textureKey) {
+                            this.setTexture(textureKey);
+                        }
+                    } else {
+                        // FINAL FALLBACK: Use the static card image (e.g., 'GiantCard')
+                        const cardFallback = `${name}Card`;
+                        if (this.scene.textures.exists(cardFallback)) {
+                            if (this.texture.key !== cardFallback) {
+                                this.setTexture(cardFallback);
+                            }
+                        }
                     }
                 }
             }

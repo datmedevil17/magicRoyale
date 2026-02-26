@@ -94,6 +94,7 @@ export function useGameProgram() {
     const wallet = useWallet();
 
     const [playerProfilePda, setPlayerProfilePda] = useState<PublicKey | null>(null);
+    const [playerProfile, setPlayerProfile] = useState<PlayerProfile | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -169,6 +170,16 @@ export function useGameProgram() {
             setPlayerProfilePda(null);
         }
     }, [wallet.publicKey, program]);
+
+    useEffect(() => {
+        if (playerProfilePda && program) {
+            program.account.playerProfile.fetch(playerProfilePda)
+                .then(setPlayerProfile as any)
+                .catch(() => setPlayerProfile(null));
+        } else {
+            setPlayerProfile(null);
+        }
+    }, [playerProfilePda, program]);
 
     // ─── Initialize Player (Base Layer) ───────────────────────────────────────
 
@@ -835,6 +846,42 @@ export function useGameProgram() {
         }
     }, [program, wallet.publicKey]);
 
+    const fetchClanMembers = useCallback(async (clan: PublicKey) => {
+        if (!program) return [];
+        if (!program) return [];
+        try {
+            const memberAccounts = await program.account.clanMember.all([
+                {
+                    memcmp: {
+                        offset: 8, // discriminator(8)
+                        bytes: clan.toBase58(),
+                    },
+                },
+            ]);
+
+            const profiles = await Promise.all(
+                memberAccounts.map(async (m) => {
+                    try {
+                        const profilePda = getPlayerProfilePda(m.account.player, program.programId);
+                        const profile = await program.account.playerProfile.fetch(profilePda);
+                        return { username: profile.username, trophies: profile.trophies };
+                    } catch {
+                        return { username: null, trophies: 0 };
+                    }
+                })
+            );
+
+            return memberAccounts.map((m, i) => ({
+                publicKey: m.publicKey,
+                account: m.account,
+                profile: profiles[i],
+            }));
+        } catch (err) {
+            console.error("Error fetching clan members:", err);
+            return [];
+        }
+    }, [program]);
+
     const leaveClan = useCallback(async () => {
         // No on-chain instruction yet — placeholder
         await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -904,6 +951,7 @@ export function useGameProgram() {
         platformBalance,
         fetchPlatformBalance,
         playerProfilePda,
+        playerProfile,
         // Player
         initializePlayer,
         fetchPlayerProfile,
@@ -930,6 +978,7 @@ export function useGameProgram() {
         donateCards,
         fetchAllClans,
         fetchUserClan,
+        fetchClanMembers,
         leaveClan,
         // Session keys
         createSession,

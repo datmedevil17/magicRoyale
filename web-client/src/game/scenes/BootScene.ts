@@ -81,7 +81,9 @@ export class BootScene extends Scene {
             'BabyDragon_walk_player', 'BabyDragon_walk_opponent',
             'BabyDragon_fight_player', 'BabyDragon_fight_opponent',
             'Barbarian_walk_player', 'Barbarian_walk_opponent',
-            'Barbarian_fight_player', 'Barbarian_fight_opponent'
+            'Barbarian_fight_player', 'Barbarian_fight_opponent',
+            'InfernoTower_walk_player', 'InfernoTower_walk_opponent',
+            'InfernoTower_fight_player', 'InfernoTower_fight_opponent'
         ];
 
         const gifToConfigMap: Record<string, string> = {
@@ -91,7 +93,8 @@ export class BootScene extends Scene {
             'Valkyrie': 'Valkyrie',
             'Wizard': 'Wizard',
             'BabyDragon': 'BabyDragon',
-            'Barbarian': 'Barbarians' // Map GIF prefix 'Barbarian' to Config key 'Barbarians'
+            'Barbarian': 'Barbarians',
+            'InfernoTower': 'InfernoTower'
         };
 
         for (const key of gifs) {
@@ -138,7 +141,9 @@ export class BootScene extends Scene {
         }
 
         console.log('BootScene: GIFs Loaded');
-        const data = this.registry.get('data');
-        this.scene.start('MainScene', data);
+        const data = this.registry.get('data') || {};
+        const nextScene = data.nextScene || 'MainScene';
+        console.log(`BootScene: Transitioning to ${nextScene}`);
+        this.scene.start(nextScene, data);
     }
 }

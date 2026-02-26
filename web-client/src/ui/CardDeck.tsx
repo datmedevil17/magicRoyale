@@ -8,32 +8,26 @@ interface CardItem {
     icon: string;
 }
 
-// Full 8-card deck (like Clash Royale)
-const FULL_DECK: CardItem[] = [
-    { id: 'Archers', name: 'Archers', cost: 3, icon: 'assets/ArchersCard.png' },
-    { id: 'Giant', name: 'Giant', cost: 5, icon: 'assets/GiantCard.png' },
-    { id: 'MiniPEKKA', name: 'Mini P.E.K.K.A', cost: 4, icon: 'assets/MiniPEKKACard.png' },
-    { id: 'Valkyrie', name: 'Valkyrie', cost: 4, icon: 'assets/ValkyrieCard.png' },
-    { id: 'Wizard', name: 'Wizard', cost: 5, icon: 'assets/WizardCard.png' },
-    { id: 'BabyDragon', name: 'Baby Dragon', cost: 4, icon: 'assets/BabyDragonCard.png' },
-    { id: 'Barbarians', name: 'Barbarians', cost: 5, icon: 'assets/BarbariansCard.png' },
-    { id: 'Archers', name: 'Archers', cost: 3, icon: 'assets/ArchersCard.png' } // Duplicate for 8 cards
-];
+interface CardDeckProps {
+    cards: CardItem[];
+}
 
-export const CardDeck: React.FC = () => {
+export const CardDeck: React.FC<CardDeckProps> = ({ cards }) => {
     // Shuffle deck once on mount
     const [deck] = useState<CardItem[]>(() => {
-        return [...FULL_DECK].sort(() => 0.5 - Math.random());
+        // If we have fewer than 8 cards, we might want to duplicate or handle it
+        // but for now we assume we get a valid array of cards
+        return [...cards].sort(() => 0.5 - Math.random());
     });
-    
-    // Track next card position in deck (0-7, cycles back to 0)
-    const [nextCardIndex, setNextCardIndex] = useState(4); // Start at position 4 (after initial 4 cards)
-    
-    // 4 visible card slots (indices 0-3 from deck initially)
+
+    // Track next card position in deck
+    const [nextCardIndex, setNextCardIndex] = useState(4);
+
+    // visible card slots (indices 0-3 from deck initially)
     const [cardSlots, setCardSlots] = useState<CardItem[]>(() => {
-        return [deck[0], deck[1], deck[2], deck[3]];
+        return [deck[0] || cards[0], deck[1] || cards[1], deck[2] || cards[2], deck[3] || cards[3]].filter(Boolean);
     });
-    
+
     // Selected card
     const [selectedCard, setSelectedCard] = useState<string | null>(null);
 
@@ -42,26 +36,26 @@ export const CardDeck: React.FC = () => {
         const handleCardPlayed = (cardId: string) => {
             // Find which slot has the played card
             const slotIndex = cardSlots.findIndex(card => card.id === cardId);
-            
+
             if (slotIndex !== -1) {
                 // Replace only that slot with next card from deck
                 const newSlots = [...cardSlots];
                 newSlots[slotIndex] = deck[nextCardIndex];
                 setCardSlots(newSlots);
-                
+
                 // Move to next card in deck (cycle)
                 const newNextIndex = (nextCardIndex + 1) % deck.length;
                 setNextCardIndex(newNextIndex);
-                
+
                 // Clear selection
                 setSelectedCard(null);
-                
+
                 console.log(`Card ${cardId} played from slot ${slotIndex}, replaced with ${deck[nextCardIndex].id}. Next card index: ${newNextIndex}`);
             }
         };
 
         EventBus.on(EVENTS.CARD_PLAYED, handleCardPlayed);
-        
+
         return () => {
             EventBus.off(EVENTS.CARD_PLAYED, handleCardPlayed);
         };
@@ -127,7 +121,7 @@ export const CardDeck: React.FC = () => {
                     </div>
                 </div>
             ))}
-            
+
             {/* Next card preview (to the right of the deck) */}
             <div style={{
                 width: '40px',

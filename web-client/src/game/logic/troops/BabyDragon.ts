@@ -15,8 +15,7 @@ export class BabyDragon extends Troop {
 
         for (const enemy of enemies) {
             if (enemy.ownerId === this.ownerId) continue;
-            // Baby Dragon hits BOTH, so no filter needed for Ground/Air
-            // But we might want to respect future constraints.
+            if (!this.canSee(enemy)) continue;
 
             const dist = this.getDistanceTo(enemy);
             if (dist < minDistance) {
@@ -30,6 +29,7 @@ export class BabyDragon extends Troop {
         if (this.target) {
             if (this.isInRange(this.target)) {
                 this.state = TroopState.FIGHT;
+                this.faceTarget(this.target);
                 if (time - this.lastAttackTime > this.hitSpeed) {
                     this.attack(this.target);
                     this.lastAttackTime = time;

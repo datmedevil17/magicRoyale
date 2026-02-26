@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { Toaster, toast } from 'react-hot-toast';
 import { PublicKey } from '@solana/web3.js';
@@ -12,6 +12,7 @@ import { GameHUD } from './ui/GameHUD';
 import { VictoryScreen } from './ui/VictoryScreen';
 import { EventBus, EVENTS } from './game/EventBus';
 import { useGameProgram } from './hooks/use-game-program';
+import { CARD_DATA, type CardData } from './game/config/CardConfig';
 
 const SERVER_URL = 'http://localhost:3000';
 
@@ -19,8 +20,9 @@ export const GameWrapper = () => {
     const gameRef = useRef<Phaser.Game | null>(null);
     const socketRef = useRef<Socket | null>(null);
     const location = useLocation();
+    const navigate = useNavigate();
     const wallet = useWallet();
-    const { deployTroop, delegateGame, endGame, erConnection, program } = useGameProgram();
+    const { deployTroop, delegateGame, endGame, erConnection, program, playerProfile } = useGameProgram();
 
     // gameId is a u64 decimal string from navigation state; battle PDA derived on-chain.
     const gameData = location.state as {
@@ -114,6 +116,8 @@ export const GameWrapper = () => {
 
     const deployTroopRef = useRef(deployTroop);
     const endGameRef = useRef(endGame);
+    // Maps transaction signatures (or temporary IDs) to card names for robust toasts
+    const pendingDeploysRef = useRef<Map<string, string>>(new Map());
     useEffect(() => {
         deployTroopRef.current = deployTroop;
         endGameRef.current = endGame;
@@ -146,16 +150,24 @@ export const GameWrapper = () => {
         }) => {
             if (!gameIdBn || !wallet.publicKey) return;
 
-            // ── OPTIMISTIC RELAY TO OPPONENT VIA SOCKET ──
-            socketRef.current?.emit('deploy-troop', {
-                cardIdx: data.cardIdx,
-                cardId: data.cardId,
-                x: data.x,
-                y: data.y,
-            });
+            // ── OPTIMISTIC RELAY TO OPPONENT VIA SOCKET (Wait for TX signature to be robust) ──
+            // We'll emit after we get the signature in the next step
 
             try {
-                await deployTroopRef.current(gameIdBn, data.cardIdx, data.x, data.y);
+                const txHash = await deployTroopRef.current(gameIdBn, data.cardIdx, data.x, data.y);
+
+                // Track this signature locally
+                pendingDeploysRef.current.set(txHash, data.cardId);
+
+                // Relay to opponent including the signature so their client can also show a confirmed toast
+                socketRef.current?.emit('deploy-troop', {
+                    cardIdx: data.cardIdx,
+                    cardId: data.cardId,
+                    x: data.x,
+                    y: data.y,
+                    signature: txHash
+                });
+
             } catch (err) {
                 console.error('On-chain deploy failed:', err);
                 toast.error('On-chain deploy failed');
@@ -172,9 +184,11 @@ export const GameWrapper = () => {
         };
         EventBus.on(EVENTS.CROWN_UPDATE, handleCrownUpdate);
 
-        const handleOpponentDeploy = (data: any) => {
-            console.log('[GameWrapper] Opponent deployed UI toast:', data);
-            toast.success(`Opponent played ${data.cardId}!`, { position: 'bottom-center', duration: 1500 });
+        const handleOpponentDeploy = (data: { cardId: string; signature?: string }) => {
+            console.log('[GameWrapper] Opponent deployed UI toast prep:', data);
+            if (data.signature) {
+                pendingDeploysRef.current.set(data.signature, data.cardId);
+            }
         };
         EventBus.on(EVENTS.NETWORK_OPPONENT_DEPLOY, handleOpponentDeploy);
 
@@ -189,30 +203,38 @@ export const GameWrapper = () => {
         }) => {
             console.log('[GameWrapper] handling GAME_END event with data:', data);
             setGameEnded(true);
-            setWinner(data.winner as 'player' | 'opponent' | 'draw');
+            const winnerRole = data.winner as 'player' | 'opponent' | 'draw';
+            setWinner(winnerRole);
             setPlayerCrowns(data.playerCrowns);
             setOpponentCrowns(data.opponentCrowns);
             setPlayerTowersDestroyed(data.playerTowersDestroyed ?? 0);
             setOpponentTowersDestroyed(data.opponentTowersDestroyed ?? 0);
             setVictoryReason(data.victoryReason ?? '');
 
-            if (data.winner === gameData?.role) {
+            const isMeWinner = winnerRole === 'player';
+            const isDraw = winnerRole === 'draw';
+
+            if (isMeWinner) {
                 toast.success('You Won!', { duration: 5000 });
-            } else if (data.winner === 'draw') {
+            } else if (isDraw) {
                 toast('Draw!', { icon: '🤝' });
             } else {
                 toast('Defeat', { icon: '🏁' });
+                // Loser Flow: Auto-navigate back after 5 seconds if not a draw
+                setTimeout(() => {
+                    navigate('/menu');
+                }, 8000); // 8 seconds to allow viewing the victory screen
             }
 
             // Commit game state to base layer via ER.
-            // endGame on the ER is atomic — it CPIs into magic_program which
-            // auto-commits and undelegates in a single instruction.
             if (gameIdBn) {
-                const isTimeout = !!data.victoryReason?.toLowerCase().includes('time');
+                // isTimeout is true if the victory reason mentions time or if crowns are < 3 and it's not a king destruction
+                const isTimeout = !!data.victoryReason?.toLowerCase().includes('time') ||
+                    !!data.victoryReason?.toLowerCase().includes('health') ||
+                    !!data.victoryReason?.toLowerCase().includes('towers remaining');
+
                 try {
                     await endGameRef.current(gameIdBn, isTimeout);
-                    // Wait briefly for base-layer propagation before showing victory screen 
-                    // which has the mint button
                     await new Promise(r => setTimeout(r, 2000));
                     toast.success('Battle committed to chain!', { duration: 3000 });
                 } catch (err) {
@@ -272,13 +294,35 @@ export const GameWrapper = () => {
             battlePda,
             (logs, _ctx) => {
                 if (logs.err === null) {
-                    // Just show a quick visual toast for any successful action on the battle state
-                    toast(`ER Tx Confirmed: ${logs.signature.slice(0, 8)}...`, {
+                    const isDeploy = logs.logs.some(l => l.includes('Instruction: DeployTroop'));
+                    let title = 'ER Tx Confirmed';
+                    if (isDeploy) {
+                        const cardName = pendingDeploysRef.current.get(logs.signature);
+                        title = cardName ? `${cardName} placed` : 'Troop placed';
+                        // Cleanup
+                        pendingDeploysRef.current.delete(logs.signature);
+                    }
+
+                    const explorerLink = `https://solscan.io/tx/${logs.signature}?cluster=custom&customUrl=https%3A%2F%2Fdevnet.magicblock.app`;
+
+                    toast(() => (
+                        <div className="flex flex-col gap-1 items-start text-left">
+                            <span className="font-bold text-sm text-green-400">{title}</span>
+                            <a
+                                href={explorerLink}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-[10px] text-blue-400 underline hover:text-blue-300 break-all leading-tight"
+                            >
+                                {logs.signature}
+                            </a>
+                        </div>
+                    ), {
                         icon: '⚡',
                         id: logs.signature, // Prevents spamming duplicate toasts for the same tx
-                        duration: 3000,
+                        duration: 5000,
                         position: 'bottom-right',
-                        style: { background: '#222', color: '#10B981', border: '1px solid #10B981' }
+                        style: { background: '#222', color: '#fff', border: '1px solid #10B981', maxWidth: '350px' }
                     });
                 }
             },
@@ -290,6 +334,35 @@ export const GameWrapper = () => {
             erConnection.removeOnLogsListener(subscriptionId);
         };
     }, [erConnection, program, gameIdBn]);
+
+    // ── Build Deck from On-Chain Data ────────────────────────────────────────
+    const [currentDeck, setCurrentDeck] = useState<CardData[]>([]);
+
+    useEffect(() => {
+        if (!playerProfile) return;
+
+        let deckIds: number[] = [];
+        if (playerProfile.deck && playerProfile.deck.filter(id => id !== 0).length >= 4) {
+            deckIds = playerProfile.deck.filter(id => id !== 0);
+        } else if (playerProfile.inventory && playerProfile.inventory.length > 0) {
+            // Fallback: use up to 8 cards from inventory
+            deckIds = playerProfile.inventory.slice(0, 8).map(item => item.cardId);
+        }
+
+        // Map IDs to full CardData objects
+        const fullDeck = deckIds.map(id => CARD_DATA[id]).filter(Boolean);
+
+        // If we still have fewer than 8, maybe add some defaults or just duplicate
+        if (fullDeck.length > 0 && fullDeck.length < 8) {
+            while (fullDeck.length < 8) {
+                fullDeck.push(fullDeck[fullDeck.length % fullDeck.length]);
+            }
+        }
+
+        if (fullDeck.length >= 4) {
+            setCurrentDeck(fullDeck);
+        }
+    }, [playerProfile]);
 
     return (
         <div className="w-screen h-screen bg-[#111] flex justify-center items-center overflow-hidden">
@@ -361,7 +434,7 @@ export const GameWrapper = () => {
                             opponentTowersDestroyed={opponentTowersDestroyed}
                         />
                         <div style={{ padding: '10px', pointerEvents: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', marginTop: 'auto' }}>
-                            <CardDeck />
+                            {currentDeck.length >= 4 && <CardDeck cards={currentDeck} />}
                             <ElixirBar />
                         </div>
                     </div>

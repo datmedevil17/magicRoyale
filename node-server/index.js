@@ -26,6 +26,9 @@ const TICK_INTERVAL_MS = 100;           // 10 ticks/sec
 // gameId → { roomId, gameId, tickInterval, timer, startTime, delegated: Set<socketId>, player1: Socket, player2: Socket }
 const activeGames = new Map();
 
+// clanKey → [{ sender, role, message, time, isSystem }]
+const clanChats = new Map();
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getGameRoom(socket) {
@@ -215,6 +218,53 @@ io.on('connection', (socket) => {
             y: data.y,
             ownerRole: socket.role,
         });
+    });
+
+    // ── Clan Chat ─────────────────────────────────────────────────────────────
+    socket.on('join-clan', (data) => {
+        const { clanKey } = data;
+        if (!clanKey) return;
+
+        const roomId = `clan_${clanKey}`;
+        socket.join(roomId);
+        console.log(`🏰 ${socket.walletPublicKey} joined clan room ${clanKey}`);
+
+        // Send chat history if it exists
+        const history = clanChats.get(clanKey) || [];
+        socket.emit('clan-chat-history', history);
+    });
+
+    socket.on('leave-clan', (data) => {
+        const { clanKey } = data;
+        if (!clanKey) return;
+
+        const roomId = `clan_${clanKey}`;
+        socket.leave(roomId);
+        console.log(`🏃 ${socket.walletPublicKey} left clan room ${clanKey}`);
+    });
+
+    socket.on('clan-chat-message', (data) => {
+        const { clanKey, message, sender, role } = data;
+        if (!clanKey || !message) return;
+
+        const roomId = `clan_${clanKey}`;
+
+        const msgObj = {
+            sender: sender || socket.walletPublicKey.slice(0, 6),
+            role: role || 'Member',
+            message,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            isSystem: false
+        };
+
+        // Save to history (keep last 50)
+        if (!clanChats.has(clanKey)) clanChats.set(clanKey, []);
+        const history = clanChats.get(clanKey);
+        history.push(msgObj);
+        if (history.length > 50) history.shift();
+
+        // Broadcast to room
+        io.to(roomId).emit('clan-chat-message', msgObj);
     });
 
     // ── Disconnect ────────────────────────────────────────────────────────────

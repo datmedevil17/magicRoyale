@@ -16,6 +16,8 @@ export abstract class Entity {
     public health: number = 100;
     public maxHealth: number = 100;
     public radius: number = 20; // Default hitbox radius
+    public rotation: number = 0; // Rotation in radians
+
 
     constructor(id: string, x: number, y: number, ownerId: string, type: EntityType) {
         this.id = id;

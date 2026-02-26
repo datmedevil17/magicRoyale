@@ -38,6 +38,8 @@ export class Giant extends Troop {
 
         for (const enemy of targets) {
             if (enemy.ownerId === this.ownerId) continue;
+            if (!this.canSee(enemy)) continue;
+
             const dist = this.getDistanceTo(enemy);
             if (dist < minDistance) {
                 minDistance = dist;
@@ -50,6 +52,7 @@ export class Giant extends Troop {
         if (this.target) {
             if (this.isInRange(this.target)) {
                 this.state = TroopState.FIGHT;
+                this.faceTarget(this.target);
                 if (time - this.lastAttackTime > this.hitSpeed) {
                     // Schedule Attack instead of immediate
                     if (!this.damageScheduled) {

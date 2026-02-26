@@ -22,6 +22,7 @@ export class MainScene extends Scene {
     private _onBattleStarted!: () => void;
     private _onServerTick!: (data: { elapsed: number; remaining: number }) => void;
     private _onOpponentDisconnected!: () => void;
+    private _onTestDeploy!: (data: { cardId: string, x: number, y: number, ownerId: 'player' | 'opponent' }) => void;
 
     constructor() { super('MainScene'); }
 
@@ -113,6 +114,14 @@ export class MainScene extends Scene {
         this._onOpponentDisconnected = () => { showDebug('Opponent disconnected!'); };
         EventBus.on('opponent-disconnected', this._onOpponentDisconnected);
 
+        // ── EventBus: test deploy (from TestArena devtools) ──────────────────
+        this._onTestDeploy = (data) => {
+            console.log(`[MainScene] Processing test deploy:`, data);
+            // World coordinates are already precise from TestArena map click/input
+            this.gameManager.deployCard(data.cardId, { x: data.x, y: data.y }, data.ownerId);
+        };
+        EventBus.on(EVENTS.TEST_DEPLOY, this._onTestDeploy);
+
         // ── Input: disabled until battle starts ──────────────────────────────
         this.input.enabled = false;
 
@@ -136,9 +145,18 @@ export class MainScene extends Scene {
 
         // ── Click to deploy ──────────────────────────────────────────────────
         this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+            const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
+
+            // Always emit technical coordinate for external UI (like TestArena)
+            EventBus.emit('map-pointer-down', {
+                x: pointer.x,
+                y: pointer.y,
+                worldX: worldPoint.x,
+                worldY: worldPoint.y
+            });
+
             if (!this.selectedCardId) return;
 
-            const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
             const entity = this.gameManager.deployCard(
                 this.selectedCardId,
                 { x: worldPoint.x, y: worldPoint.y },
@@ -209,11 +227,17 @@ export class MainScene extends Scene {
                     const isKing = entity.maxHealth > 3000;
                     towerSprite.setShooting(entity.isShooting, entity.ownerId, isKing);
 
+
+
                     // Tower destroyed — only handled here, not in GameManager
                     if (entity.health <= 0 && !entity.destroyed) {
                         entity.destroyed = true;
                         towerSprite.destroy();
                         this.towerSprites.delete(entity.id);
+
+                        // Signal GameManager for scoring and instant victory
+                        this.gameManager.onTowerDestroyed(isKing, entity.ownerId);
+
                         EventBus.emit(EVENTS.TOWER_DESTROYED, {
                             towerId: entity.id, isKing, ownerId: entity.ownerId,
                         });

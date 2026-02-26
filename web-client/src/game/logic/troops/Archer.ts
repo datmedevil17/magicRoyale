@@ -1,4 +1,3 @@
-import Phaser from 'phaser';
 import { Troop, TroopState } from './Troop';
 import { Entity } from '../Entity';
 import type { ArenaLayout } from '../Interfaces';
@@ -29,6 +28,7 @@ export class Archer extends Troop {
             // Check Attack Range first
             if (this.isInRange(this.target)) {
                 this.state = TroopState.FIGHT;
+                this.faceTarget(this.target);
                 if (time - this.lastAttackTime > this.hitSpeed) {
                     this.attack(this.target);
                     this.lastAttackTime = time;
@@ -79,8 +79,10 @@ export class Archer extends Troop {
 
         for (const enemy of enemies) {
             if (enemy.ownerId === this.ownerId) continue; // Ignore friendlies
-            const dist = Phaser.Math.Distance.Between(this.x, this.y, enemy.x, enemy.y);
-            if (dist < minDist && dist <= this.range + 200) { // Look ahead a bit
+            if (!this.canSee(enemy)) continue; // Use the new Sight Range logic
+
+            const dist = this.getDistanceTo(enemy);
+            if (dist < minDist) {
                 minDist = dist;
                 nearest = enemy;
             }

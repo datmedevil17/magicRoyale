@@ -14,5 +14,6 @@ export const EVENTS = {
     DEPLOY_TROOP_BLOCKCHAIN: 'deploy-troop-blockchain',
     BATTLE_STARTED: 'battle-started',
     PLAYER_DELEGATED: 'player-delegated',
-    CLIENT_UNDELEGATED: 'client-undelegated'
+    CLIENT_UNDELEGATED: 'client-undelegated',
+    TEST_DEPLOY: 'test-deploy'
 };

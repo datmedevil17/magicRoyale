@@ -26,11 +26,8 @@ export interface TroopStats {
     continuousAttack?: boolean; // If true, loop animation without pause based on hitSpeed
     fightPixelScale?: number; // Optional scale override for fight animation
 
-    // Derived (computed getter or similar? For now, we compute in getTroopStats)
-    // speed: number;       // Computed: animSpeed.walk * movePerFrame
-    // hitSpeed: number;    // Computed: (attackFrames / animSpeed.fight) * 1000
-
     range: number;       // pixels
+    sightRange: number;  // detection range in pixels
     damage: number;
     attackType: TargetType;
     movementType: TroopType;
@@ -45,12 +42,13 @@ export const TROOP_STATS: Record<string, TroopStats> = {
         animSpeed: { walk: 2, fight: 2 },
         movePerFrame: 4.5, // 10 * 4.5 = 45 speed
         attackFrames: 2,  // (14/15)*1000 = ~933ms hitSpeed
-        range: 50,
+        range: 120,
+        sightRange: 250,
         damage: 112,
         attackType: TargetType.BOTH,
         movementType: TroopType.GROUND,
         elixirCost: 3,
-        radius: 0,
+        radius: 12,
         spawnCount: 2,
         pixelScale: 0.7 // Default visual size
     },
@@ -59,7 +57,8 @@ export const TROOP_STATS: Record<string, TroopStats> = {
         animSpeed: { walk: 4, fight: 5 },
         movePerFrame: 4.5, // 45 speed
         attackFrames: 5,  // (20/15)*1000 = 1333ms
-        range: 5,
+        range: 30,
+        sightRange: 150,
         damage: 192,
         attackType: TargetType.GROUND,
         movementType: TroopType.GROUND,
@@ -74,7 +73,8 @@ export const TROOP_STATS: Record<string, TroopStats> = {
         movePerFrame: 10, // 10 * 3.5 = 35 speed
         attackFrames: 2,  // (23/15)*1000 = 1533ms
         impactFrame: 1,   // Frame 1 of 2
-        range: 5,
+        range: 40,
+        sightRange: 180,
         damage: 253,
         attackType: TargetType.GROUND,
         movementType: TroopType.GROUND,
@@ -89,12 +89,13 @@ export const TROOP_STATS: Record<string, TroopStats> = {
         movePerFrame: 10,
         attackFrames: 2.5,   // 28 frames / 14 FPS = 2.0s hitSpeed (2 loops if 14 frames/loop)
         impactFrame: 1.5,    // Damage at frame 10
-        range: 5,
+        range: 35,
+        sightRange: 160,
         damage: 500,
         attackType: TargetType.GROUND,
         movementType: TroopType.GROUND,
         elixirCost: 4,
-        radius: 0,
+        radius: 18,
         spawnCount: 1,
         pixelScale: 0.7,
         stopRange: 5
@@ -104,7 +105,8 @@ export const TROOP_STATS: Record<string, TroopStats> = {
         animSpeed: { walk: 4, fight: 5 }, // Slow/Standard Spin
         movePerFrame: 7,
         attackFrames: 10, // 10 frames / 5 FPS = 2.0s Cycle. Continuous spin.
-        range: 5, // Reverted to 30 (was 5 in messed up block) or keep 5? User didn't request Valkyrie change. Reference typical valkyrie range: melee (splash). 30/melee.
+        range: 35,
+        sightRange: 150,
         damage: 266,
         attackType: TargetType.GROUND,
         movementType: TroopType.GROUND,
@@ -119,7 +121,8 @@ export const TROOP_STATS: Record<string, TroopStats> = {
         animSpeed: { walk: 6, fight: 4 },
         movePerFrame: 4.5,
         attackFrames: 8, // 8 / 4 = 2.0s hitSpeed
-        range: 30,       // Default / Fallback
+        range: 100,
+        sightRange: 220,
         damage: 281,
         attackType: TargetType.BOTH,
         movementType: TroopType.GROUND,
@@ -134,7 +137,8 @@ export const TROOP_STATS: Record<string, TroopStats> = {
         animSpeed: { walk: 5, fight: 4 },
         movePerFrame: 7,
         attackFrames: 4,
-        range: 35,
+        range: 80,
+        sightRange: 200,
         damage: 161,
         attackType: TargetType.BOTH,
         movementType: TroopType.AIR,
@@ -142,6 +146,21 @@ export const TROOP_STATS: Record<string, TroopStats> = {
         radius: 0,
         spawnCount: 1,
         pixelScale: 0.7
+    },
+    'InfernoTower': {
+        health: 1400,
+        animSpeed: { walk: 1, fight: 5 },
+        movePerFrame: 0, // Building
+        attackFrames: 5,
+        range: 150,
+        sightRange: 300,
+        damage: 50, // Ramping damage usually, but base 50
+        attackType: TargetType.BOTH,
+        movementType: TroopType.GROUND,
+        elixirCost: 5,
+        radius: 30,
+        spawnCount: 1,
+        pixelScale: 0.8
     }
 };
 
@@ -151,6 +170,7 @@ export interface DerivedTroopStats extends TroopStats {
     hitSpeed: number;
     pixelScale: number;
     stopRange: number;
+    sightRange: number;
 }
 
 // Helper to get stats safely
@@ -165,6 +185,7 @@ export const getTroopStats = (cardId: string): DerivedTroopStats => {
         movePerFrame: 2,
         attackFrames: 10,
         range: 20,
+        sightRange: 100,
         damage: 10,
         attackType: TargetType.GROUND,
         movementType: TroopType.GROUND,
@@ -182,6 +203,7 @@ function computeDerived(stats: TroopStats): DerivedTroopStats {
         speed: stats.animSpeed.walk * stats.movePerFrame,
         hitSpeed: (stats.attackFrames / stats.animSpeed.fight) * 1000,
         pixelScale: stats.pixelScale !== undefined ? stats.pixelScale : 0.5,
-        stopRange: stats.stopRange !== undefined ? stats.stopRange : stats.range
+        stopRange: stats.stopRange !== undefined ? stats.stopRange : stats.range,
+        sightRange: stats.sightRange !== undefined ? stats.sightRange : stats.range * 3
     };
 }
