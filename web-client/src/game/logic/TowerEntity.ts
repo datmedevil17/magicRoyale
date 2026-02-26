@@ -8,11 +8,13 @@ export class TowerEntity extends Entity {
     public maxHealth: number;
     public isShooting: boolean = false;
     public destroyed: boolean = false;
+    public isKing: boolean;
     private shootingTimer: number = 0;
     private tileSize: number = 22;
 
     constructor(id: string, x: number, y: number, ownerId: string, isKing: boolean, radius: number, tileSize: number = 22) {
         super(id, x, y, ownerId, EntityType.BUILDING);
+        this.isKing = isKing;
         this.maxHealth = isKing ? 4000 : 2500;
         this.health = this.maxHealth;
         this.radius = radius;

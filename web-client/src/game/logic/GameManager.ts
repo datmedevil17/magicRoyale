@@ -185,7 +185,7 @@ export class GameManager {
      * Called from MainScene when a tower sprite detects health <= 0.
      * MainScene is the single owner of tower destruction detection.
      */
-    public onTowerDestroyed(isKing: boolean, ownerId: string) {
+    public onTowerDestroyed(isKing: boolean, ownerId: string, isAuthority: boolean = true) {
         if (this.gameEnded) return;
 
         const ownerLower = ownerId.toLowerCase();
@@ -215,7 +215,8 @@ export class GameManager {
         this.opponentCrowns = Math.min(3, this.opponentCrowns);
 
         // ONLY immediate victory on king tower destruction or naturally reaching 3 crowns via king death
-        if (isKing || this.playerCrowns >= 3 || this.opponentCrowns >= 3) {
+        // Authority check: only the host can trigger the local end-game state transition
+        if (isAuthority && (isKing || this.playerCrowns >= 3 || this.opponentCrowns >= 3)) {
             this.victoryReason = isKing ? 'King Tower Destroyed!' : 'Three Crown Victory!';
             this.endGame();
         }

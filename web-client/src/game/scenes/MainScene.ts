@@ -287,7 +287,9 @@ export class MainScene extends Scene {
                         this.towerSprites.delete(entity.id);
 
                         // Signal GameManager for scoring and instant victory
-                        this.gameManager.onTowerDestroyed(isKing, entity.ownerId);
+                        const gameData = this.registry.get('data');
+                        const isHost = gameData?.role === 'player1';
+                        this.gameManager.onTowerDestroyed(isKing, entity.ownerId, isHost);
 
                         EventBus.emit(EVENTS.TOWER_DESTROYED, {
                             towerId: entity.id, isKing, ownerId: entity.ownerId,
