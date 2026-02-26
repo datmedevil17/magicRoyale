@@ -14,6 +14,7 @@ export class MainScene2v2 extends Scene {
     private spriteMap: Map<string, Phaser.GameObjects.Sprite> = new Map();
     private towerSprites: Map<string, Tower> = new Map();
     private isTestMode: boolean = false;
+    private gameEndEmitted: boolean = false;
 
     // EventBus handler refs for cleanup
     private _onCardSelected!: (id: string | null) => void;
@@ -90,8 +91,29 @@ export class MainScene2v2 extends Scene {
     }
 
     update(time: number, delta: number) {
-        if (!this.gameManager.gameStarted || this.gameManager.gameEnded) return;
-        this.gameManager.update(time, delta);
+        if (!this.gameManager.gameStarted) return;
+
+        if (!this.gameManager.gameEnded) {
+            this.gameManager.update(time, delta);
+            EventBus.emit(EVENTS.CROWN_UPDATE, {
+                playerCrowns: this.gameManager.playerCrowns,
+                opponentCrowns: this.gameManager.opponentCrowns,
+                playerTowersDestroyed: this.gameManager.playerTowersDestroyed,
+                opponentTowersDestroyed: this.gameManager.opponentTowersDestroyed,
+                remainingTime: this.gameManager.getRemainingTime(),
+            });
+        } else if (!this.gameEndEmitted) {
+            this.gameEndEmitted = true;
+            EventBus.emit(EVENTS.GAME_END, {
+                winner: this.gameManager.winner,
+                playerCrowns: this.gameManager.playerCrowns,
+                opponentCrowns: this.gameManager.opponentCrowns,
+                playerTowersDestroyed: this.gameManager.playerTowersDestroyed,
+                opponentTowersDestroyed: this.gameManager.opponentTowersDestroyed,
+                victoryReason: this.gameManager.victoryReason,
+            });
+        }
+
         this.syncSprites();
     }
 

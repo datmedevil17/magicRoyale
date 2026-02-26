@@ -178,9 +178,13 @@ export const GameWrapper = () => {
         const handleCrownUpdate = (data: {
             playerCrowns: number;
             opponentCrowns: number;
+            playerTowersDestroyed?: number;
+            opponentTowersDestroyed?: number;
         }) => {
             setPlayerCrowns(data.playerCrowns);
             setOpponentCrowns(data.opponentCrowns);
+            if (data.playerTowersDestroyed !== undefined) setPlayerTowersDestroyed(data.playerTowersDestroyed);
+            if (data.opponentTowersDestroyed !== undefined) setOpponentTowersDestroyed(data.opponentTowersDestroyed);
         };
         EventBus.on(EVENTS.CROWN_UPDATE, handleCrownUpdate);
 

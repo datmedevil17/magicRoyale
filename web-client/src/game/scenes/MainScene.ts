@@ -23,6 +23,7 @@ export class MainScene extends Scene {
     private _onServerTick!: (data: { elapsed: number; remaining: number }) => void;
     private _onOpponentDisconnected!: () => void;
     private _onTestDeploy!: (data: { cardId: string, x: number, y: number, ownerId: 'player' | 'opponent' }) => void;
+    private gameEndEmitted: boolean = false;
 
     constructor() { super('MainScene'); }
 
@@ -74,7 +75,6 @@ export class MainScene extends Scene {
         // ── EventBus: battle started (from Network or test mode) ─────────────
         // This is the SINGLE trigger that starts gameplay.
         this._onBattleStarted = () => {
-            console.log(`[MainScene] EVENTS.BATTLE_STARTED received. Updating UI and GameManager...`);
             this.input.enabled = true;
             this.gameManager.startGame();
         };
@@ -95,10 +95,7 @@ export class MainScene extends Scene {
         // x/y are already server-relayed world coords from the OTHER player's screen.
         // We mirror them to our POV: flip along the centre.
         this._onOpponentDeploy = (data: { cardId: string; x: number; y: number; ownerRole: string }) => {
-            console.log(`[MainScene] Processing opponent deploy from network:`, data);
-
             if (!data.cardId) {
-                console.error('[MainScene] Received opponent deploy without cardId', data);
                 return;
             }
 
@@ -169,7 +166,6 @@ export class MainScene extends Scene {
 
                 // ── Single path for troop relay + on-chain submission ─────────
                 // Request on-chain submission via EventBus → GameWrapper (which also relays socket)
-                console.log(`[MainScene] Emitting DEPLOY_TROOP_BLOCKCHAIN locally for cardId=${this.selectedCardId} (${worldPoint.x}, ${worldPoint.y})`);
                 EventBus.emit(EVENTS.DEPLOY_TROOP_BLOCKCHAIN, {
                     cardIdx: CARD_NAME_TO_ID[this.selectedCardId] ?? 0,
                     cardId: this.selectedCardId,
@@ -183,17 +179,22 @@ export class MainScene extends Scene {
     }
 
     update(_time: number, delta: number) {
-        if (!this.gameManager.gameStarted || this.gameManager.gameEnded) return;
+        if (!this.gameManager.gameStarted) return;
 
-        this.gameManager.update(_time, delta);
-        EventBus.emit(EVENTS.ELIXIR_UPDATE, this.gameManager.elixir);
-        EventBus.emit(EVENTS.CROWN_UPDATE, {
-            playerCrowns: this.gameManager.playerCrowns,
-            opponentCrowns: this.gameManager.opponentCrowns,
-            remainingTime: this.gameManager.getRemainingTime(),
-        });
-
-        if (this.gameManager.gameEnded) {
+        // Run logic if match is active
+        if (!this.gameManager.gameEnded) {
+            this.gameManager.update(_time, delta);
+            EventBus.emit(EVENTS.ELIXIR_UPDATE, this.gameManager.elixir);
+            EventBus.emit(EVENTS.CROWN_UPDATE, {
+                playerCrowns: this.gameManager.playerCrowns,
+                opponentCrowns: this.gameManager.opponentCrowns,
+                playerTowersDestroyed: this.gameManager.playerTowersDestroyed,
+                opponentTowersDestroyed: this.gameManager.opponentTowersDestroyed,
+                remainingTime: this.gameManager.getRemainingTime(),
+            });
+        } else if (!this.gameEndEmitted) {
+            // Signal outcome once
+            this.gameEndEmitted = true;
             EventBus.emit(EVENTS.GAME_END, {
                 winner: this.gameManager.winner,
                 playerCrowns: this.gameManager.playerCrowns,

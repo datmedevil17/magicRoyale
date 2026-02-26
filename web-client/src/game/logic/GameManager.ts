@@ -59,13 +59,13 @@ export class GameManager {
      */
     public setElapsedFromServer(serverElapsedMs: number) {
         const drift = Math.abs(this.elapsedTime - serverElapsedMs);
-        if (drift > 500 && this.elapsedTime > 0) { // Log significant drift only after first sync
-            console.log(`[GameManager] Syncing clock. Drift was ${drift}ms. Local=${this.elapsedTime}, Server=${serverElapsedMs}`);
+        if (drift > 2000 && this.elapsedTime > 0) {
+            // Only log extreme drift if necessary for production monitoring, otherwise skip
+            // console.log(`[GameManager] Syncing clock. Drift was ${drift}ms.`);
         }
         this.elapsedTime = serverElapsedMs;
 
         if (this.elapsedTime >= this.matchDuration && !this.gameEnded) {
-            console.log(`[GameManager] Match duration reached (${this.elapsedTime}ms). Triggering endGame().`);
             this.endGame();
         }
     }
@@ -244,6 +244,13 @@ export class GameManager {
         if (this.gameEnded) return;
 
         this.gameEnded = true;
+
+        // Freeze all troops immediately
+        this.entities.forEach(e => {
+            if (e instanceof Troop) {
+                e.state = 'idle';
+            }
+        });
 
         // Get all towers (including destroyed ones to calculate total damage dealt)
         const playerTowers = this.entities.filter(e =>
