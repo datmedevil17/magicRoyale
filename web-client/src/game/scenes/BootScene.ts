@@ -33,11 +33,15 @@ export class BootScene extends Scene {
         this.load.image('ValkyrieCard', 'ValkyrieCard.png');
         this.load.image('WizardCard', 'WizardCard.png');
 
-        // Towers
-        this.load.image('tower_archer_blue', 'tower_archer_blue.png');
-        this.load.image('tower_archer_red', 'tower_archer_red.png');
-        this.load.image('tower_king_blue', 'tower_king_blue.png');
-        this.load.image('tower_king_red', 'tower_king_red.png');
+        // Towers (Load from solanamap instead of assets)
+        this.load.image('tower_archer_blue', '../solanamap/tower_archer_blue.png');
+        this.load.image('tower_archer_red', '../solanamap/tower_archer_red.png');
+        this.load.image('tower_king_blue', '../solanamap/tower_king_blue.png');
+        this.load.image('tower_king_red', '../solanamap/tower_king_red.png');
+        this.load.image('logo', '../solanamap/logo.png');
+
+        // Solana Logostone1
+        // this.load.image('logo', '../solanamap/stone1.png');
 
         // Arena Assets
         this.load.image('bridge', 'bridge.png');
@@ -60,6 +64,13 @@ export class BootScene extends Scene {
         for (let i = 1; i <= 5; i++) {
             this.load.image(`trees${i}`, `trees${i}.png`);
         }
+
+        // Load solanamap custom props
+        for (let i = 1; i <= 3; i++) {
+            this.load.image(`solana_stone${i}`, `../solanamap/stone${i}.png`);
+        }
+        // this.load.image('solana_logo', '../solanamap/logo.png');
+        this.load.image('solana_wall1', '../solanamap/wall1solana.png');
     }
 
     async create() {

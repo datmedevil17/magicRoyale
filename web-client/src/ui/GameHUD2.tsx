@@ -1,7 +1,7 @@
 import React from 'react';
-import './GameHUD.css';
+import './GameHUD2.css';
 
-interface GameHUDProps {
+interface GameHUD2Props {
     playerName: string;
     opponentName: string;
     playerLevel: number;
@@ -11,13 +11,13 @@ interface GameHUDProps {
     timeLeft: string;
     playerTowersDestroyed?: number;
     opponentTowersDestroyed?: number;
-    playerCrownImage?: string;
-    playerEmptyCrownImage?: string;
-    opponentCrownImage?: string;
-    opponentEmptyCrownImage?: string;
+    playerKingImage?: string;
+    playerQueenImage?: string;
+    opponentKingImage?: string;
+    opponentQueenImage?: string;
 }
 
-export const GameHUD: React.FC<GameHUDProps> = ({
+export const GameHUD2: React.FC<GameHUD2Props> = ({
     playerName,
     opponentName,
     playerLevel,
@@ -27,18 +27,21 @@ export const GameHUD: React.FC<GameHUDProps> = ({
     timeLeft,
     playerTowersDestroyed = 0,
     opponentTowersDestroyed = 0,
-    playerCrownImage = "/assets/crown_small_blue.png",
-    playerEmptyCrownImage = "/assets/crown_place_blue.png",
-    opponentCrownImage = "/assets/crown_small_red.png",
-    opponentEmptyCrownImage = "/assets/crown_place_red.png"
+    playerKingImage = "/solanamap/tower_king_blue.png",
+    playerQueenImage = "/solanamap/tower_archer_blue.png",
+    opponentKingImage = "/solanamap/tower_king_red.png",
+    opponentQueenImage = "/solanamap/tower_archer_red.png"
 }) => {
+    const opponentScoreCrowns = [opponentQueenImage, opponentKingImage, opponentQueenImage];
+    const playerScoreCrowns = [playerQueenImage, playerKingImage, playerQueenImage];
+
     return (
         <div className="game-hud">
             {/* Top Section - Opponent Info & Time */}
             <div className="hud-top">
                 <div className="player-info opponent">
                     <div className="level-badge">
-                        <img src="/assets/level_place.png" alt="Level" />
+                        <img src={opponentKingImage} alt="Level" />
                         <span>{opponentLevel}</span>
                     </div>
                     <span className="player-name">{opponentName}</span>
@@ -50,14 +53,14 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                 </div>
 
                 <div className="crowns-display opponent-crowns">
-                    <img src="/assets/score_place1.png" alt="Score" className="score-bg" />
                     {/* Dynamic crowns based on score */}
                     <div className="crown-icons">
-                        {[...Array(3)].map((_, i) => (
+                        {opponentScoreCrowns.map((src, i) => (
                             <img
                                 key={i}
-                                src={i < opponentCrowns ? opponentCrownImage : opponentEmptyCrownImage}
+                                src={src}
                                 className="crown-icon"
+                                style={{ filter: i < opponentCrowns ? 'none' : 'grayscale(100%) opacity(50%)' }}
                             />
                         ))}
                     </div>
@@ -69,28 +72,28 @@ export const GameHUD: React.FC<GameHUDProps> = ({
 
             {/* Bottom Section - Player Info */}
             <div className="hud-bottom">
+                <div className="player-info player">
+                    <div className="level-badge">
+                        <img src={playerKingImage} alt="Level" style={{ objectFit: 'contain', padding: '2px' }} />
+                        <span>{playerLevel}</span>
+                    </div>
+                    <span className="player-name">{playerName}</span>
+                </div>
+
                 <div className="crowns-display player-crowns">
-                    <img src="/assets/score_place2.png" alt="Score" className="score-bg" />
                     <div className="crown-icons">
-                        {[...Array(3)].map((_, i) => (
+                        {playerScoreCrowns.map((src, i) => (
                             <img
                                 key={i}
-                                src={i < playerCrowns ? playerCrownImage : playerEmptyCrownImage}
+                                src={src}
                                 className="crown-icon"
+                                style={{ filter: i < playerCrowns ? 'none' : 'grayscale(100%) opacity(50%)' }}
                             />
                         ))}
                     </div>
                     <div className="tower-count">
                         Towers: {playerTowersDestroyed}/3
                     </div>
-                </div>
-
-                <div className="player-info player">
-                    <div className="level-badge">
-                        <img src="/assets/level_place.png" alt="Level" />
-                        <span>{playerLevel}</span>
-                    </div>
-                    <span className="player-name">{playerName}</span>
                 </div>
             </div>
         </div>
