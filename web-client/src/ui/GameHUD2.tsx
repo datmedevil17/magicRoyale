@@ -12,9 +12,11 @@ interface GameHUD2Props {
     playerTowersDestroyed?: number;
     opponentTowersDestroyed?: number;
     playerKingImage?: string;
-    playerQueenImage?: string;
+    playerQueenImageLeft?: string;
+    playerQueenImageRight?: string;
     opponentKingImage?: string;
-    opponentQueenImage?: string;
+    opponentQueenImageLeft?: string;
+    opponentQueenImageRight?: string;
 }
 
 export const GameHUD2: React.FC<GameHUD2Props> = ({
@@ -28,12 +30,14 @@ export const GameHUD2: React.FC<GameHUD2Props> = ({
     playerTowersDestroyed = 0,
     opponentTowersDestroyed = 0,
     playerKingImage = "/solanamap/tower_king_blue.png",
-    playerQueenImage = "/solanamap/tower_archer_blue.png",
+    playerQueenImageLeft = "/solanamap/tower_archer_blue2.png",
+    playerQueenImageRight = "/solanamap/tower_archer_blue.png",
     opponentKingImage = "/solanamap/tower_king_red.png",
-    opponentQueenImage = "/solanamap/tower_archer_red.png"
+    opponentQueenImageLeft = "/solanamap/tower_archer_red2.png",
+    opponentQueenImageRight = "/solanamap/tower_archer_red.png"
 }) => {
-    const opponentScoreCrowns = [opponentQueenImage, opponentKingImage, opponentQueenImage];
-    const playerScoreCrowns = [playerQueenImage, playerKingImage, playerQueenImage];
+    const opponentScoreCrowns = [opponentQueenImageLeft, opponentKingImage, opponentQueenImageRight];
+    const playerScoreCrowns = [playerQueenImageLeft, playerKingImage, playerQueenImageRight];
 
     return (
         <div className="game-hud">

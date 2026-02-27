@@ -14,8 +14,10 @@ export class MapTestScene2 extends Scene {
         this.load.setPath('assets');
 
         // Towers (Load from solanamap instead of assets)
-        this.load.image('tower_archer_blue', '../solanamap/tower_archer_blue.png');
-        this.load.image('tower_archer_red', '../solanamap/tower_archer_red.png');
+        this.load.image('tower_archer_blue_right', '../solanamap/tower_archer_blue.png');
+        this.load.image('tower_archer_blue_left', '../solanamap/tower_archer_blue2.png');
+        this.load.image('tower_archer_red_right', '../solanamap/tower_archer_red.png');
+        this.load.image('tower_archer_red_left', '../solanamap/tower_archer_red2.png');
         this.load.image('tower_king_blue', '../solanamap/tower_king_blue.png');
         this.load.image('tower_king_red', '../solanamap/tower_king_red.png');
 
