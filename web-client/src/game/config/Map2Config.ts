@@ -24,7 +24,7 @@ export const Map2Config = {
 
     // Tower Stats
     KING_TOWER_HP: 4200,
-    PRINCESS_TOWER_HP: 2400,
+    PRINCESS_TOWER_HP: 3200,
 
     // Playable Area (centered)
     PLAYABLE_ROWS: 30,
@@ -47,9 +47,11 @@ export const Map2Config = {
     // Crown Images for HUD
     CROWN_IMAGES: {
         PLAYER_KING: '/solanamap/tower_king_blue.png',
-        PLAYER_QUEEN: '/solanamap/tower_archer_blue.png',
+        PLAYER_QUEEN_Left: '/solanamap/tower_archer_blue2.png',
+        PLAYER_QUEEN_Right: '/solanamap/tower_archer_blue.png',
         OPPONENT_KING: '/solanamap/tower_king_red.png',
-        OPPONENT_QUEEN: '/solanamap/tower_archer_red.png',
+        OPPONENT_QUEEN_Left: '/solanamap/tower_archer_red2.png',
+        OPPONENT_QUEEN_Right: '/solanamap/tower_archer_red.png',
     },
 
     // Colors
@@ -58,10 +60,10 @@ export const Map2Config = {
         GRASS_ALT: 0x1d0a24,  // Slightly lighter for subtle grid
         WATER: 0x9945FF,      // Bright neon cyan river
         SAND: 0x055441,       // Dark blue for the sand patches
-        // BORDER: 0x000000,     // Black
-        // FENCE: 0xcc00ff,      // Neon purple
-        // LASER_CYAN: 0x00ffff, // Bright cyan for circuit lines
-        // LASER_PURPLE: 0xcc00ff, // Bright purple for circuit lines
+        BORDER: 0x000000,     // Black
+        FENCE: 0xcc00ff,      // Neon purple
+        LASER_CYAN: 0x00ffff, // Bright cyan for circuit lines
+        LASER_PURPLE: 0xcc00ff, // Bright purple for circuit lines
     },
 
     // Tower Layout (Relative to Playable Area bounds)
@@ -120,8 +122,8 @@ export const Map2Config = {
             owner: 'player',
             towerRow: 27.5,
             towerCol: 6,
-            pixelScale: 0.06,
-            texture: 'tower_archer_blue',
+            pixelScale: 0.15,
+            texture: 'tower_archer_blue_left',
             gridRow: 28,
             gridCol: 6,
             gridWidth: 3,
@@ -134,7 +136,7 @@ export const Map2Config = {
             towerRow: 27.5,
             towerCol: 17,
             pixelScale: 0.06,
-            texture: 'tower_archer_blue',
+            texture: 'tower_archer_blue_right',
             gridRow: 28,
             gridCol: 17,
             gridWidth: 3,
@@ -162,7 +164,7 @@ export const Map2Config = {
             towerRow: 8.5,
             towerCol: 6,
             pixelScale: 0.06,
-            texture: 'tower_archer_red',
+            texture: 'tower_archer_red_left',
             gridRow: 9,
             gridCol: 6,
             gridWidth: 3,
@@ -175,7 +177,7 @@ export const Map2Config = {
             towerRow: 8.5,
             towerCol: 17,
             pixelScale: 0.06,
-            texture: 'tower_archer_red',
+            texture: 'tower_archer_red_right',
             gridRow: 9,
             gridCol: 17,
             gridWidth: 3,

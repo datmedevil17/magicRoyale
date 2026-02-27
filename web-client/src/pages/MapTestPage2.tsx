@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+ import { useEffect, useRef } from 'react';
 import Phaser from 'phaser';
 import { MapTestScene2 } from '../game/scenes/MapTestScene2';
 import { GameHUD2 } from '../ui/GameHUD2';
@@ -69,9 +69,11 @@ export const MapTestPage2 = () => {
                         opponentCrowns={1} // Hardcoded test values
                         timeLeft="3:00"
                         playerKingImage={Map2Config.CROWN_IMAGES.PLAYER_KING}
-                        playerQueenImage={Map2Config.CROWN_IMAGES.PLAYER_QUEEN}
+                        playerQueenImageLeft={Map2Config.CROWN_IMAGES.PLAYER_QUEEN_Left}
+                        playerQueenImageRight={Map2Config.CROWN_IMAGES.PLAYER_QUEEN_Right}
                         opponentKingImage={Map2Config.CROWN_IMAGES.OPPONENT_KING}
-                        opponentQueenImage={Map2Config.CROWN_IMAGES.OPPONENT_QUEEN}
+                        opponentQueenImageLeft={Map2Config.CROWN_IMAGES.OPPONENT_QUEEN_Left}
+                        opponentQueenImageRight={Map2Config.CROWN_IMAGES.OPPONENT_QUEEN_Right}
                     />
                 </div>
             </div>
