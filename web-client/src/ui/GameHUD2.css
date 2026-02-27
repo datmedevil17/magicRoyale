@@ -1,3 +1,4 @@
+
 .game-hud {
     position: absolute;
     top: 0;
@@ -9,7 +10,7 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: 10px;
+    padding: 10px 4% 10px 4%;
     box-sizing: border-box;
     font-family: 'Supercell-Magic', sans-serif;
     color: white;
@@ -31,9 +32,25 @@
     flex-direction: row;
 }
 
-.player-info.player {
-    flex-direction: row-reverse;
+/* Only resize MY logo and name */
+.player-info.player .level-badge {
+    width: 50px;
+    height: 50px;
+
 }
+.player-info.player .player-name {
+    font-size: 1.2rem;
+}
+
+/* Only resize OPPONENT logo and name */
+.player-info.opponent .level-badge {
+    width: 25px;
+    height: 25px;
+}
+.player-info.opponent .player-name {
+    font-size: 0.8rem;
+}
+
 
 .level-badge {
     position: relative;
@@ -87,8 +104,8 @@
 }
 
 .crowns-display {
-    position: fixed;  /* Changed from relative to fixed */
-    right: 10px;      /* Position at right edge */
+    position: absolute;
+    right: 4%;      /* Align with the overall edge padding */
     width: 90px;      /* Slightly wider for tower count */
     height: auto;     /* Auto height for vertical layout */
     display: flex;
@@ -103,11 +120,11 @@
 }
 
 .crowns-display.opponent-crowns {
-    top: 80px;  /* Below opponent info */
+    top: 0px;  /* Upper black background */
 }
 
 .crowns-display.player-crowns {
-    bottom: 320px;  /* Above card deck */
+    bottom: 0px;  /* Lower black background */
 }
 
 .score-bg {
@@ -116,8 +133,8 @@
 
 .crown-icons {
     display: flex;
-    gap: 4px;
-    margin-bottom: 4px;
+    gap: 2px;
+    margin-bottom: 1px;
     align-items: center;
 }
 
@@ -140,8 +157,8 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
-    margin-bottom: 250px;
-    /* Reduced to provide space for cards, but not too high. CardDeck is absolute positioned */
+    margin-bottom: 20px;
+    /* Reduced margin to place in the lower black background */
     pointer-events: none;
 }
 
@@ -150,7 +167,10 @@
 
 /* Timer Improvements */
 .timer-container {
-    position: relative;
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
     width: 80px;
     height: 40px;
     display: flex;

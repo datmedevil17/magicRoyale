@@ -14,7 +14,9 @@ export function colorRect(c1: number, r1: number, c2: number, r2: number, color:
     return tiles;
 }
 
-export const ArenaConfig = {
+
+
+export const Map2Config = {
     // Dimensions
     TILE_SIZE: 22,
     ROWS: 38, // Total rows (Reduced to zoom in)
@@ -39,16 +41,27 @@ export const ArenaConfig = {
     // River (Middle 2 rows)
     // Rows 0-37. Middle is 18.5. So rows 18 and 19.
     RIVER_ROW_START: 18,
+
     RIVER_ROW_END: 19,
+
+    // Crown Images for HUD
+    CROWN_IMAGES: {
+        PLAYER_KING: '/solanamap/tower_king_blue.png',
+        PLAYER_QUEEN: '/solanamap/tower_archer_blue.png',
+        OPPONENT_KING: '/solanamap/tower_king_red.png',
+        OPPONENT_QUEEN: '/solanamap/tower_archer_red.png',
+    },
 
     // Colors
     Colors: {
-        GRASS: 0x2162cc,
-        GRASS_ALT: 0x5a83c7,
-        WATER: 0x00add2,
-        SAND: 0xd2b48c, // Tan/Sand color
-        BORDER: 0x555555, // Dark gray for non-playable area
-        FENCE: 0x654321, // Brown for fence posts (if drawn as rects for now)
+        GRASS: 0x050505,      // Very dark navy, almost black
+        GRASS_ALT: 0x1d0a24,  // Slightly lighter for subtle grid
+        WATER: 0x9945FF,      // Bright neon cyan river
+        SAND: 0x055441,       // Dark blue for the sand patches
+        // BORDER: 0x000000,     // Black
+        // FENCE: 0xcc00ff,      // Neon purple
+        // LASER_CYAN: 0x00ffff, // Bright cyan for circuit lines
+        // LASER_PURPLE: 0xcc00ff, // Bright purple for circuit lines
     },
 
     // Tower Layout (Relative to Playable Area bounds)
@@ -93,7 +106,7 @@ export const ArenaConfig = {
             // Visual Tower
             towerRow: 31,
             towerCol: 11.5,
-            pixelScale: 0.8,
+            pixelScale: 0.2,
             texture: 'tower_king_blue',
             // Sand Grid
             gridRow: 32,
@@ -105,9 +118,9 @@ export const ArenaConfig = {
             id: 'player_princess_left',
             type: 'princess',
             owner: 'player',
-            towerRow: 28,
+            towerRow: 27.5,
             towerCol: 6,
-            pixelScale: 0.7,
+            pixelScale: 0.06,
             texture: 'tower_archer_blue',
             gridRow: 28,
             gridCol: 6,
@@ -118,9 +131,9 @@ export const ArenaConfig = {
             id: 'player_princess_right',
             type: 'princess',
             owner: 'player',
-            towerRow: 28,
+            towerRow: 27.5,
             towerCol: 17,
-            pixelScale: 0.7,
+            pixelScale: 0.06,
             texture: 'tower_archer_blue',
             gridRow: 28,
             gridCol: 17,
@@ -133,9 +146,9 @@ export const ArenaConfig = {
             id: 'opponent_king',
             type: 'king',
             owner: 'opponent',
-            towerRow: 5,
+            towerRow: 4.7,
             towerCol: 11.5,
-            pixelScale: 0.8,
+            pixelScale: 0.08,
             texture: 'tower_king_red',
             gridRow: 6,
             gridCol: 11.5,
@@ -146,9 +159,9 @@ export const ArenaConfig = {
             id: 'opponent_princess_left',
             type: 'princess',
             owner: 'opponent',
-            towerRow: 9,
+            towerRow: 8.5,
             towerCol: 6,
-            pixelScale: 0.7,
+            pixelScale: 0.06,
             texture: 'tower_archer_red',
             gridRow: 9,
             gridCol: 6,
@@ -159,9 +172,9 @@ export const ArenaConfig = {
             id: 'opponent_princess_right',
             type: 'princess',
             owner: 'opponent',
-            towerRow: 9,
+            towerRow: 8.5,
             towerCol: 17,
-            pixelScale: 0.7,
+            pixelScale: 0.06,
             texture: 'tower_archer_red',
             gridRow: 9,
             gridCol: 17,
@@ -200,8 +213,7 @@ export const ArenaConfig = {
             { col: 17, row: 22 },
             { col: 17, row: 21 },
             { col: 17, row: 20 },
-
-        ], 0xd2b48c),
+        ], 0x05a680),
         ...colorTiles([
             { col: 6, row: 17 },
             { col: 6, row: 16 },
@@ -242,8 +254,7 @@ export const ArenaConfig = {
             // { col: 17, row: 22 },
             // { col: 17, row: 21 },
             // { col: 17, row: 20 },
-
-        ], 0xd2b48c),
+        ], 0x05a680),
         // ...colorRect(10, 20, 12, 22, 0xFF0000), // Example: Red Rectangle
         // ...colorTiles([{col: 5, row: 5}, {col: 6, row: 6}], 0x00FF00), // Example: Specific Green Points
     ] as { col: number, row: number, color: number }[],
@@ -257,22 +268,32 @@ export const ArenaConfig = {
 
 
 
+        { col: 2, row: 5, rotate: 3, texture: 'solana_wall1', scaleX: 5, scaleY: 4 },
+        { col: 2, row: 10, rotate: 3, texture: 'solana_wall1', scaleX: 5, scaleY: 4 },
+        { col: 2, row: 15, rotate: 3, texture: 'solana_wall1', scaleX: 5, scaleY: 4 },
+        { col: 2, row: 22, rotate: 3, texture: 'solana_wall1', scaleX: 5, scaleY: 4 },
+        { col: 2, row: 27, rotate: 3, texture: 'solana_wall1', scaleX: 5, scaleY: 4 },
+        { col: 2, row: 32, rotate: 3, texture: 'solana_wall1', scaleX: 5, scaleY: 4 },
+        // { col: 2, row: 34, rotate: 3, texture: 'solana_wall1', scaleX: 2, scaleY: 1 },
 
-        { col: 2, row: 10, rotate: 3, texture: 'wall3', scaleX: 5, scaleY: 1 },
-        { col: 2, row: 15, rotate: 3, texture: 'wall3', scaleX: 5, scaleY: 1 },
-        { col: 2, row: 22, rotate: 3, texture: 'wall3', scaleX: 5, scaleY: 1 },
-        { col: 2, row: 27, rotate: 3, texture: 'wall3', scaleX: 5, scaleY: 1 },
-        { col: 2, row: 32, rotate: 3, texture: 'wall3', scaleX: 5, scaleY: 1 },
-        // { col: 2, row: 34, rotate: 3, texture: 'wall3', scaleX: 2, scaleY: 1 },
-        { col: 5, row: 34.5, rotate: 0, texture: 'wall3', scaleX: 5, scaleY: 1 },
-        { col: 10, row: 34.5, rotate: 0, texture: 'wall3', scaleX: 5, scaleY: 1 },
-        { col: 21, row: 27, rotate: 1, texture: 'wall3', scaleX: 5, scaleY: 1 },
-        { col: 21, row: 22, rotate: 1, texture: 'wall3', scaleX: 5, scaleY: 1 },
-        { col: 21, row: 15, rotate: 1, texture: 'wall3', scaleX: 5, scaleY: 1 },
-        { col: 21, row: 10, rotate: 1, texture: 'wall3', scaleX: 5, scaleY: 1 },
-        { col: 21, row: 5, rotate: 1, texture: 'wall3', scaleX: 5, scaleY: 1 },
-        { col: 18, row: 2.5, rotate: 2, texture: 'wall3', scaleX: 5, scaleY: 1 },
-        { col: 13, row: 2.5, rotate: 2, texture: 'wall3', scaleX: 5, scaleY: 1 },
+        { col: 5, row: 34.5, rotate: 0, texture: 'solana_wall1', scaleX: 5, scaleY: 4 },
+        { col: 10, row: 34.5, rotate: 0, texture: 'solana_wall1', scaleX: 5, scaleY: 4 },
+        { col: 15, row: 34.5, rotate: 0, texture: 'solana_wall1', scaleX: 5, scaleY: 4 },
+        { col: 21, row: 32, rotate: 1, texture: 'solana_wall1', scaleX: 5, scaleY: 4 },
+
+
+        { col: 21, row: 27, rotate: 1, texture: 'solana_wall1', scaleX: 5, scaleY: 4 },
+        { col: 21, row: 22, rotate: 1, texture: 'solana_wall1', scaleX: 5, scaleY: 4 },
+        { col: 21, row: 15, rotate: 1, texture: 'solana_wall1', scaleX: 5, scaleY: 4 },
+        { col: 21, row: 10, rotate: 1, texture: 'solana_wall1', scaleX: 5, scaleY: 4 },
+        { col: 21, row: 5, rotate: 1, texture: 'solana_wall1', scaleX: 5, scaleY: 4 },
+
+        { col: 18, row: 1.5, rotate: 0, texture: 'solana_wall1', scaleX: 5, scaleY: 4 },
+        { col: 13, row: 1.5, rotate: 0, texture: 'solana_wall1', scaleX: 5, scaleY: 4 },
+        { col: 8, row: 1.5, rotate: 0, texture: 'solana_wall1', scaleX: 5, scaleY: 4 },
+
+
+
 
 
 
@@ -287,94 +308,70 @@ export const ArenaConfig = {
         // Example: { col: 5, row: 5, rotate: 1 } (1 = 90 deg, 0 = 0 deg)
     ] as { col: number, row: number, rotate?: number, texture?: string, scale?: number, scaleX?: number, scaleY?: number }[],
 
+
     // Props (Trees, Stones, etc.) outside the playable area
     PROPS: [
 
-        // { col: 0, row: 20, texture: 'tree3' }, // Near river
-        { col: 5, row: 16, texture: 'stone3' },
-        { col: 5, row: 20, texture: 'stone3' },
-        { col: 18, row: 16, texture: 'stone3' },
-        { col: 18, row: 20, texture: 'stone3' },
-        { col: 0.5, row: 10, texture: 'tree2', rotate: 0 },
-        { col: 0.5, row: 15, texture: 'tree2', rotate: 0 },
-
-
-        { col: 1, row: 29, texture: 'trees3', rotate: 0 },
-
-        { col: 22.5, row: 12, texture: 'tree4', rotate: 0 },
-        { col: 22.5, row: 1.5, texture: 'trees5', rotate: 0 },
-        { col: 22.5, row: 7, texture: 'tree4', rotate: 0 },
-        { col: 22.5, row: 22, texture: 'tree4', rotate: 0 },
-        { col: 22.5, row: 27, texture: 'tree4', rotate: 0 },
-
-        // { col: 1, row: 31, texture: 'stone4' },
-        // { col: 0, row: 30, texture: 'trees2' },
-        // { col: 1, row: 35, texture: 'tree4' },
-
-        {
-            col: 5,
-            row: 3.5,
-            texture: 'trees1',
-            rotate: 2
-        },
-        {
-            col: 18,
-            row: 33.5,
-            texture: 'trees1'
-        },
+        // // { col: 0, row: 20, texture: 'tree3' }, // Near river
+        { col: 3.5, row: 1.5, texture: 'solana_stone1', scale: 0.08, rotate: 0 },
+        { col: 19, row: 34, texture: 'solana_stone1', scale: 0.08, rotate: 0 },
+        { col: 18.2, row: 16.2, texture: 'solana_stone3', scale: 0.12 },
+        { col: 18.2, row: 20.2, texture: 'solana_stone3', scale: 0.12 },
+        { col: 4.7, row: 16.2, texture: 'solana_stone3', scale: 0.12 },
+        { col: 4.7, row: 20.2, texture: 'solana_stone3', scale: 0.12 },
+        { col: 11.5, row: 25, texture: 'logo', scale: 0.2, rotate: 0 },
+        { col: 11.5, row: 12, texture: 'logo', scale: 0.2, rotate: 2 },
+        // { col: 11.5, row: 5, texture: 'logo', scale: 0.2, rotate: 0 },
+        // { col: 10, row: 20, texture: 'logo', scale: 5 },
 
 
 
+        // { col: 1, row: 36.2, texture: 'solana_stone1',scale:0.07,rotate:3 },
+        // { col: 3.5, row: 36, texture: 'solana_stone2',scale:0.065 },
+        // { col: 6, row: 36, texture: 'solana_stone2',scale:0.065 },
+        // { col: 8.5, row: 36, texture: 'solana_stone2',scale:0.065 },
+        // { col: 11, row: 36, texture: 'solana_stone2',scale:0.065 },
+        // { col: 13.5, row: 36 , texture: 'solana_stone2',scale:0.065 },
+        // { col: 16, row: 36, texture: 'solana_stone2',scale:0.065 },
+        // { col: 18.5, row: 36, texture: 'solana_stone2',scale:0.065 },
+        // { col: 21.2, row: 36.2 , texture: 'solana_stone1',scale:0.07,rotate:1 },
 
-        // {
-        //     col: 3,
-        //     row: 11,
-        //     texture: 'tree3',
-        //     rotate: 0
-        // },
-        // {
-        //     col: 20,
-        //     row: 25,
-        //     texture: 'tree3',
-        //     rotate: 0
-        // },
+
+
+        // { col: 5, row: 20, texture: 'stone3' },
+        // { col: 18, row: 16, texture: 'stone3' },
+        // { col: 18, row: 20, texture: 'stone3' },
+        // { col: 0.5, row: 10, texture: 'tree2', rotate: 0 },
+        // { col: 0.5, row: 15, texture: 'tree2', rotate: 0 },
+
+
+        // { col: 1, row: 29, texture: 'trees3', rotate: 0 },
+
+        // { col: 22.5, row: 12, texture: 'tree4', rotate: 0 },
+        // { col: 22.5, row: 1.5, texture: 'trees5', rotate: 0 },
+        // { col: 22.5, row: 7, texture: 'tree4', rotate: 0 },
+        // { col: 22.5, row: 22, texture: 'tree4', rotate: 0 },
+        // { col: 22.5, row: 27, texture: 'tree4', rotate: 0 },
+
+
 
         // {
-        //     col: 3,
-        //     row: 34,
-        //     texture: 'tree1'
-        // },
-        // {
-        //     col: 20,
-        //     row: 3,
-        //     texture: 'tree1',
+        //     col: 5,
+        //     row: 3.5,
+        //     texture: 'trees1',
         //     rotate: 2
         // },
+        // {
+        //     col: 18,
+        //     row: 33.5,
+        //     texture: 'trees1'
+        // },
 
 
 
 
-        // Right Margin (Cols 21-23)
-        // { col: 23, row: 4, texture: 'tree2' },
-        // { col: 22, row: 9, texture: 'stone3' },
-        // { col: 23, row: 14, texture: 'trees3' },
-        // { col: 22, row: 19, texture: 'tree1' }, // Near river
-        // { col: 23, row: 24, texture: 'stone4' },
-        // { col: 22, row: 29, texture: 'trees4' },
-        // { col: 23, row: 34, texture: 'tree3' },
 
-        // Top Margin (Rows 0-3) - mostly behind opponent king
-        // { col: 4, row: 0, texture: 'trees5' },
-        // { col: 8, row: 1, texture: 'stone1' },
-        // { col: 15, row: 1, texture: 'stone2' },
-        // { col: 19, row: 0, texture: 'trees1' },
-
-        // Bottom Margin (Rows 34-37) - mostly behind player king
-        // { col: 3, row: 37, texture: 'trees2' },
-        // { col: 9, row: 36, texture: 'stone3' },
-        // { col: 14, row: 36, texture: 'stone4' },
-        // { col: 20, row: 37, texture: 'trees3' },
-    ] as { col: number, row: number, texture: string, rotate?: number }[],
+    ] as { col: number, row: number, texture: string, rotate?: number, scale?: number }[],
 
     getPixelCoords(col: number, row: number) {
         return {
