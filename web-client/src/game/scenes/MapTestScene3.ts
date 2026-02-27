@@ -1,7 +1,7 @@
 
 import { Scene } from 'phaser';
 import { Map3Config } from '../config/Map3Config';
-import { MapBuilder3 } from './MapBuilder3';
+import { MapBuilder } from './MapBuilder';
 import { Tower } from '../entities/Tower';
 
 export class MapTestScene3 extends Scene {
@@ -20,10 +20,10 @@ export class MapTestScene3 extends Scene {
         this.load.image('m3_tower_archer_red_left', '../magicblock/tower_archer_red2.png');
         this.load.image('m3_tower_king_blue', '../magicblock/tower_king_blue.png');
         this.load.image('m3_tower_king_red', '../magicblock/tower_king_red.png');
-        this.load.image('logo', '../magicblock/logo.png');
+        this.load.image('m3_logo', '../magicblock/logo.png');
 
         // Solana Logo
-        this.load.image('solana_logo', '../solanamap/wall1solana.png');
+        this.load.image('m2_solana_logo', '../solanamap/wall1solana.png');
 
         // Arena Assets
         this.load.image('bridge', 'bridge.png');
@@ -42,10 +42,10 @@ export class MapTestScene3 extends Scene {
 
         // Load Map 3 custom props
         for (let i = 1; i <= 2; i++) {
-            this.load.image(`magic_stone${i}`, `../magicblock/stone${i}.png`);
+            this.load.image(`m3_magic_stone${i}`, `../magicblock/stone${i}.png`);
         }
-        this.load.image('solana_wall1', '../solanamap/wall1solana.png');
-        this.load.image('logo', '../magicblock/logo.png');
+        this.load.image('m2_solana_wall1', '../solanamap/wall1solana.png');
+        this.load.image('m3_logo', '../magicblock/logo.png');
     }
 
     create() {
@@ -61,7 +61,7 @@ export class MapTestScene3 extends Scene {
         this.cameras.main.setBackgroundColor('#000000');
 
         // 2. Build Map
-        const mapBuilder = new MapBuilder3(this, 0, 0);
+        const mapBuilder = new MapBuilder(this, 0, 0, Map3Config);
         mapBuilder.build();
 
         // 3. Place Visual Towers (No Logic Entities)

@@ -1,4 +1,4 @@
- import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import Phaser from 'phaser';
 import { MapTestScene3 } from '../game/scenes/MapTestScene3';
 import { GameHUD2 } from '../ui/GameHUD2';

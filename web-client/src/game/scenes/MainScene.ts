@@ -9,6 +9,9 @@ import { TowerEntity } from '../logic/TowerEntity';
 import { Spell } from '../logic/spells/Spell';
 import { Unit } from '../entities/Unit';
 import { ArenaConfig } from '../config/ArenaConfig';
+import { Map2Config } from '../config/Map2Config';
+import { Map3Config } from '../config/Map3Config';
+import type { ArenaConfigInterface } from '../config/IArenaConfig';
 
 export class MainScene extends Scene {
     private gameManager!: GameManager;
@@ -16,6 +19,9 @@ export class MainScene extends Scene {
     private spriteMap: Map<string, Phaser.GameObjects.Sprite> = new Map();
     private towerSprites: Map<string, Tower> = new Map();
     private isTestMode: boolean = false;
+    private mapType: string = 'classic';
+    private arenaConfig: ArenaConfigInterface = ArenaConfig;
+
     // EventBus handler refs for cleanup
     private _onCardSelected!: (id: string | null) => void;
     private _onOpponentDeploy!: (data: any) => void;
@@ -28,8 +34,24 @@ export class MainScene extends Scene {
 
     constructor() { super('MainScene'); }
 
-    init(data: { isTestMode?: boolean }) {
+    init(data: { isTestMode?: boolean, mapType?: string }) {
         this.isTestMode = !!data.isTestMode;
+        this.mapType = data.mapType || 'classic';
+
+        // Select the appropriate config
+        switch (this.mapType) {
+            case 'solana':
+            case 'map2':
+                this.arenaConfig = Map2Config;
+                break;
+            case 'magicblock':
+            case 'map3':
+                this.arenaConfig = Map3Config;
+                break;
+            default:
+                this.arenaConfig = ArenaConfig;
+        }
+
         this.gameManager = new GameManager({
             username: 'Player1',
             level: UserLevelEnum.LEVEL_1,
@@ -39,14 +61,14 @@ export class MainScene extends Scene {
 
     create() {
         // ── Map ──────────────────────────────────────────────────────────────
-        const mapWidth = ArenaConfig.COLS * ArenaConfig.TILE_SIZE;
-        const mapHeight = ArenaConfig.ROWS * ArenaConfig.TILE_SIZE;
+        const mapWidth = this.arenaConfig.COLS * this.arenaConfig.TILE_SIZE;
+        const mapHeight = this.arenaConfig.ROWS * this.arenaConfig.TILE_SIZE;
         const zoom = (this.scale.height * 0.95) / mapHeight;
         this.cameras.main.setZoom(zoom);
         this.cameras.main.centerOn(mapWidth / 2, mapHeight / 2);
         this.cameras.main.setBackgroundColor('#000000');
 
-        const mapBuilder = new MapBuilder(this, 0, 0);
+        const mapBuilder = new MapBuilder(this, 0, 0, this.arenaConfig);
         mapBuilder.build();
 
         // ── Debug text overlay ───────────────────────────────────────────────
@@ -65,8 +87,8 @@ export class MainScene extends Scene {
         };
 
         // ── Towers ───────────────────────────────────────────────────────────
-        ArenaConfig.TOWERS.forEach(tc => {
-            const { x, y } = ArenaConfig.getPixelCoords(tc.towerCol, tc.towerRow);
+        this.arenaConfig.TOWERS.forEach(tc => {
+            const { x, y } = this.arenaConfig.getPixelCoords(tc.towerCol, tc.towerRow);
             this.createTower(tc.id, x, y, tc.texture, tc.type === 'king', tc.owner, tc.pixelScale);
         });
 
@@ -75,7 +97,6 @@ export class MainScene extends Scene {
         EventBus.on(EVENTS.CARD_SELECTED, this._onCardSelected);
 
         // ── EventBus: battle started (from Network or test mode) ─────────────
-        // This is the SINGLE trigger that starts gameplay.
         this._onBattleStarted = () => {
             this.input.enabled = true;
             this.gameManager.startGame();
@@ -83,8 +104,6 @@ export class MainScene extends Scene {
         EventBus.on(EVENTS.BATTLE_STARTED, this._onBattleStarted);
 
         // ── EventBus: server clock tick → sync GameManager time ──────────────
-        // The server is the authoritative clock. We sync elapsed to GameManager
-        // so both players' timers drift together (not independently from Phaser delta).
         this._onServerTick = (data: { elapsed: number; remaining: number }) => {
             if (this.gameManager.gameStarted && !this.gameManager.gameEnded) {
                 this.gameManager.setElapsedFromServer(data.elapsed);
@@ -93,16 +112,11 @@ export class MainScene extends Scene {
         EventBus.on('server-tick', this._onServerTick);
 
         // ── EventBus: opponent deployed a troop ──────────────────────────────
-        // Shape: { cardId: string, x: number, y: number (world coords from opponent) }
-        // x/y are already server-relayed world coords from the OTHER player's screen.
-        // We mirror them to our POV: flip along the centre.
         this._onOpponentDeploy = (data: { cardId: string; x: number; y: number; ownerRole: string }) => {
-            if (!data.cardId) {
-                return;
-            }
+            if (!data.cardId) return;
 
-            const mapWidth = ArenaConfig.COLS * ArenaConfig.TILE_SIZE;
-            const mapHeight = ArenaConfig.ROWS * ArenaConfig.TILE_SIZE;
+            const mapWidth = this.arenaConfig.COLS * this.arenaConfig.TILE_SIZE;
+            const mapHeight = this.arenaConfig.ROWS * this.arenaConfig.TILE_SIZE;
             const mirroredX = mapWidth - data.x;
             const mirroredY = mapHeight - data.y;
             this.gameManager.deployCard(data.cardId, { x: mirroredX, y: mirroredY }, 'opponent');
@@ -115,7 +129,6 @@ export class MainScene extends Scene {
 
         // ── EventBus: external game end trigger (e.g. timeout) ────────────────
         this._onGameEndTrigger = () => {
-            console.log('[MainScene] Force ending game via EventBus trigger');
             this.gameManager.forceEndGame();
         };
         EventBus.on(EVENTS.GAME_END_TRIGGER, this._onGameEndTrigger);
@@ -124,7 +137,6 @@ export class MainScene extends Scene {
         const gameData = this.registry.get('data');
         const isHost = gameData?.role === 'player1';
 
-        // Listener for incoming syncs (for non-hosts)
         const onSyncUnits = (data: any) => {
             if (!isHost) {
                 this.gameManager.syncFromHost(data, isHost);
@@ -132,10 +144,9 @@ export class MainScene extends Scene {
         };
         EventBus.on('sync-units', onSyncUnits);
 
-        // Broadcaster for host
         if (isHost) {
             this.time.addEvent({
-                delay: 200, // Every 200ms
+                delay: 200,
                 loop: true,
                 callback: () => {
                     const entities = this.gameManager.getEntities()
@@ -169,7 +180,6 @@ export class MainScene extends Scene {
 
         // ── EventBus: test deploy (from TestArena devtools) ──────────────────
         this._onTestDeploy = (data) => {
-            // World coordinates are already precise from TestArena map click/input
             this.gameManager.deployCard(data.cardId, { x: data.x, y: data.y }, data.ownerId);
         };
         EventBus.on(EVENTS.TEST_DEPLOY, this._onTestDeploy);
@@ -177,29 +187,25 @@ export class MainScene extends Scene {
         // ── Input: disabled until battle starts ──────────────────────────────
         this.input.enabled = false;
 
-        // Show searching text until battle starts
         const centerY = this.scale.height / 2;
         const waitingText = this.add.text(centerX, centerY, 'Waiting for both players...', {
             fontSize: '22px', color: '#ffffff',
             backgroundColor: '#000000', padding: { x: 10, y: 10 },
         }).setOrigin(0.5).setScrollFactor(0).setDepth(999);
 
-        // Remove waiting text when battle starts
-        const removeWaiting = () => { waitingText.destroy(); };
+        const removeWaiting = () => { if (waitingText.active) waitingText.destroy(); };
         EventBus.once(EVENTS.BATTLE_STARTED, removeWaiting);
 
-        // ── Test-mode auto-start ─────────────────────────────────────────────
         if (this.isTestMode || this.gameManager.gameStarted) {
             this.input.enabled = true;
-            this.gameManager.startGame(); // Ensure it's started in GM
-            waitingText.destroy();
+            this.gameManager.startGame();
+            removeWaiting();
         }
 
         // ── Click to deploy ──────────────────────────────────────────────────
         this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
             const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
 
-            // Always emit technical coordinate for external UI (like TestArena)
             EventBus.emit('map-pointer-down', {
                 x: pointer.x,
                 y: pointer.y,
@@ -208,10 +214,6 @@ export class MainScene extends Scene {
             });
 
             if (!this.selectedCardId) return;
-
-            // In TestArena mode, deployment is handled by TestArena.tsx listening to 'map-pointer-down'
-            // and emitting EVENTS.TEST_DEPLOY, which this scene listens for.
-            // If we are in test mode, we SKIP the direct deployment here to avoid duplicates.
             if (this.isTestMode) return;
 
             const [assetId, deckIdxStr] = (this.selectedCardId || "").split(':');
@@ -226,9 +228,6 @@ export class MainScene extends Scene {
             if (entity) {
                 showDebug(`${assetId} deployed`);
                 EventBus.emit(EVENTS.CARD_PLAYED, this.selectedCardId);
-
-                // ── Single path for troop relay + on-chain submission ─────────
-                // Request on-chain submission via EventBus → GameWrapper (which also relays socket)
                 EventBus.emit(EVENTS.DEPLOY_TROOP_BLOCKCHAIN, {
                     cardIdx: deckIdx,
                     cardId: assetId,
@@ -245,7 +244,6 @@ export class MainScene extends Scene {
     update(_time: number, delta: number) {
         if (!this.gameManager.gameStarted) return;
 
-        // Run logic if match is active
         if (!this.gameManager.gameEnded) {
             this.gameManager.update(_time, delta);
             EventBus.emit(EVENTS.ELIXIR_UPDATE, this.gameManager.elixir);
@@ -257,7 +255,6 @@ export class MainScene extends Scene {
                 remainingTime: this.gameManager.getRemainingTime(),
             });
         } else if (!this.gameEndEmitted) {
-            // Signal outcome once
             this.gameEndEmitted = true;
             EventBus.emit(EVENTS.GAME_END, {
                 winner: this.gameManager.winner,
@@ -269,7 +266,6 @@ export class MainScene extends Scene {
             });
         }
 
-        // ── Sync entity sprites ───────────────────────────────────────────────
         const entities = this.gameManager.getEntities();
         const activeIds = new Set(entities.map(e => e.id));
 
@@ -278,14 +274,7 @@ export class MainScene extends Scene {
         }
 
         for (const entity of entities) {
-            if (entity instanceof Troop) {
-                let unit = this.spriteMap.get(entity.id) as Unit;
-                if (!unit) {
-                    unit = new Unit(this, entity);
-                    this.spriteMap.set(entity.id, unit);
-                }
-                unit.updateVisuals(entity);
-            } else if (entity instanceof Spell) {
+            if (entity instanceof Troop || entity instanceof Spell) {
                 let unit = this.spriteMap.get(entity.id) as Unit;
                 if (!unit) {
                     unit = new Unit(this, entity);
@@ -296,24 +285,19 @@ export class MainScene extends Scene {
                 const towerSprite = this.towerSprites.get(entity.id);
                 if (towerSprite) {
                     towerSprite.setHealth(entity.health);
-                    const isKing = entity.isKing;
-                    towerSprite.setShooting(entity.isShooting, entity.ownerId, isKing);
+                    towerSprite.setShooting(entity.isShooting, entity.ownerId, entity.isKing);
 
-
-
-                    // Tower destroyed — only handled here, not in GameManager
                     if (entity.health <= 0 && !entity.destroyed) {
                         entity.destroyed = true;
                         towerSprite.destroy();
                         this.towerSprites.delete(entity.id);
 
-                        // Signal GameManager for scoring and instant victory
                         const gameData = this.registry.get('data');
                         const isHost = gameData?.role === 'player1';
-                        this.gameManager.onTowerDestroyed(isKing, entity.ownerId, isHost);
+                        this.gameManager.onTowerDestroyed(entity.isKing, entity.ownerId, isHost);
 
                         EventBus.emit(EVENTS.TOWER_DESTROYED, {
-                            towerId: entity.id, isKing, ownerId: entity.ownerId,
+                            towerId: entity.id, isKing: entity.isKing, ownerId: entity.ownerId,
                         });
                     }
                 }
@@ -322,7 +306,6 @@ export class MainScene extends Scene {
     }
 
     shutdown() {
-        // Clean up all EventBus listeners to prevent double-registration on scene restart
         EventBus.off(EVENTS.CARD_SELECTED, this._onCardSelected);
         EventBus.off(EVENTS.BATTLE_STARTED, this._onBattleStarted);
         EventBus.off('server-tick', this._onServerTick);
@@ -338,8 +321,8 @@ export class MainScene extends Scene {
     ): TowerEntity {
         const gameData = this.registry.get('data');
         const isHost = gameData?.role === 'player1';
-        const mapWidth = ArenaConfig.COLS * ArenaConfig.TILE_SIZE;
-        const mapHeight = ArenaConfig.ROWS * ArenaConfig.TILE_SIZE;
+        const mapWidth = this.arenaConfig.COLS * this.arenaConfig.TILE_SIZE;
+        const mapHeight = this.arenaConfig.ROWS * this.arenaConfig.TILE_SIZE;
 
         let finalX = x;
         let finalY = y;
@@ -347,12 +330,10 @@ export class MainScene extends Scene {
         let finalTexture = texture;
 
         if (!isHost) {
-            // Mirror for Player 2 POV
             finalX = mapWidth - x;
             finalY = mapHeight - y;
             finalOwner = ownerId === 'player' ? 'opponent' : 'player';
 
-            // Texture swap: Red <-> Blue to maintain team-color POV
             if (finalTexture.includes('blue')) {
                 finalTexture = finalTexture.replace('blue', 'red');
             } else if (finalTexture.includes('red')) {
@@ -360,7 +341,7 @@ export class MainScene extends Scene {
             }
         }
 
-        const maxHealth = isKing ? 4000 : 2500;
+        const maxHealth = isKing ? this.arenaConfig.KING_TOWER_HP : this.arenaConfig.PRINCESS_TOWER_HP;
         const towerSprite = new Tower(this, finalX, finalY, finalTexture, maxHealth);
         towerSprite.setScale(pixelScale);
         this.towerSprites.set(id, towerSprite);

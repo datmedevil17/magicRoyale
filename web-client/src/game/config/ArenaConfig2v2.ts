@@ -14,11 +14,17 @@ export function colorRect(c1: number, r1: number, c2: number, r2: number, color:
     return tiles;
 }
 
-export const ArenaConfig2v2 = {
+import type { ArenaConfigInterface } from './IArenaConfig';
+
+export const ArenaConfig2v2: ArenaConfigInterface = {
     // Dimensions
     TILE_SIZE: 22,
     ROWS: 38, // Total rows (Reduced to zoom in)
     COLS: 24, // Total cols
+
+    // Tower Stats
+    KING_TOWER_HP: 4200,
+    PRINCESS_TOWER_HP: 3200,
 
     // Playable Area (centered)
     PLAYABLE_ROWS: 30,

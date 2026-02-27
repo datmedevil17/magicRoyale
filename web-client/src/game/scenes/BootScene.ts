@@ -33,17 +33,24 @@ export class BootScene extends Scene {
         this.load.image('ValkyrieCard', 'ValkyrieCard.png');
         this.load.image('WizardCard', 'WizardCard.png');
 
-        // Towers (Load from solanamap instead of assets)
-        this.load.image('tower_archer_blue_right', '../solanamap/tower_archer_blue.png');
-        this.load.image('tower_archer_blue_left', '../solanamap/tower_archer_blue2.png');
-        this.load.image('tower_archer_red_right', '../solanamap/tower_archer_red.png');
-        this.load.image('tower_archer_red_left', '../solanamap/tower_archer_red2.png');
-        this.load.image('tower_king_blue', '../solanamap/tower_king_blue.png');
-        this.load.image('tower_king_red', '../solanamap/tower_king_red.png');
-        this.load.image('solana_wall1', '../solanamap/wall1solana.png');
-        this.load.image('logo', '../solanamap/logo.png');
+        // Map 1 (Base Map) Towers - Load from assets/
+        this.load.image('tower_archer_blue', 'tower_archer_blue.png');
+        this.load.image('tower_archer_red', 'tower_archer_red.png');
+        this.load.image('tower_king_blue', 'tower_king_blue.png');
+        this.load.image('tower_king_red', 'tower_king_red.png');
+        this.load.image('logo', 'arena_logo.png');
 
-        // Map 3 Towers (Load from magicblock)
+        // Map 2 (Solana Map) Towers - Load from solanamap/
+        this.load.image('m2_tower_archer_blue_right', '../solanamap/tower_archer_blue.png');
+        this.load.image('m2_tower_archer_blue_left', '../solanamap/tower_archer_blue2.png');
+        this.load.image('m2_tower_archer_red_right', '../solanamap/tower_archer_red.png');
+        this.load.image('m2_tower_archer_red_left', '../solanamap/tower_archer_red2.png');
+        this.load.image('m2_tower_king_blue', '../solanamap/tower_king_blue.png');
+        this.load.image('m2_tower_king_red', '../solanamap/tower_king_red.png');
+        this.load.image('m2_logo', '../solanamap/logo.png');
+        this.load.image('m2_solana_wall1', '../solanamap/wall1solana.png');
+
+        // Map 3 (Magicblock Map) Towers - Load from magicblock/
         this.load.image('m3_tower_archer_blue_right', '../magicblock/tower_archer_blue.png');
         this.load.image('m3_tower_archer_blue_left', '../magicblock/tower_archer_blue2.png');
         this.load.image('m3_tower_archer_red_right', '../magicblock/tower_archer_red.png');
@@ -51,11 +58,8 @@ export class BootScene extends Scene {
         this.load.image('m3_tower_king_blue', '../magicblock/tower_king_blue.png');
         this.load.image('m3_tower_king_red', '../magicblock/tower_king_red.png');
         this.load.image('m3_logo', '../magicblock/logo.png');
-        this.load.image('magic_stone1', '../magicblock/stone1.png');
-        this.load.image('magic_stone2', '../magicblock/stone2.png');
-
-        // Solana Logostone1
-        // this.load.image('logo', '../solanamap/stone1.png');
+        this.load.image('m3_magic_stone1', '../magicblock/stone1.png');
+        this.load.image('m3_magic_stone2', '../magicblock/stone2.png');
 
         // Arena Assets
         this.load.image('bridge', 'bridge.png');

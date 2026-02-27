@@ -61,6 +61,17 @@ export const MainMenuPage: React.FC = () => {
                         <div className="w-4 h-4 rounded-full bg-[#fbce47] border border-[#d4af37] shadow-sm"></div>
                     </div>
 
+                    {/* Map Selection */}
+                    <div 
+                        className="flex items-center gap-2 px-3 py-1 bg-[#1a1a1a]/50 rounded-full border border-white/10 hover:bg-white/10 transition-colors"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            navigate('/maps');
+                        }}
+                    >
+                        <span className="text-white text-[0.7rem] font-black italic tracking-widest uppercase text-shadow-sm">MAPS</span>
+                    </div>
+
                     {/* Trophies */}
                     <div className="flex items-center gap-2 px-3 py-1 bg-[#1a1a1a]/50 rounded-full border border-white/10">
                         <img src="/assets/trophy.png" alt="Trophies" className="h-6 w-auto" onError={(e) => e.currentTarget.style.display = 'none'} />

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { BottomNav } from '../ui/BottomNav';
 import { MobileLayout } from '../ui/MobileLayout';
 import { useGameProgram, type PlayerProfile } from '../hooks/use-game-program';
-import { CARD_ID_TO_NAME } from '../game/config/CardConfig';
+import { getCardData } from '../game/config/CardConfig';
 import { MINT_CONFIG } from '../game/config/MintConfig';
 
 export const ProfilePage: React.FC = () => {
@@ -57,8 +57,9 @@ export const ProfilePage: React.FC = () => {
                 <div className="grid grid-cols-4 gap-2">
                     {profile?.inventory && profile.inventory.length > 0 ? (
                         profile.inventory.map((card, idx) => {
-                            const cardName = CARD_ID_TO_NAME[card.cardId] || `Card ${card.cardId}`;
-                            const imageUrl = `/assets/cards/${cardName.toLowerCase()}.png`;
+                            const cardData = getCardData(card.cardId);
+                            const cardName = cardData?.name || `Card ${card.cardId}`;
+                            const imageUrl = cardData?.icon ? `/${cardData.icon}` : '/assets/cards/unknown.png';
 
                             const cardsNeeded = card.level * 2;
                             const canUpgrade = card.amount >= cardsNeeded;

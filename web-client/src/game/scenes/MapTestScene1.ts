@@ -1,7 +1,7 @@
 
 import { Scene } from 'phaser';
 import { ArenaConfig1 } from '../config/ArenaConfig1';
-import { MapBuilder1 } from './MapBuilder1';
+import { MapBuilder } from './MapBuilder';
 import { Tower } from '../entities/Tower';
 
 export class MapTestScene1 extends Scene {
@@ -49,7 +49,7 @@ export class MapTestScene1 extends Scene {
         this.cameras.main.setBackgroundColor('#000000');
 
         // 2. Build Map
-        const mapBuilder = new MapBuilder1(this, 0, 0);
+        const mapBuilder = new MapBuilder(this, 0, 0, ArenaConfig1);
         mapBuilder.build();
 
         // 3. Place Visual Towers (No Logic Entities)

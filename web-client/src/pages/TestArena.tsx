@@ -11,6 +11,7 @@ export const TestArena: React.FC = () => {
     const [spawnOwner, setSpawnOwner] = useState<'player' | 'opponent'>('player');
     const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
     const [isBattleActive, setIsBattleActive] = useState(false);
+    const [currentMap, setCurrentMap] = useState<string>('classic');
 
     // Mock constants for the test arena
     const playerName = "Player (Local)";
@@ -18,26 +19,35 @@ export const TestArena: React.FC = () => {
     const opponentCrowns = 0;
 
     useEffect(() => {
+        setIsBattleActive(false);
         // Initialize Phaser Game in Test Mode
-        gameRef.current = StartGame("game-container", { isTestMode: true });
+        gameRef.current = StartGame("game-container", { isTestMode: true, mapType: currentMap });
 
         // Set layout once scene is ready
-        EventBus.once('scene-ready', () => {
+        const onSceneReady = () => {
             // Basic layout for testing
             EventBus.emit(EVENTS.BATTLE_STARTED, {
                 gameId: "test-game",
                 layout: { mapStartX: 0, mapStartY: 0, tileSize: 22 }
             });
             setIsBattleActive(true);
-        });
+        };
+
+        EventBus.on('scene-ready', onSceneReady);
 
         return () => {
+            EventBus.off('scene-ready', onSceneReady);
             if (gameRef.current) {
                 gameRef.current.destroy(true);
                 gameRef.current = null;
             }
         };
-    }, []);
+    }, [currentMap]);
+
+    const handleMapChange = (map: string) => {
+        if (map === currentMap) return;
+        setCurrentMap(map);
+    };
 
     // Handle map pointer events from Phaser
     useEffect(() => {
@@ -126,6 +136,28 @@ export const TestArena: React.FC = () => {
                     <h2 className="text-2xl font-black text-white italic tracking-tighter mb-1">ARENA DEVTOOLS</h2>
                     <p className="text-gray-500 text-xs uppercase tracking-widest font-bold">Multiplayer Logic Testing</p>
                 </div>
+
+                <section>
+                    <h3 className="text-xs font-bold text-gray-400 mb-4 uppercase tracking-[0.2em] flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        Arena Map
+                    </h3>
+                    <div className="flex flex-col gap-2">
+                        {[
+                            { id: 'classic', name: 'Classic Arena', color: 'bg-green-600' },
+                            { id: 'solana', name: 'Solana Arena', color: 'bg-blue-600' },
+                            { id: 'magicblock', name: 'Magicblock Arena', color: 'bg-purple-600' }
+                        ].map(map => (
+                            <button
+                                key={map.id}
+                                onClick={() => handleMapChange(map.id)}
+                                className={`py-2 px-4 rounded-lg font-bold text-xs transition-all duration-300 ${currentMap === map.id ? `${map.color} text-white shadow-lg scale-[1.02]` : 'bg-[#252525] text-gray-400 hover:bg-[#2a2a2a]'}`}
+                            >
+                                {map.name.toUpperCase()}
+                            </button>
+                        ))}
+                    </div>
+                </section>
 
                 <section>
                     <h3 className="text-xs font-bold text-gray-400 mb-4 uppercase tracking-[0.2em] flex items-center gap-2">

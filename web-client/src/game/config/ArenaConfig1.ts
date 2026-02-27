@@ -36,7 +36,9 @@ for (let c = 4; c <= 20; c++) {
     customFences.push({ col: c, row: 34.5, vertical: false, texture: 'wall_solana' });
 }
 
-export const ArenaConfig1 = {
+import type { ArenaConfigInterface } from './IArenaConfig';
+
+export const ArenaConfig1: ArenaConfigInterface = {
     // Dimensions
     TILE_SIZE: 22,
     ROWS: 38,

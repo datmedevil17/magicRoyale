@@ -3,7 +3,7 @@ import { GameManager } from '../logic/GameManager';
 import { Troop } from '../logic/troops/Troop';
 import { UserLevelEnum } from '../logic/User';
 import { EventBus, EVENTS } from '../EventBus';
-import { MapBuilder2v2 } from './MapBuilder2v2';
+import { MapBuilder } from './MapBuilder';
 import { Tower } from '../entities/Tower';
 import { TowerEntity } from '../logic/TowerEntity';
 import { Unit } from '../entities/Unit';
@@ -42,7 +42,7 @@ export class MainScene2v2 extends Scene {
         this.cameras.main.centerOn(mapWidth / 2, mapHeight / 2);
         this.cameras.main.setBackgroundColor('#000000');
 
-        const mapBuilder = new MapBuilder2v2(this, 0, 0);
+        const mapBuilder = new MapBuilder(this, 0, 0, ArenaConfig2v2);
         mapBuilder.build();
 
         // ── Towers ───────────────────────────────────────────────────────────

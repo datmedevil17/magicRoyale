@@ -18,6 +18,7 @@ import { ClanPage } from './pages/ClanPage';
 import { TournamentPage } from './pages/TournamentPage';
 import { TestArena } from './pages/TestArena';
 import { TestArena2v2 } from './pages/TestArena2v2';
+import { MapSelectionPage } from './pages/MapSelectionPage';
 
 import { GameWrapper2v2 } from './GameWrapper2v2';
 
@@ -45,6 +46,7 @@ function App() {
         <Route path="/map2v2test" element={<Map2v2TestPage />} />
         <Route path="/troop-test" element={<TroopTestPage />} />
         <Route path="/test-arena-2v2" element={<TestArena2v2 />} />
+        <Route path="/maps" element={<MapSelectionPage />} />
       </Routes>
     </Router>
   );

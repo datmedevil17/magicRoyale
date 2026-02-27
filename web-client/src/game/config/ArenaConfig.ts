@@ -14,7 +14,9 @@ export function colorRect(c1: number, r1: number, c2: number, r2: number, color:
     return tiles;
 }
 
-export const ArenaConfig = {
+import type { ArenaConfigInterface } from './IArenaConfig';
+
+export const ArenaConfig: ArenaConfigInterface = {
     // Dimensions
     TILE_SIZE: 22,
     ROWS: 38, // Total rows (Reduced to zoom in)
@@ -22,7 +24,7 @@ export const ArenaConfig = {
 
     // Tower Stats
     KING_TOWER_HP: 4200,
-    PRINCESS_TOWER_HP: 2400,
+    PRINCESS_TOWER_HP: 3200,
 
     // Playable Area (centered)
     PLAYABLE_ROWS: 30,
@@ -43,8 +45,8 @@ export const ArenaConfig = {
 
     // Colors
     Colors: {
-        GRASS: 0x2162cc,
-        GRASS_ALT: 0x5a83c7,
+        GRASS: 0x8cbc2b,
+        GRASS_ALT: 0x9dc330,
         WATER: 0x00add2,
         SAND: 0xd2b48c, // Tan/Sand color
         BORDER: 0x555555, // Dark gray for non-playable area
@@ -62,16 +64,9 @@ export const ArenaConfig = {
 
         // Player is at bottom, Opponent at top
         if (perspective === 'player') {
-            // Player y starts from bottom margin up
-            // River is at row 21-22. 
-            // Playable area starts at row 7 (MARGIN_Y) and ends at row 37 (44-7=37).
-            // But usually we think "distance from river".
-            // Let's define distance from River Center or River Edge? 
-            // "7 from river" -> presumably 7 tiles *away* from the river bank.
             const riverBottom = this.RIVER_ROW_END + 1; // Row 23
             absoluteY = riverBottom + playableY;
         } else {
-            // Opponent
             const riverTop = this.RIVER_ROW_START - 1; // Row 20
             absoluteY = riverTop - playableY;
         }
@@ -168,13 +163,10 @@ export const ArenaConfig = {
             gridWidth: 3,
             gridHeight: 3
         }
-    ] as const,
+    ],
 
     // Custom Tile Coloring
-    // Add specific tiles here to override their color
-    // Use helper functions with spread operator (...)
     CUSTOM_TILES: [
-        // ...colorTiles([{ col: 5, row: 16 }], 0xFF0000),
         ...colorTiles([
             { col: 6, row: 20 },
             { col: 6, row: 21 },
@@ -200,7 +192,6 @@ export const ArenaConfig = {
             { col: 17, row: 22 },
             { col: 17, row: 21 },
             { col: 17, row: 20 },
-
         ], 0xd2b48c),
         ...colorTiles([
             { col: 6, row: 17 },
@@ -227,43 +218,16 @@ export const ArenaConfig = {
             { col: 17, row: 15 },
             { col: 17, row: 16 },
             { col: 17, row: 17 },
-            // { col: 7, row: 31 },
-            // { col: 8, row: 31 },
-            // { col: 9, row: 31 },
-            // { col: 14, row: 31 },
-            // { col: 15, row: 31 },
-            // { col: 16, row: 31 },
-            // { col: 17, row: 31 },
-            // { col: 17, row: 30 },
-            // { col: 17, row: 26 },
-            // { col: 17, row: 25 },
-            // { col: 17, row: 24 },
-            // { col: 17, row: 23 },
-            // { col: 17, row: 22 },
-            // { col: 17, row: 21 },
-            // { col: 17, row: 20 },
-
         ], 0xd2b48c),
-        // ...colorRect(10, 20, 12, 22, 0xFF0000), // Example: Red Rectangle
-        // ...colorTiles([{col: 5, row: 5}, {col: 6, row: 6}], 0x00FF00), // Example: Specific Green Points
-    ] as { col: number, row: number, color: number }[],
+    ],
 
     // Custom Fences (Wall segments at specific locations)
     CUSTOM_FENCES: [
-
-
-
-
-
-
-
-
         { col: 2, row: 10, rotate: 3, texture: 'wall3', scaleX: 5, scaleY: 1 },
         { col: 2, row: 15, rotate: 3, texture: 'wall3', scaleX: 5, scaleY: 1 },
         { col: 2, row: 22, rotate: 3, texture: 'wall3', scaleX: 5, scaleY: 1 },
         { col: 2, row: 27, rotate: 3, texture: 'wall3', scaleX: 5, scaleY: 1 },
         { col: 2, row: 32, rotate: 3, texture: 'wall3', scaleX: 5, scaleY: 1 },
-        // { col: 2, row: 34, rotate: 3, texture: 'wall3', scaleX: 2, scaleY: 1 },
         { col: 5, row: 34.5, rotate: 0, texture: 'wall3', scaleX: 5, scaleY: 1 },
         { col: 10, row: 34.5, rotate: 0, texture: 'wall3', scaleX: 5, scaleY: 1 },
         { col: 21, row: 27, rotate: 1, texture: 'wall3', scaleX: 5, scaleY: 1 },
@@ -273,108 +237,25 @@ export const ArenaConfig = {
         { col: 21, row: 5, rotate: 1, texture: 'wall3', scaleX: 5, scaleY: 1 },
         { col: 18, row: 2.5, rotate: 2, texture: 'wall3', scaleX: 5, scaleY: 1 },
         { col: 13, row: 2.5, rotate: 2, texture: 'wall3', scaleX: 5, scaleY: 1 },
-
-
-
-
-
-
-
-
-
-
-
-        // Example: { col: 5, row: 5, rotate: 1 } (1 = 90 deg, 0 = 0 deg)
-    ] as { col: number, row: number, rotate?: number, texture?: string, scale?: number, scaleX?: number, scaleY?: number }[],
+    ],
 
     // Props (Trees, Stones, etc.) outside the playable area
     PROPS: [
-
-        // { col: 0, row: 20, texture: 'tree3' }, // Near river
         { col: 5, row: 16, texture: 'stone3' },
         { col: 5, row: 20, texture: 'stone3' },
         { col: 18, row: 16, texture: 'stone3' },
         { col: 18, row: 20, texture: 'stone3' },
         { col: 0.5, row: 10, texture: 'tree2', rotate: 0 },
         { col: 0.5, row: 15, texture: 'tree2', rotate: 0 },
-
-
         { col: 1, row: 29, texture: 'trees3', rotate: 0 },
-
         { col: 22.5, row: 12, texture: 'tree4', rotate: 0 },
         { col: 22.5, row: 1.5, texture: 'trees5', rotate: 0 },
         { col: 22.5, row: 7, texture: 'tree4', rotate: 0 },
         { col: 22.5, row: 22, texture: 'tree4', rotate: 0 },
         { col: 22.5, row: 27, texture: 'tree4', rotate: 0 },
-
-        // { col: 1, row: 31, texture: 'stone4' },
-        // { col: 0, row: 30, texture: 'trees2' },
-        // { col: 1, row: 35, texture: 'tree4' },
-
-        {
-            col: 5,
-            row: 3.5,
-            texture: 'trees1',
-            rotate: 2
-        },
-        {
-            col: 18,
-            row: 33.5,
-            texture: 'trees1'
-        },
-
-
-
-
-        // {
-        //     col: 3,
-        //     row: 11,
-        //     texture: 'tree3',
-        //     rotate: 0
-        // },
-        // {
-        //     col: 20,
-        //     row: 25,
-        //     texture: 'tree3',
-        //     rotate: 0
-        // },
-
-        // {
-        //     col: 3,
-        //     row: 34,
-        //     texture: 'tree1'
-        // },
-        // {
-        //     col: 20,
-        //     row: 3,
-        //     texture: 'tree1',
-        //     rotate: 2
-        // },
-
-
-
-
-        // Right Margin (Cols 21-23)
-        // { col: 23, row: 4, texture: 'tree2' },
-        // { col: 22, row: 9, texture: 'stone3' },
-        // { col: 23, row: 14, texture: 'trees3' },
-        // { col: 22, row: 19, texture: 'tree1' }, // Near river
-        // { col: 23, row: 24, texture: 'stone4' },
-        // { col: 22, row: 29, texture: 'trees4' },
-        // { col: 23, row: 34, texture: 'tree3' },
-
-        // Top Margin (Rows 0-3) - mostly behind opponent king
-        // { col: 4, row: 0, texture: 'trees5' },
-        // { col: 8, row: 1, texture: 'stone1' },
-        // { col: 15, row: 1, texture: 'stone2' },
-        // { col: 19, row: 0, texture: 'trees1' },
-
-        // Bottom Margin (Rows 34-37) - mostly behind player king
-        // { col: 3, row: 37, texture: 'trees2' },
-        // { col: 9, row: 36, texture: 'stone3' },
-        // { col: 14, row: 36, texture: 'stone4' },
-        // { col: 20, row: 37, texture: 'trees3' },
-    ] as { col: number, row: number, texture: string, rotate?: number }[],
+        { col: 5, row: 3.5, texture: 'trees1', rotate: 2 },
+        { col: 18, row: 33.5, texture: 'trees1' },
+    ],
 
     getPixelCoords(col: number, row: number) {
         return {
