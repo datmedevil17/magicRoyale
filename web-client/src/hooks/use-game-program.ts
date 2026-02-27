@@ -30,6 +30,15 @@ export const getBattlePda = (gameId: BN, programId: PublicKey): PublicKey => {
     )[0];
 };
 
+// Helper: derive the battle 2v2 PDA from a u64 gameId
+export const getBattle2v2Pda = (gameId: BN, programId: PublicKey): PublicKey => {
+    const idBuffer = gameId.toArrayLike(Buffer, "le", 8);
+    return PublicKey.findProgramAddressSync(
+        [Buffer.from("battle2v2"), idBuffer],
+        programId
+    )[0];
+};
+
 // Helper: derive player profile PDA
 const getPlayerProfilePda = (authority: PublicKey, programId: PublicKey): PublicKey => {
     return PublicKey.findProgramAddressSync(
@@ -230,8 +239,9 @@ export function useGameProgram() {
                 const tx = await program.methods
                     .createGame(gameId)
                     .accounts({
-                        playerOne: wallet.publicKey,
+                        battle: getBattlePda(gameId, program.programId),
                         playerOneProfile: getPlayerProfilePda(wallet.publicKey, program.programId),
+                        playerOne: wallet.publicKey,
                         systemProgram: SystemProgram.programId,
                     } as any)
                     .rpc();
@@ -257,11 +267,66 @@ export function useGameProgram() {
                 const tx = await program.methods
                     .joinGame(gameId)
                     .accounts({
-                        playerTwo: wallet.publicKey,
+                        battle: getBattlePda(gameId, program.programId),
                         playerTwoProfile: getPlayerProfilePda(wallet.publicKey, program.programId),
+                        playerTwo: wallet.publicKey,
                     } as any)
                     .rpc();
                 console.log(`[joinGame] Transaction Hash: https://solscan.io/tx/${tx}?cluster=custom&customUrl=https%3A%2F%2Fdevnet.magicblock.app`);
+                return tx;
+            } catch (err: any) {
+                setError(err.message);
+                throw err;
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [program, wallet.publicKey]
+    );
+
+    // ─── Create Game 2v2 (Base Layer) ─────────────────────────────────────────
+
+    const createGame2v2 = useCallback(
+        async (gameId: BN): Promise<string> => {
+            if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
+            setIsLoading(true);
+            try {
+                const tx = await program.methods
+                    .createGame2v2(gameId)
+                    .accounts({
+                        battle: getBattle2v2Pda(gameId, program.programId),
+                        playerOneProfile: getPlayerProfilePda(wallet.publicKey, program.programId),
+                        playerOne: wallet.publicKey,
+                        systemProgram: SystemProgram.programId,
+                    } as any)
+                    .rpc();
+                return tx;
+            } catch (err: any) {
+                setError(err.message);
+                throw err;
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [program, wallet.publicKey]
+    );
+
+    // ─── Join Game 2v2 (Base Layer) ───────────────────────────────────────────
+
+    const joinGame2v2 = useCallback(
+        async (gameId: BN): Promise<string> => {
+            if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
+            setIsLoading(true);
+            try {
+                const tx = await program.methods
+                    .joinGame2v2(gameId)
+                    .accounts({
+                        battle: getBattle2v2Pda(gameId, program.programId),
+                        playerProfile: getPlayerProfilePda(wallet.publicKey, program.programId),
+                        player: wallet.publicKey,
+                    } as any)
+                    .rpc();
+                console.log(`[joinGame2v2] Transaction Hash: https://solscan.io/tx/${tx}?cluster=custom&customUrl=https%3A%2F%2Fdevnet.magicblock.app`);
                 return tx;
             } catch (err: any) {
                 setError(err.message);
@@ -299,6 +364,8 @@ export function useGameProgram() {
                     .accounts({
                         payer: wallet.publicKey,
                         pda: battlePda,
+                        // Following derived automatically by Anchor 0.30+ IDL if seeds are in IDL
+                        // but keeping explicit if needed for compatibility
                         delegationRecordPda,
                         delegationMetadataPda,
                         delegationProgram: DELEGATION_PROGRAM_ID,
@@ -309,6 +376,48 @@ export function useGameProgram() {
                 return tx;
             } catch (err: any) {
                 console.error("Delegation Error:", err);
+                setError(err.message);
+                throw err;
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [program, wallet.publicKey]
+    );
+
+    // ─── Delegate Game 2v2 (Base Layer) ───────────────────────────────────────
+
+    const delegateGame2v2 = useCallback(
+        async (gameId: BN): Promise<string> => {
+            if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
+            setIsLoading(true);
+            try {
+                const battlePda = getBattle2v2Pda(gameId, program.programId);
+
+                const [delegationRecordPda] = PublicKey.findProgramAddressSync(
+                    [Buffer.from("delegation"), battlePda.toBuffer()],
+                    DELEGATION_PROGRAM_ID
+                );
+                const [delegationMetadataPda] = PublicKey.findProgramAddressSync(
+                    [Buffer.from("delegation-metadata"), battlePda.toBuffer()],
+                    DELEGATION_PROGRAM_ID
+                );
+
+                const tx = await program.methods
+                    .delegateGame2v2(gameId)
+                    .accounts({
+                        payer: wallet.publicKey,
+                        pda: battlePda,
+                        delegationRecordPda,
+                        delegationMetadataPda,
+                        delegationProgram: DELEGATION_PROGRAM_ID,
+                        ownerProgram: program.programId,
+                        systemProgram: SystemProgram.programId,
+                    } as any)
+                    .rpc();
+                return tx;
+            } catch (err: any) {
+                console.error("Delegation Error 2v2:", err);
                 setError(err.message);
                 throw err;
             } finally {
@@ -353,6 +462,7 @@ export function useGameProgram() {
 
                 const accounts: any = {
                     signer,
+                    battle: getBattlePda(gameId, program.programId),
                     playerProfile: getPlayerProfilePda(wallet.publicKey, program.programId),
                     sessionToken: hasSession && sessionPubkey ? sessionPubkey : null,
                 };
@@ -379,6 +489,72 @@ export function useGameProgram() {
                 console.log(`[deployTroop] Transaction Hash: https://solscan.io/tx/${txHash}?cluster=custom&customUrl=https%3A%2F%2Fdevnet.magicblock.app`);
 
                 // Removed await erConnection.confirmTransaction(txHash, "confirmed") to eliminate latency
+
+                return txHash;
+            } catch (err: any) {
+                setError(err.message);
+                throw err;
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [program, erProvider, erConnection, wallet.publicKey, sessionToken, sessionWallet]
+    );
+
+    // ─── Deploy Troop 2v2 (ER – High Frequency) ──────────────────────────────
+
+    const deployTroop2v2 = useCallback(
+        async (
+            gameId: BN,
+            cardIdx: number,
+            x: number,
+            y: number
+        ): Promise<string> => {
+            if (!program || !erProvider || !wallet.publicKey)
+                throw new Error("Game not ready");
+            setIsLoading(true);
+            try {
+                let hasSession = sessionToken != null && sessionWallet != null;
+                const sessionPubkey = sessionToken ? new PublicKey(sessionToken) : null;
+
+                if (hasSession && sessionPubkey) {
+                    const sessionInfo = await erConnection.getAccountInfo(sessionPubkey);
+                    if (!sessionInfo) {
+                        hasSession = false;
+                    }
+                }
+
+                const signer = hasSession
+                    ? sessionWallet!.publicKey
+                    : wallet.publicKey;
+
+                const accounts: any = {
+                    signer,
+                    battle: getBattle2v2Pda(gameId, program.programId),
+                    playerProfile: getPlayerProfilePda(wallet.publicKey, program.programId),
+                    sessionToken: hasSession && sessionPubkey ? sessionPubkey : null,
+                };
+
+                let tx = await program.methods
+                    .deployTroop2v2(gameId, cardIdx, x, y)
+                    .accounts(accounts)
+                    .transaction();
+
+                tx.feePayer = signer || undefined;
+                tx.recentBlockhash = (await erConnection.getLatestBlockhash()).blockhash;
+
+                if (hasSession && sessionWallet && sessionWallet.signTransaction) {
+                    // @ts-ignore
+                    tx = await sessionWallet.signTransaction(tx);
+                } else {
+                    tx = await erProvider.wallet.signTransaction(tx);
+                }
+
+                const txHash = await erConnection.sendRawTransaction(tx.serialize(), {
+                    skipPreflight: true,
+                });
+
+                console.log(`[deployTroop2v2] Transaction Hash: https://solscan.io/tx/${txHash}?cluster=custom&customUrl=https%3A%2F%2Fdevnet.magicblock.app`);
 
                 return txHash;
             } catch (err: any) {
@@ -418,6 +594,7 @@ export function useGameProgram() {
 
                 const accounts: any = {
                     signer,
+                    battle: getBattlePda(gameId, program.programId),
                     playerProfile: getPlayerProfilePda(wallet.publicKey, program.programId),
                     sessionToken: hasSession && sessionPubkey ? sessionPubkey : null,
                 };
@@ -444,16 +621,67 @@ export function useGameProgram() {
 
                 console.log(`[endGame] Transaction Hash: https://solscan.io/tx/${txHash}?cluster=custom&customUrl=https%3A%2F%2Fdevnet.magicblock.app`);
 
-                // 2) Commit the battle back to the base layer
-                //    We use the base `program` since it interacts with the delegation program
-                const commitTx = await program.methods
-                    .commitBattle(gameId)
-                    .accounts({
-                        payer: wallet.publicKey,
-                    } as any)
-                    .rpc();
+                return txHash;
+            } catch (err: any) {
+                setError(err.message);
+                throw err;
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [program, erProvider, erConnection, wallet.publicKey, sessionToken, sessionWallet]
+    );
 
-                console.log(`[commitBattle] Transaction Hash: https://solscan.io/tx/${commitTx}?cluster=devnet`);
+    // ─── End Game 2v2 (ER) ──────────────────────────────────────────────────
+
+    const endGame2v2 = useCallback(
+        async (gameId: BN, winnerIdx: number): Promise<string> => {
+            if (!program || !erProvider || !wallet.publicKey)
+                throw new Error("Wallet not connected / ER not ready");
+            setIsLoading(true);
+            try {
+                let hasSession = sessionToken != null && sessionWallet != null;
+                const sessionPubkey = sessionToken ? new PublicKey(sessionToken) : null;
+
+                if (hasSession && sessionPubkey) {
+                    const sessionInfo = await erConnection.getAccountInfo(sessionPubkey);
+                    if (!sessionInfo) {
+                        hasSession = false;
+                    }
+                }
+
+                const signer = hasSession
+                    ? sessionWallet!.publicKey
+                    : wallet.publicKey;
+
+                const accounts: any = {
+                    signer,
+                    battle: getBattle2v2Pda(gameId, program.programId),
+                    playerProfile: getPlayerProfilePda(wallet.publicKey, program.programId),
+                    sessionToken: hasSession && sessionPubkey ? sessionPubkey : null,
+                };
+
+                let tx = await program.methods
+                    .endGame2v2(gameId, winnerIdx)
+                    .accounts(accounts)
+                    .transaction();
+
+                tx.feePayer = signer || undefined;
+                tx.recentBlockhash = (await erConnection.getLatestBlockhash()).blockhash;
+
+                if (hasSession && sessionWallet && sessionWallet.signTransaction) {
+                    // @ts-ignore
+                    tx = await sessionWallet.signTransaction(tx);
+                } else {
+                    tx = await erProvider.wallet.signTransaction(tx);
+                }
+
+                const txHash = await erConnection.sendRawTransaction(tx.serialize(), {
+                    skipPreflight: true,
+                });
+                await erConnection.confirmTransaction(txHash, "confirmed");
+
+                console.log(`[endGame2v2] Transaction Hash: https://solscan.io/tx/${txHash}?cluster=custom&customUrl=https%3A%2F%2Fdevnet.magicblock.app`);
 
                 return txHash;
             } catch (err: any) {
@@ -464,6 +692,64 @@ export function useGameProgram() {
             }
         },
         [program, erProvider, erConnection, wallet.publicKey, sessionToken, sessionWallet]
+    );
+
+    const commitBattle = useCallback(
+        async (gameId: BN): Promise<string> => {
+            if (!erProgram || !program || !wallet.publicKey) throw new Error("Wallet not connected or ER not ready");
+            setIsLoading(true);
+            try {
+                const battlePda = getBattlePda(gameId, program.programId);
+
+                const tx = await erProgram.methods
+                    .commitBattle(gameId)
+                    .accounts({
+                        payer: wallet.publicKey,
+                        battle: battlePda,
+                    } as any)
+                    .rpc();
+
+                console.log(`[commitBattle] ER Transaction Hash: https://solscan.io/tx/${tx}?cluster=custom&customUrl=https%3A%2F%2Fdevnet.magicblock.app`);
+                return tx;
+            } catch (err: any) {
+                setError(err.message);
+                throw err;
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [erProgram, program, wallet.publicKey]
+    );
+
+    const commitBattle2v2 = useCallback(
+        async (gameId: BN): Promise<string> => {
+            if (!erProgram || !program || !wallet.publicKey) throw new Error("Wallet not connected or ER not ready");
+            setIsLoading(true);
+            try {
+                const idBuffer = gameId.toArrayLike(Buffer, "le", 8);
+                const [battlePda] = PublicKey.findProgramAddressSync(
+                    [Buffer.from("battle2v2"), idBuffer],
+                    program.programId
+                );
+
+                const tx = await erProgram.methods
+                    .commitBattle2v2(gameId)
+                    .accounts({
+                        payer: wallet.publicKey,
+                        battle: battlePda,
+                    } as any)
+                    .rpc();
+
+                console.log(`[commitBattle2v2] ER Transaction Hash: https://solscan.io/tx/${tx}?cluster=custom&customUrl=https%3A%2F%2Fdevnet.magicblock.app`);
+                return tx;
+            } catch (err: any) {
+                setError(err.message);
+                throw err;
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [erProgram, program, wallet.publicKey]
     );
 
     // ─── Mint Trophies (Base Layer) ───────────────────────────────────────────
@@ -493,7 +779,8 @@ export function useGameProgram() {
                 const tx = await program.methods
                     .mintTrophies(gameId)
                     .accounts({
-                        signer: wallet.publicKey,
+                        battle: getBattlePda(gameId, program.programId),
+                        profile: getPlayerProfilePda(wallet.publicKey, program.programId),
                         mint,
                         destination,
                         mintAuthority: PublicKey.findProgramAddressSync(
@@ -501,10 +788,61 @@ export function useGameProgram() {
                             program.programId
                         )[0],
                         tokenProgram: TOKEN_PROGRAM_ID,
+                        signer: wallet.publicKey,
                     } as any)
                     .preInstructions(preInstructions)
                     .rpc();
                 console.log(`[mintTrophies] Transaction Hash: https://solscan.io/tx/${tx}?cluster=custom&customUrl=https%3A%2F%2Fdevnet.magicblock.app`);
+                return tx;
+            } catch (err: any) {
+                setError(err.message);
+                throw err;
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [program, wallet.publicKey, connection]
+    );
+
+    // ─── Mint Trophies 2v2 (Base Layer) ───────────────────────────────────────
+
+    const mintTrophies2v2 = useCallback(
+        async (gameId: BN, mint: PublicKey): Promise<string> => {
+            if (!program || !wallet.publicKey) throw new Error("Wallet not connected");
+            setIsLoading(true);
+            try {
+                const destination = getAssociatedTokenAddressSync(mint, wallet.publicKey);
+
+                const preInstructions = [];
+                const destInfo = await connection.getAccountInfo(destination);
+                if (!destInfo) {
+                    preInstructions.push(
+                        createAssociatedTokenAccountInstruction(
+                            wallet.publicKey,
+                            destination,
+                            wallet.publicKey,
+                            mint
+                        )
+                    );
+                }
+
+                const tx = await program.methods
+                    .mintTrophies2v2(gameId)
+                    .accounts({
+                        battle: getBattle2v2Pda(gameId, program.programId),
+                        profile: getPlayerProfilePda(wallet.publicKey, program.programId),
+                        mint,
+                        destination,
+                        mintAuthority: PublicKey.findProgramAddressSync(
+                            [Buffer.from("mint_authority")],
+                            program.programId
+                        )[0],
+                        tokenProgram: TOKEN_PROGRAM_ID,
+                        signer: wallet.publicKey,
+                    } as any)
+                    .preInstructions(preInstructions)
+                    .rpc();
+                console.log(`[mintTrophies2v2] Transaction Hash: https://solscan.io/tx/${tx}?cluster=custom&customUrl=https%3A%2F%2Fdevnet.magicblock.app`);
                 return tx;
             } catch (err: any) {
                 setError(err.message);
@@ -872,6 +1210,20 @@ export function useGameProgram() {
         [program]
     );
 
+    const fetchBattleState2v2 = useCallback(
+        async (gameId: BN) => {
+            if (!program) return null;
+            try {
+                const pda = getBattle2v2Pda(gameId, program.programId);
+                return await program.account.battleState2v2.fetch(pda);
+            } catch (err) {
+                console.log("Battle 2v2 not found or error fetching:", err);
+                return null;
+            }
+        },
+        [program]
+    );
+
     const fetchAllClans = useCallback(async () => {
         if (!program) return [];
         try {
@@ -954,6 +1306,25 @@ export function useGameProgram() {
         console.log("Mock Leave Clan");
     }, []);
 
+    const fetchAccountInfo = useCallback(
+        async (address: PublicKey, useER: boolean = false) => {
+            try {
+                const conn = useER ? erConnection : connection;
+                const info = await conn.getAccountInfo(address, "confirmed");
+                return info ? {
+                    owner: info.owner.toBase58(),
+                    executable: info.executable,
+                    lamports: info.lamports,
+                    dataSize: info.data.length
+                } : null;
+            } catch (err) {
+                console.error("Error fetching account info:", err);
+                return null;
+            }
+        },
+        [connection, erConnection]
+    );
+
     // ─── Platform Token Balance ───────────────────────────────────────────────
 
     const [platformBalance, setPlatformBalance] = useState<number>(0);
@@ -1033,12 +1404,21 @@ export function useGameProgram() {
         setDeck,
         // Game flow
         createGame,
+        createGame2v2,
         joinGame,
+        joinGame2v2,
         delegateGame,
+        delegateGame2v2,
         deployTroop,
+        deployTroop2v2,
         endGame,
+        endGame2v2,
+        commitBattle,
+        commitBattle2v2,
         mintTrophies,
+        mintTrophies2v2,
         fetchBattleState,
+        fetchBattleState2v2,
         // NFT / Resources
         exportNft,
         exportResource,
@@ -1058,5 +1438,7 @@ export function useGameProgram() {
         // Market (off-chain)
         fetchMarketListings,
         addMarketListing,
+        // Utils
+        fetchAccountInfo,
     };
 }

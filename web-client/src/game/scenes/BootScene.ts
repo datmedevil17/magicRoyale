@@ -81,7 +81,8 @@ export class BootScene extends Scene {
             'Barbarian_walk_player', 'Barbarian_walk_opponent',
             'Barbarian_fight_player', 'Barbarian_fight_opponent',
             'InfernoTower_walk_player', 'InfernoTower_walk_opponent',
-            'InfernoTower_fight_player', 'InfernoTower_fight_opponent'
+            'InfernoTower_fight_player', 'InfernoTower_fight_opponent',
+            'Arrows_fight_player'
         ];
 
         const gifToConfigMap: Record<string, string> = {

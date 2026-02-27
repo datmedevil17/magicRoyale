@@ -19,17 +19,18 @@ export class MainScene2v2 extends Scene {
     // EventBus handler refs for cleanup
     private _onCardSelected!: (id: string | null) => void;
     private _onBattleStarted!: () => void;
+    private _onGameEndTrigger!: () => void;
     private _onTestDeploy!: (data: { cardId: string, x: number, y: number, ownerId: string }) => void;
 
     constructor() { super('MainScene2v2'); }
 
-    init(data: { isTestMode?: boolean }) {
+    init(data: { isTestMode?: boolean, role?: string }) {
         this.isTestMode = !!data.isTestMode;
         this.gameManager = new GameManager({
             username: 'TestPlayer',
             level: UserLevelEnum.LEVEL_1,
             currentXp: 0
-        }, this.isTestMode);
+        }, this.isTestMode, data.role || 'player1');
     }
 
     create() {
@@ -66,6 +67,13 @@ export class MainScene2v2 extends Scene {
         };
         EventBus.on(EVENTS.TEST_DEPLOY, this._onTestDeploy);
 
+        // ── External Game End Trigger ──────────────────────────────────────
+        this._onGameEndTrigger = () => {
+            console.log('[MainScene2v2] Force ending game');
+            this.gameManager.forceEndGame();
+        };
+        EventBus.on(EVENTS.GAME_END_TRIGGER, this._onGameEndTrigger);
+
         // Emit ready
         EventBus.emit('scene-ready');
 
@@ -74,6 +82,53 @@ export class MainScene2v2 extends Scene {
             const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
             EventBus.emit('map-pointer-down', { worldX: worldPoint.x, worldY: worldPoint.y });
         });
+
+        // ── Continuous Sync (Host-based) ──────────────────────────────────────
+        const gameData = this.registry.get('data');
+        const isHost = gameData?.role === 'player1';
+
+        // Listener for incoming syncs (for non-hosts)
+        const onSyncUnits = (data: any) => {
+            if (!isHost) {
+                this.gameManager.syncFromHost(data, isHost);
+            }
+        };
+        EventBus.on('sync-units', onSyncUnits);
+
+        // Broadcaster for host
+        if (isHost) {
+            this.time.addEvent({
+                delay: 200, // Every 200ms
+                loop: true,
+                callback: () => {
+                    const entities = this.gameManager.getEntities()
+                        .filter(e => e instanceof Troop || e instanceof TowerEntity)
+                        .map(e => ({
+                            id: e.id,
+                            x: e.x,
+                            y: e.y,
+                            health: e.health,
+                            ownerId: e.ownerId,
+                            state: (e as any).state,
+                            targetId: (e as any).target?.id
+                        }));
+
+                    if (entities.length > 0) {
+                        const socket = this.registry.get('socket');
+                        socket?.emit('sync-units', {
+                            entities: entities,
+                            playerCrowns: this.gameManager.playerCrowns,
+                            opponentCrowns: this.gameManager.opponentCrowns,
+                            playerTowersDestroyed: this.gameManager.playerTowersDestroyed,
+                            opponentTowersDestroyed: this.gameManager.opponentTowersDestroyed,
+                            gameEnded: this.gameManager.gameEnded,
+                            winner: this.gameManager.winner,
+                            victoryReason: this.gameManager.victoryReason
+                        });
+                    }
+                }
+            });
+        }
     }
 
     private createTower(id: string, x: number, y: number, texture: string, isKing: boolean, ownerId: string, scale: number) {
@@ -142,7 +197,10 @@ export class MainScene2v2 extends Scene {
                         entity.destroyed = true;
                         towerSprite.destroy();
                         this.towerSprites.delete(entity.id);
-                        this.gameManager.onTowerDestroyed(isKing, entity.ownerId);
+
+                        const gameData = this.registry.get('data');
+                        const isHost = gameData?.role === 'player1';
+                        this.gameManager.onTowerDestroyed(isKing, entity.ownerId, isHost);
                     }
                 }
                 continue;
@@ -163,6 +221,7 @@ export class MainScene2v2 extends Scene {
     shutdown() {
         EventBus.off(EVENTS.CARD_SELECTED, this._onCardSelected);
         EventBus.off(EVENTS.BATTLE_STARTED, this._onBattleStarted);
+        EventBus.off(EVENTS.GAME_END_TRIGGER, this._onGameEndTrigger);
         EventBus.off(EVENTS.TEST_DEPLOY, this._onTestDeploy);
     }
 }

@@ -4,7 +4,7 @@ import { CARD_DATA } from '../game/config/CardConfig';
 export interface GameTransaction {
     id: string; // signature or temp ID
     cardId: string;
-    ownerId: 'player' | 'opponent';
+    ownerId: 'player' | 'opponent' | 'teammate';
     status: 'pending' | 'success' | 'fail';
     timestamp: number;
 }
@@ -76,8 +76,9 @@ export const TransactionDrawer: React.FC<TransactionDrawerProps> = ({ transactio
                             const icon = cardId ? CARD_DATA[Number(cardId)].icon : '';
 
                             const isPlayer = tx.ownerId === 'player';
-                            const borderColor = isPlayer ? '#3b82f6' : '#ef4444'; // Blue vs Red
-                            const bgColor = isPlayer ? 'rgba(59, 130, 246, 0.1)' : 'rgba(239, 68, 68, 0.1)';
+                            const isTeammate = tx.ownerId === 'teammate';
+                            const borderColor = isPlayer ? '#3b82f6' : (isTeammate ? '#60a5fa' : '#ef4444'); // Blue, Light Blue, Red
+                            const bgColor = isPlayer ? 'rgba(59, 130, 246, 0.1)' : (isTeammate ? 'rgba(96, 165, 250, 0.1)' : 'rgba(239, 68, 68, 0.1)');
 
                             return (
                                 <div

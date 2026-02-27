@@ -5,6 +5,7 @@ interface LoadGifOptions {
     duration?: number; // Total duration of the animation in ms
     frameRate?: number; // Override frame rate (fps)
     hitSpeed?: number; // Target total cycle time (ms) to calculate pause
+    repeat?: number;   // Phaser animation repeat (-1 for infinite, 0 for once)
 }
 
 export const loadGif = async (scene: Phaser.Scene, key: string, url: string, options: LoadGifOptions = {}) => {
@@ -68,7 +69,7 @@ export const loadGif = async (scene: Phaser.Scene, key: string, url: string, opt
                 key: key,
                 frames: animFrames,
                 frameRate: frameRate,
-                repeat: -1,
+                repeat: options.repeat !== undefined ? options.repeat : -1,
                 repeatDelay: repeatDelay
             });
         }

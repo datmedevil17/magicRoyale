@@ -161,6 +161,21 @@ export const TROOP_STATS: Record<string, TroopStats> = {
         radius: 30,
         spawnCount: 1,
         pixelScale: 0.8
+    },
+    'Arrows': {
+        health: 1,
+        animSpeed: { walk: 1, fight: 10 }, // 10 FPS for the gif
+        movePerFrame: 0,
+        attackFrames: 10, // Total frames in Arrows_fight_player.gif
+        range: 100, // AOE radius
+        sightRange: 0,
+        damage: 300,
+        attackType: TargetType.BOTH,
+        movementType: TroopType.AIR,
+        elixirCost: 3,
+        radius: 0,
+        spawnCount: 1,
+        pixelScale: 1.5 // Visual size for the AOE
     }
 };
 

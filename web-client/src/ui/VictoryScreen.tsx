@@ -13,7 +13,8 @@ interface VictoryScreenProps {
     opponentTowersDestroyed: number;
     victoryReason?: string;
     gameId?: string; // u64 as decimal string
-    role?: 'player1' | 'player2';
+    role?: 'player1' | 'player2' | 'player3' | 'player4';
+    is2v2?: boolean;
 }
 
 export const VictoryScreen: React.FC<VictoryScreenProps> = ({
@@ -24,10 +25,11 @@ export const VictoryScreen: React.FC<VictoryScreenProps> = ({
     opponentTowersDestroyed,
     victoryReason,
     gameId,
-    role
+    role,
+    is2v2 = false
 }) => {
     const navigate = useNavigate();
-    const { mintTrophies, endGame, isLoading, error } = useGameProgram();
+    const { mintTrophies, endGame, mintTrophies2v2, endGame2v2, isLoading, error } = useGameProgram();
     const [countdown, setCountdown] = React.useState(8);
 
     // New states for the multi-step ending process
@@ -55,10 +57,15 @@ export const VictoryScreen: React.FC<VictoryScreenProps> = ({
             try {
                 // Step 1: End Game (on-chain)
                 setIsEndingGame(true);
-                let winnerIdx = role === 'player1' ? 0 : 1;
-
-                console.log(`[VictorySequence] Ending Game: ${gameId}, WinnerIdx: ${winnerIdx}`);
-                await endGame(new BN(gameId), winnerIdx);
+                let winnerIdx = 0;
+                if (is2v2) {
+                    // winnerIdx 0 = Team 0 (p1, p2), 1 = Team 1 (p3, p4)
+                    winnerIdx = (role === 'player1' || role === 'player2') ? 0 : 1;
+                    await endGame2v2(new BN(gameId), winnerIdx);
+                } else {
+                    winnerIdx = role === 'player1' ? 0 : 1;
+                    await endGame(new BN(gameId), winnerIdx);
+                }
                 setHasEndedGame(true);
                 setIsEndingGame(false);
 
@@ -70,7 +77,11 @@ export const VictoryScreen: React.FC<VictoryScreenProps> = ({
                 while (mintRetries > 0) {
                     try {
                         console.log(`[VictorySequence] Minting Trophies, Attempt: ${4 - mintRetries}`);
-                        await mintTrophies(new BN(gameId), MINT_CONFIG.GOLD);
+                        if (is2v2) {
+                            await mintTrophies2v2(new BN(gameId), MINT_CONFIG.GOLD);
+                        } else {
+                            await mintTrophies(new BN(gameId), MINT_CONFIG.GOLD);
+                        }
                         toast.success('🏆 Trophies Minted! 🏆');
                         break;
                     } catch (err: any) {

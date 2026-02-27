@@ -18,5 +18,6 @@ export const EVENTS = {
     TEST_DEPLOY: 'test-deploy',
     ELIXIR_INSUFFICIENT: 'elixir-insufficient',
     TRANSACTION_UPDATE: 'transaction-update',
-    TOGGLE_DRAWER: 'toggle-drawer'
+    TOGGLE_DRAWER: 'toggle-drawer',
+    GAME_END_TRIGGER: 'game-end-trigger'
 };

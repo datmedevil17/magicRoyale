@@ -66,7 +66,9 @@ export const TestArena: React.FC = () => {
         setSelectedCardId(cardId);
     };
 
-    const testCards = Object.values(CARD_DATA).slice(0, 8);
+    const testCards = Object.values(CARD_DATA).filter(card =>
+        ['Giant', 'Valkyrie', 'MiniPEKKA', 'BabyDragon', 'Archers', 'Arrows'].includes(card.id)
+    );
 
     return (
         <div className="w-screen h-screen bg-[#111] flex overflow-hidden font-sans">

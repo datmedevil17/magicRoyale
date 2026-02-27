@@ -107,9 +107,9 @@ export const GameWrapper = () => {
         });
 
         socket.on('game-timeout', () => {
-            setGameEnded(true);
-            setWinner('draw');
-            setVictoryReason('Time Out');
+            console.log('[GameWrapper] Server signal: Game Timeout');
+            // Force the GameManager to evaluate end state if it hasn't already
+            EventBus.emit(EVENTS.GAME_END_TRIGGER);
         });
 
         if (gameRef.current) {

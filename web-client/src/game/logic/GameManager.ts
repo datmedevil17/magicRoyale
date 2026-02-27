@@ -10,6 +10,7 @@ import { Valkyrie } from './troops/Valkyrie';
 import { Wizard } from './troops/Wizard';
 import { BabyDragon } from './troops/BabyDragon';
 import { InfernoTower } from './troops/InfernoTower';
+import { Spell } from './spells/Spell';
 import { TowerEntity } from './TowerEntity';
 import type { Point2D, ArenaLayout } from './Interfaces';
 import type { IUser } from './User';
@@ -40,10 +41,13 @@ export class GameManager {
 
     public isTestMode: boolean = false;
 
-    constructor(_user: IUser, isTestMode: boolean = false) {
+    public role: string = 'player1';
+
+    constructor(_user: IUser, isTestMode: boolean = false, role: string = 'player1') {
         // user param kept for compatibility/extension
         this.isTestMode = isTestMode;
         this.entities = [];
+        this.role = role;
     }
 
     public setLayout(layout: ArenaLayout) {
@@ -117,6 +121,8 @@ export class GameManager {
             if (entity instanceof Troop) {
                 entity.updateBase(this.layout);
                 entity.update(time, tickDelta, aliveEntities, this.layout);
+            } else if (entity instanceof Spell) {
+                entity.update(time, tickDelta, aliveEntities, this.layout);
             }
         }
 
@@ -168,6 +174,9 @@ export class GameManager {
         } else if (cardId === 'InfernoTower') {
             const id = `inferno_${Date.now()}_${Math.random()}`;
             entity = new InfernoTower(id, position.x, position.y, ownerId);
+        } else if (cardId === 'Arrows') {
+            const id = `arrows_${Date.now()}_${Math.random()}`;
+            entity = new Spell(id, position.x, position.y, ownerId, 'Arrows');
         }
 
         if (entity) {
@@ -189,34 +198,40 @@ export class GameManager {
         if (this.gameEnded) return;
 
         const ownerLower = ownerId.toLowerCase();
-        const isPlayerTeam = ownerLower.startsWith('player');
-        const isOpponentTeam = ownerLower.startsWith('opponent');
 
+        // 2v2 Role Mapping
+        // Team 0: player1, player2 (Blue)
+        // Team 1: player3, player4 (Red)
+        const isTeam0 = ownerLower === 'player1' || ownerLower === 'player2' || ownerLower === 'player';
+        const isTeam1 = ownerLower === 'player3' || ownerLower === 'player4' || ownerLower === 'opponent';
+
+        const myTeam = (this.role === 'player1' || this.role === 'player2') ? 0 : 1;
+
+        const isPlayerTeam = (myTeam === 0) ? isTeam0 : isTeam1;
+        const isOpponentTeam = (myTeam === 0) ? isTeam1 : isTeam0;
+
+        // King tower death awards 3 crowns and 3 towers destroyed for a full clear
         const crownCount = isKing ? 3 : 1;
+        const towerCount = isKing ? 3 : 1;
 
         // Track tower destruction
         if (isPlayerTeam) {
             // Player tower destroyed, opponent gets credit
-            this.opponentTowersDestroyed++;
-            this.opponentCrowns += crownCount;
-        } else if (isOpponentTeam) {
-            // Opponent tower destroyed, player gets credit
-            this.playerTowersDestroyed++;
-            this.playerCrowns += crownCount;
-        }
-
-        // Cap at 3 crowns (standard rules: King tower = 3 crowns)
-        if (isKing) {
-            if (isOpponentTeam) this.playerCrowns = 3;
-            if (isPlayerTeam) this.opponentCrowns = 3;
+            this.opponentTowersDestroyed = Math.min(3, isKing ? 3 : this.opponentTowersDestroyed + towerCount);
+            this.opponentCrowns = Math.min(3, isKing ? 3 : this.opponentCrowns + crownCount);
+        } else if (isOpponentTeam || ownerLower.startsWith('player3') || ownerLower.startsWith('player4')) {
+            // Opponent tower destroyed (check for 2v2 roles too), player gets credit
+            this.playerTowersDestroyed = Math.min(3, isKing ? 3 : this.playerTowersDestroyed + towerCount);
+            this.playerCrowns = Math.min(3, isKing ? 3 : this.playerCrowns + crownCount);
         }
 
         this.playerCrowns = Math.min(3, this.playerCrowns);
         this.opponentCrowns = Math.min(3, this.opponentCrowns);
 
-        // ONLY immediate victory on king tower destruction or naturally reaching 3 crowns via king death
-        // Authority check: only the host can trigger the local end-game state transition
-        if (isAuthority && (isKing || this.playerCrowns >= 3 || this.opponentCrowns >= 3)) {
+        // ONLY immediate victory on king tower destruction or naturally reaching 3 crowns
+        // Authority check: normally only host triggers end-game. 
+        // EXCEPTION: anyone can trigger instant end-match locally for a King destruction to keep the UI snappy.
+        if (isKing || (isAuthority && (this.playerCrowns >= 3 || this.opponentCrowns >= 3))) {
             this.victoryReason = isKing ? 'King Tower Destroyed!' : 'Three Crown Victory!';
             this.endGame();
         }
@@ -252,7 +267,20 @@ export class GameManager {
                 if (!isLocalHost) {
                     finalX = mapWidth - snap.x;
                     finalY = mapHeight - snap.y;
-                    finalOwner = snap.ownerId === 'player' ? 'opponent' : 'player';
+
+                    // Perspective flip logic for 2v2
+                    // Team 0 (p1, p2) is Blue, Team 1 (p3, p4) is Red
+                    // If snap.ownerId is 'player1' or 'player2', it's Blue.
+                    // If snap.ownerId is 'player3' or 'player4', it's Red.
+                    // From p3/p4 perspective: Red is 'player', Blue is 'opponent'
+                    if (snap.ownerId === 'player1' || snap.ownerId === 'player2') {
+                        finalOwner = 'opponent';
+                    } else if (snap.ownerId === 'player3' || snap.ownerId === 'player4') {
+                        finalOwner = 'player';
+                    } else {
+                        // Fallback/Legacy 1v1
+                        finalOwner = snap.ownerId === 'player' ? 'opponent' : 'player';
+                    }
                 }
 
                 if (!entity && !isLocalHost) {
@@ -311,6 +339,10 @@ export class GameManager {
 
     public getRemainingTime(): number {
         return Math.max(0, this.matchDuration - this.elapsedTime);
+    }
+
+    public forceEndGame() {
+        this.endGame();
     }
 
     private endGame() {

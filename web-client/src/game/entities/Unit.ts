@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { Entity } from '../logic/Entity';
 import { Troop } from '../logic/troops/Troop';
+import { Spell } from '../logic/spells/Spell';
 
 export class Unit extends Phaser.GameObjects.Sprite {
     private healthBar: Phaser.GameObjects.Graphics;
@@ -46,10 +47,10 @@ export class Unit extends Phaser.GameObjects.Sprite {
 
         // Update Animation/Texture based on State
 
-        if (entity instanceof Troop) {
-            const state = entity.state; // 'walk', 'fight', 'idle'
+        if (entity instanceof Troop || entity instanceof Spell) {
+            const state = (entity as any).state; // 'walk', 'fight', 'idle'
             const owner = entity.ownerId.includes('player') ? 'player' : 'opponent';
-            const name = entity.name; // e.g. 'Archer'
+            const name = (entity as any).name; // e.g. 'Archer' or 'Arrows'
 
             let action = 'walk';
             if (state === 'fight') action = 'fight';

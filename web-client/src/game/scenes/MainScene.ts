@@ -6,6 +6,7 @@ import { EventBus, EVENTS } from '../EventBus';
 import { MapBuilder } from './MapBuilder';
 import { Tower } from '../entities/Tower';
 import { TowerEntity } from '../logic/TowerEntity';
+import { Spell } from '../logic/spells/Spell';
 import { Unit } from '../entities/Unit';
 import { ArenaConfig } from '../config/ArenaConfig';
 
@@ -21,6 +22,7 @@ export class MainScene extends Scene {
     private _onBattleStarted!: () => void;
     private _onServerTick!: (data: { elapsed: number; remaining: number }) => void;
     private _onOpponentDisconnected!: () => void;
+    private _onGameEndTrigger!: () => void;
     private _onTestDeploy!: (data: { cardId: string, x: number, y: number, ownerId: 'player' | 'opponent' }) => void;
     private gameEndEmitted: boolean = false;
 
@@ -111,6 +113,13 @@ export class MainScene extends Scene {
         this._onOpponentDisconnected = () => { showDebug('Opponent disconnected!'); };
         EventBus.on('opponent-disconnected', this._onOpponentDisconnected);
 
+        // ── EventBus: external game end trigger (e.g. timeout) ────────────────
+        this._onGameEndTrigger = () => {
+            console.log('[MainScene] Force ending game via EventBus trigger');
+            this.gameManager.forceEndGame();
+        };
+        EventBus.on(EVENTS.GAME_END_TRIGGER, this._onGameEndTrigger);
+
         // ── Continuous Sync (Host-based) ──────────────────────────────────────
         const gameData = this.registry.get('data');
         const isHost = gameData?.role === 'player1';
@@ -126,7 +135,7 @@ export class MainScene extends Scene {
         // Broadcaster for host
         if (isHost) {
             this.time.addEvent({
-                delay: 500, // Every 500ms
+                delay: 200, // Every 200ms
                 loop: true,
                 callback: () => {
                     const entities = this.gameManager.getEntities()
@@ -144,7 +153,7 @@ export class MainScene extends Scene {
                     if (entities.length > 0) {
                         const socket = this.registry.get('socket');
                         socket?.emit('sync-units', {
-                            units: entities,
+                            entities: entities,
                             playerCrowns: this.gameManager.playerCrowns,
                             opponentCrowns: this.gameManager.opponentCrowns,
                             playerTowersDestroyed: this.gameManager.playerTowersDestroyed,
@@ -199,6 +208,11 @@ export class MainScene extends Scene {
             });
 
             if (!this.selectedCardId) return;
+
+            // In TestArena mode, deployment is handled by TestArena.tsx listening to 'map-pointer-down'
+            // and emitting EVENTS.TEST_DEPLOY, which this scene listens for.
+            // If we are in test mode, we SKIP the direct deployment here to avoid duplicates.
+            if (this.isTestMode) return;
 
             const [assetId, deckIdxStr] = (this.selectedCardId || "").split(':');
             const deckIdx = parseInt(deckIdxStr || '0');
@@ -271,11 +285,18 @@ export class MainScene extends Scene {
                     this.spriteMap.set(entity.id, unit);
                 }
                 unit.updateVisuals(entity);
+            } else if (entity instanceof Spell) {
+                let unit = this.spriteMap.get(entity.id) as Unit;
+                if (!unit) {
+                    unit = new Unit(this, entity);
+                    this.spriteMap.set(entity.id, unit);
+                }
+                unit.updateVisuals(entity);
             } else if (entity instanceof TowerEntity) {
                 const towerSprite = this.towerSprites.get(entity.id);
                 if (towerSprite) {
                     towerSprite.setHealth(entity.health);
-                    const isKing = entity.maxHealth > 3000;
+                    const isKing = entity.isKing;
                     towerSprite.setShooting(entity.isShooting, entity.ownerId, isKing);
 
 
@@ -307,6 +328,8 @@ export class MainScene extends Scene {
         EventBus.off('server-tick', this._onServerTick);
         EventBus.off(EVENTS.NETWORK_OPPONENT_DEPLOY, this._onOpponentDeploy);
         EventBus.off('opponent-disconnected', this._onOpponentDisconnected);
+        EventBus.off(EVENTS.GAME_END_TRIGGER, this._onGameEndTrigger);
+        EventBus.off(EVENTS.TEST_DEPLOY, this._onTestDeploy);
     }
 
     private createTower(

@@ -55,6 +55,26 @@ pub struct BattleState {
     pub last_update_time: i64,
 }
 
+#[account]
+#[derive(InitSpace)]
+pub struct BattleState2v2 {
+    pub game_id: u64,
+    pub players: [Pubkey; 4],
+    pub status: GameStatus,
+    pub tick_count: u64,
+    pub elixir: [u64; 4],
+    pub towers: [Tower; 6],
+    #[max_len(MAX_ENTITIES)]
+    pub entities: Vec<Entity>,
+    pub winner: Option<u8>, // 0 for Team A (p0, p1), 1 for Team B (p2, p3)
+    pub trophies_minted: [bool; 4],
+    /// How many of the enemy's towers each team has destroyed (princess only)
+    pub towers_destroyed: [u8; 2],
+    /// Total HP damage dealt to enemy towers by each team
+    pub damage_dealt: [u64; 2],
+    pub last_update_time: i64,
+}
+
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace, PartialEq, Eq)]
 pub enum GameStatus {
     Waiting,

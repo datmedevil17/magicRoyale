@@ -19,7 +19,7 @@ const io = new Server(server, {
 const disconnectTimers = new Map();
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const GAME_DURATION_MS = 3 * 60 * 1000; // 3 minutes
+const GAME_DURATION_MS = 3 * 60 * 1000 + 15000; // 3 minutes + 15s buffer
 const TICK_INTERVAL_MS = 100;           // 10 ticks/sec
 
 // ─── State ────────────────────────────────────────────────────────────────────
@@ -31,12 +31,7 @@ const clanChats = new Map();
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function getGameRoom(socket) {
-    for (const room of socket.rooms) {
-        if (room !== socket.id) return room;
-    }
-    return null;
-}
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function cleanupGame(gameId) {
     const game = activeGames.get(gameId);
@@ -208,7 +203,7 @@ io.on('connection', (socket) => {
     // ── Troop relay ───────────────────────────────────────────────────────────
     // Shape: { cardIdx, cardId, x, y }
     socket.on('deploy-troop', (data) => {
-        const roomId = getGameRoom(socket);
+        const roomId = socket.roomId;
         if (!roomId) return;
         console.log(`🪖 ${socket.role} deployed cardIdx=${data.cardIdx} at (${data.x},${data.y})`);
         socket.to(roomId).emit('opponent-deploy-troop', {
@@ -223,7 +218,7 @@ io.on('connection', (socket) => {
     // ── Continuous Sync (Host-based) ──────────────────────────────────────────
     // Player 1 sends the snapshots of all entities periodically.
     socket.on('sync-units', (data) => {
-        const roomId = getGameRoom(socket);
+        const roomId = socket.roomId;
         if (!roomId) return;
         // Relay to other players
         socket.to(roomId).emit('sync-units', data);

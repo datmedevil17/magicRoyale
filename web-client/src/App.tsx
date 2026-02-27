@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { WaitingScreen } from './ui/WaitingScreen';
 import { GameWrapper } from './GameWrapper';
-import { TestGifComponent } from './ui/TestGifComponent';
+import { TestProgramPage } from './pages/TestProgramPage';
 import { LoginPage } from './pages/LoginPage';
 import { MainMenuPage } from './pages/MainMenuPage';
 import { BattleDeckPage } from './pages/BattleDeckPage';
@@ -16,6 +16,8 @@ import { ClanPage } from './pages/ClanPage';
 import { TournamentPage } from './pages/TournamentPage';
 import { TestArena } from './pages/TestArena';
 import { TestArena2v2 } from './pages/TestArena2v2';
+
+import { GameWrapper2v2 } from './GameWrapper2v2';
 
 function App() {
   return (
@@ -32,7 +34,8 @@ function App() {
         <Route path="/test-arena" element={<TestArena />} />
         <Route path="/waiting" element={<WaitingScreen />} />
         <Route path="/game" element={<GameWrapper />} />
-        <Route path="/test" element={<TestGifComponent />} />
+        <Route path="/game2v2" element={<GameWrapper2v2 />} />
+        <Route path="/test" element={<TestProgramPage />} />
         <Route path="/map-test" element={<MapTestPage />} />
         <Route path="/testmap1" element={<MapTestPage1 />} />
         <Route path="/map2v2test" element={<Map2v2TestPage />} />

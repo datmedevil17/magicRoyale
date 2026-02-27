@@ -72,6 +72,67 @@ export type GameCore = {
       ]
     },
     {
+      "name": "commitBattle2v2",
+      "discriminator": [
+        40,
+        157,
+        201,
+        205,
+        225,
+        183,
+        145,
+        146
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "battle",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  97,
+                  116,
+                  116,
+                  108,
+                  101,
+                  50,
+                  118,
+                  50
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "gameId"
+              }
+            ]
+          }
+        },
+        {
+          "name": "magicProgram",
+          "address": "Magic11111111111111111111111111111111111111"
+        },
+        {
+          "name": "magicContext",
+          "writable": true,
+          "address": "MagicContext1111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "gameId",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "createClan",
       "discriminator": [
         89,
@@ -181,6 +242,84 @@ export type GameCore = {
                   116,
                   108,
                   101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "gameId"
+              }
+            ]
+          }
+        },
+        {
+          "name": "playerOneProfile",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  108,
+                  97,
+                  121,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "playerOne"
+              }
+            ]
+          }
+        },
+        {
+          "name": "playerOne",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "gameId",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "createGame2v2",
+      "discriminator": [
+        105,
+        238,
+        1,
+        45,
+        18,
+        107,
+        75,
+        99
+      ],
+      "accounts": [
+        {
+          "name": "battle",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  97,
+                  116,
+                  116,
+                  108,
+                  101,
+                  50,
+                  118,
+                  50
                 ]
               },
               {
@@ -421,6 +560,200 @@ export type GameCore = {
       ]
     },
     {
+      "name": "delegateGame2v2",
+      "discriminator": [
+        222,
+        184,
+        166,
+        241,
+        162,
+        5,
+        254,
+        156
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "signer": true
+        },
+        {
+          "name": "bufferPda",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  117,
+                  102,
+                  102,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pda"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                201,
+                60,
+                163,
+                178,
+                222,
+                211,
+                170,
+                45,
+                63,
+                127,
+                183,
+                27,
+                119,
+                174,
+                113,
+                4,
+                116,
+                150,
+                226,
+                136,
+                32,
+                37,
+                213,
+                121,
+                165,
+                196,
+                103,
+                129,
+                155,
+                52,
+                15,
+                162
+              ]
+            }
+          }
+        },
+        {
+          "name": "delegationRecordPda",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  108,
+                  101,
+                  103,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pda"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "delegationProgram"
+            }
+          }
+        },
+        {
+          "name": "delegationMetadataPda",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  108,
+                  101,
+                  103,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110,
+                  45,
+                  109,
+                  101,
+                  116,
+                  97,
+                  100,
+                  97,
+                  116,
+                  97
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pda"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "delegationProgram"
+            }
+          }
+        },
+        {
+          "name": "pda",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  97,
+                  116,
+                  116,
+                  108,
+                  101,
+                  50,
+                  118,
+                  50
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "gameId"
+              }
+            ]
+          }
+        },
+        {
+          "name": "ownerProgram",
+          "address": "EYYaUKGcq2epXWsXk52P7dEXpDMZQpGdkSXVDypzDhYm"
+        },
+        {
+          "name": "delegationProgram",
+          "address": "DELeGGvXpWV2fqJUhqcF5ZSYMS4JTLjteaAMARRSaeSh"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "gameId",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "deployTroop",
       "discriminator": [
         158,
@@ -452,6 +785,97 @@ export type GameCore = {
                   116,
                   108,
                   101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "gameId"
+              }
+            ]
+          }
+        },
+        {
+          "name": "playerProfile",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  108,
+                  97,
+                  121,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "player_profile.authority",
+                "account": "playerProfile"
+              }
+            ]
+          }
+        },
+        {
+          "name": "sessionToken",
+          "optional": true
+        }
+      ],
+      "args": [
+        {
+          "name": "gameId",
+          "type": "u64"
+        },
+        {
+          "name": "cardIdx",
+          "type": "u8"
+        },
+        {
+          "name": "x",
+          "type": "i32"
+        },
+        {
+          "name": "y",
+          "type": "i32"
+        }
+      ]
+    },
+    {
+      "name": "deployTroop2v2",
+      "discriminator": [
+        74,
+        45,
+        183,
+        45,
+        205,
+        30,
+        55,
+        69
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "battle",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  97,
+                  116,
+                  116,
+                  108,
+                  101,
+                  50,
+                  118,
+                  50
                 ]
               },
               {
@@ -690,6 +1114,89 @@ export type GameCore = {
                   116,
                   108,
                   101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "gameId"
+              }
+            ]
+          }
+        },
+        {
+          "name": "playerProfile",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  108,
+                  97,
+                  121,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "player_profile.authority",
+                "account": "playerProfile"
+              }
+            ]
+          }
+        },
+        {
+          "name": "sessionToken",
+          "optional": true
+        }
+      ],
+      "args": [
+        {
+          "name": "gameId",
+          "type": "u64"
+        },
+        {
+          "name": "winnerIdx",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "endGame2v2",
+      "discriminator": [
+        106,
+        180,
+        103,
+        190,
+        170,
+        159,
+        76,
+        234
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "battle",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  97,
+                  116,
+                  116,
+                  108,
+                  101,
+                  50,
+                  118,
+                  50
                 ]
               },
               {
@@ -1302,6 +1809,80 @@ export type GameCore = {
       ]
     },
     {
+      "name": "joinGame2v2",
+      "discriminator": [
+        153,
+        119,
+        186,
+        81,
+        98,
+        163,
+        112,
+        151
+      ],
+      "accounts": [
+        {
+          "name": "battle",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  97,
+                  116,
+                  116,
+                  108,
+                  101,
+                  50,
+                  118,
+                  50
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "gameId"
+              }
+            ]
+          }
+        },
+        {
+          "name": "playerProfile",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  108,
+                  97,
+                  121,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "player"
+              }
+            ]
+          }
+        },
+        {
+          "name": "player",
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "gameId",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "mintTrophies",
       "discriminator": [
         43,
@@ -1328,6 +1909,119 @@ export type GameCore = {
                   116,
                   108,
                   101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "gameId"
+              }
+            ]
+          }
+        },
+        {
+          "name": "profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  108,
+                  97,
+                  121,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "signer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint",
+          "writable": true
+        },
+        {
+          "name": "destination",
+          "writable": true
+        },
+        {
+          "name": "mintAuthority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "gameId",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "mintTrophies2v2",
+      "discriminator": [
+        220,
+        127,
+        161,
+        50,
+        22,
+        83,
+        68,
+        65
+      ],
+      "accounts": [
+        {
+          "name": "battle",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  97,
+                  116,
+                  116,
+                  108,
+                  101,
+                  50,
+                  118,
+                  50
                 ]
               },
               {
@@ -1742,6 +2436,19 @@ export type GameCore = {
       ]
     },
     {
+      "name": "battleState2v2",
+      "discriminator": [
+        79,
+        9,
+        64,
+        38,
+        124,
+        220,
+        1,
+        103
+      ]
+    },
+    {
       "name": "cardMintState",
       "discriminator": [
         251,
@@ -2061,6 +2768,114 @@ export type GameCore = {
             "name": "damageDealt",
             "docs": [
               "Total HP damage dealt to enemy towers by each player"
+            ],
+            "type": {
+              "array": [
+                "u64",
+                2
+              ]
+            }
+          },
+          {
+            "name": "lastUpdateTime",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "battleState2v2",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "gameId",
+            "type": "u64"
+          },
+          {
+            "name": "players",
+            "type": {
+              "array": [
+                "pubkey",
+                4
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "type": {
+              "defined": {
+                "name": "gameStatus"
+              }
+            }
+          },
+          {
+            "name": "tickCount",
+            "type": "u64"
+          },
+          {
+            "name": "elixir",
+            "type": {
+              "array": [
+                "u64",
+                4
+              ]
+            }
+          },
+          {
+            "name": "towers",
+            "type": {
+              "array": [
+                {
+                  "defined": {
+                    "name": "tower"
+                  }
+                },
+                6
+              ]
+            }
+          },
+          {
+            "name": "entities",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "entity"
+                }
+              }
+            }
+          },
+          {
+            "name": "winner",
+            "type": {
+              "option": "u8"
+            }
+          },
+          {
+            "name": "trophiesMinted",
+            "type": {
+              "array": [
+                "bool",
+                4
+              ]
+            }
+          },
+          {
+            "name": "towersDestroyed",
+            "docs": [
+              "How many of the enemy's towers each team has destroyed (princess only)"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                2
+              ]
+            }
+          },
+          {
+            "name": "damageDealt",
+            "docs": [
+              "Total HP damage dealt to enemy towers by each team"
             ],
             "type": {
               "array": [

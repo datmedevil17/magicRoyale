@@ -64,6 +64,35 @@ pub mod game_core {
         instructions::battle::mint_trophies(ctx, game_id)
     }
 
+    // --- 2v2 Battle ---
+    pub fn create_game_2v2(ctx: Context<CreateGame2v2>, game_id: u64) -> Result<()> {
+        instructions::battle::create_game_2v2(ctx, game_id)
+    }
+
+    pub fn join_game_2v2(ctx: Context<JoinGame2v2>, game_id: u64) -> Result<()> {
+        instructions::battle::join_game_2v2(ctx, game_id)
+    }
+
+    pub fn delegate_game_2v2(ctx: Context<DelegateGame2v2>, game_id: u64) -> Result<()> {
+        instructions::battle::delegate_game_2v2(ctx, game_id)
+    }
+
+    pub fn deploy_troop_2v2(ctx: Context<DeployTroop2v2>, game_id: u64, card_idx: u8, x: i32, y: i32) -> Result<()> {
+        instructions::battle::deploy_troop_2v2(ctx, game_id, card_idx, x, y)
+    }
+
+    pub fn end_game_2v2(ctx: Context<EndGame2v2>, game_id: u64, winner_idx: u8) -> Result<()> {
+        instructions::battle::end_game_2v2(ctx, game_id, winner_idx)
+    }
+
+    pub fn commit_battle_2v2(ctx: Context<CommitBattle2v2>, game_id: u64) -> Result<()> {
+        instructions::battle::commit_battle_2v2(ctx, game_id)
+    }
+
+    pub fn mint_trophies_2v2(ctx: Context<MintTrophies2v2>, game_id: u64) -> Result<()> {
+        instructions::battle::mint_trophies_2v2(ctx, game_id)
+    }
+
     // Resources
     pub fn export_resource(ctx: Context<ExportResource>, card_id: u8, amount: u32) -> Result<()> {
         instructions::resources::export_resource(ctx, card_id, amount)
