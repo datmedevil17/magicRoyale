@@ -40,7 +40,19 @@ export class BootScene extends Scene {
         this.load.image('tower_archer_red_left', '../solanamap/tower_archer_red2.png');
         this.load.image('tower_king_blue', '../solanamap/tower_king_blue.png');
         this.load.image('tower_king_red', '../solanamap/tower_king_red.png');
+        this.load.image('solana_wall1', '../solanamap/wall1solana.png');
         this.load.image('logo', '../solanamap/logo.png');
+
+        // Map 3 Towers (Load from magicblock)
+        this.load.image('m3_tower_archer_blue_right', '../magicblock/tower_archer_blue.png');
+        this.load.image('m3_tower_archer_blue_left', '../magicblock/tower_archer_blue2.png');
+        this.load.image('m3_tower_archer_red_right', '../magicblock/tower_archer_red.png');
+        this.load.image('m3_tower_archer_red_left', '../magicblock/tower_archer_red2.png');
+        this.load.image('m3_tower_king_blue', '../magicblock/tower_king_blue.png');
+        this.load.image('m3_tower_king_red', '../magicblock/tower_king_red.png');
+        this.load.image('m3_logo', '../magicblock/logo.png');
+        this.load.image('magic_stone1', '../magicblock/stone1.png');
+        this.load.image('magic_stone2', '../magicblock/stone2.png');
 
         // Solana Logostone1
         // this.load.image('logo', '../solanamap/stone1.png');
@@ -70,6 +82,9 @@ export class BootScene extends Scene {
         // Load solanamap custom props
         for (let i = 1; i <= 3; i++) {
             this.load.image(`solana_stone${i}`, `../solanamap/stone${i}.png`);
+        }
+        for (let i = 1; i <= 2; i++) {
+            this.load.image(`magic_stone${i}`, `../magicblock/stone${i}.png`);
         }
         // this.load.image('solana_logo', '../solanamap/logo.png');
         this.load.image('solana_wall1', '../solanamap/wall1solana.png');

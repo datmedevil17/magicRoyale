@@ -8,6 +8,7 @@ import { BattleDeckPage } from './pages/BattleDeckPage';
 import { MapTestPage } from './pages/MapTestPage';
 import { MapTestPage1 } from './pages/MapTestPage1';
 import { MapTestPage2 } from './pages/MapTestPage2';
+import { MapTestPage3 } from './pages/MapTestPage3';
 import { Map2v2TestPage } from './pages/Map2v2TestPage';
 import { TroopTestPage } from './pages/TroopTestPage';
 import { ProfilePage } from './pages/ProfilePage';
@@ -40,6 +41,7 @@ function App() {
         <Route path="/map-test" element={<MapTestPage />} />
         <Route path="/testmap1" element={<MapTestPage1 />} />
         <Route path="/map2" element={<MapTestPage2 />} />
+        <Route path="/map3" element={<MapTestPage3 />} />
         <Route path="/map2v2test" element={<Map2v2TestPage />} />
         <Route path="/troop-test" element={<TroopTestPage />} />
         <Route path="/test-arena-2v2" element={<TestArena2v2 />} />
