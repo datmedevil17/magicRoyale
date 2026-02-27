@@ -123,6 +123,8 @@ export class GameManager {
                 entity.update(time, tickDelta, aliveEntities, this.layout);
             } else if (entity instanceof Spell) {
                 entity.update(time, tickDelta, aliveEntities, this.layout);
+            } else if (entity instanceof TowerEntity) {
+                entity.update(time, tickDelta, aliveEntities);
             }
         }
 

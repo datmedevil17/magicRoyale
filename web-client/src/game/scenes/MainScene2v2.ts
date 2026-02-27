@@ -21,6 +21,7 @@ export class MainScene2v2 extends Scene {
     private _onBattleStarted!: () => void;
     private _onGameEndTrigger!: () => void;
     private _onTestDeploy!: (data: { cardId: string, x: number, y: number, ownerId: string }) => void;
+    private _onSyncUnits!: (data: any) => void;
 
     constructor() { super('MainScene2v2'); }
 
@@ -88,12 +89,12 @@ export class MainScene2v2 extends Scene {
         const isHost = gameData?.role === 'player1';
 
         // Listener for incoming syncs (for non-hosts)
-        const onSyncUnits = (data: any) => {
+        this._onSyncUnits = (data: any) => {
             if (!isHost) {
                 this.gameManager.syncFromHost(data, isHost);
             }
         };
-        EventBus.on('sync-units', onSyncUnits);
+        EventBus.on('sync-units', this._onSyncUnits);
 
         // Broadcaster for host
         if (isHost) {
@@ -223,5 +224,6 @@ export class MainScene2v2 extends Scene {
         EventBus.off(EVENTS.BATTLE_STARTED, this._onBattleStarted);
         EventBus.off(EVENTS.GAME_END_TRIGGER, this._onGameEndTrigger);
         EventBus.off(EVENTS.TEST_DEPLOY, this._onTestDeploy);
+        EventBus.off('sync-units', this._onSyncUnits);
     }
 }

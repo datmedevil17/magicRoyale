@@ -30,6 +30,7 @@ export class MainScene extends Scene {
     private _onOpponentDisconnected!: () => void;
     private _onGameEndTrigger!: () => void;
     private _onTestDeploy!: (data: { cardId: string, x: number, y: number, ownerId: 'player' | 'opponent' }) => void;
+    private _onSyncUnits!: (data: any) => void;
     private gameEndEmitted: boolean = false;
 
     constructor() { super('MainScene'); }
@@ -137,12 +138,12 @@ export class MainScene extends Scene {
         const gameData = this.registry.get('data');
         const isHost = gameData?.role === 'player1';
 
-        const onSyncUnits = (data: any) => {
+        this._onSyncUnits = (data: any) => {
             if (!isHost) {
                 this.gameManager.syncFromHost(data, isHost);
             }
         };
-        EventBus.on('sync-units', onSyncUnits);
+        EventBus.on('sync-units', this._onSyncUnits);
 
         if (isHost) {
             this.time.addEvent({
@@ -313,6 +314,7 @@ export class MainScene extends Scene {
         EventBus.off('opponent-disconnected', this._onOpponentDisconnected);
         EventBus.off(EVENTS.GAME_END_TRIGGER, this._onGameEndTrigger);
         EventBus.off(EVENTS.TEST_DEPLOY, this._onTestDeploy);
+        EventBus.off('sync-units', this._onSyncUnits);
     }
 
     private createTower(

@@ -19,6 +19,7 @@ import { TournamentPage } from './pages/TournamentPage';
 import { TestArena } from './pages/TestArena';
 import { TestArena2v2 } from './pages/TestArena2v2';
 import { MapSelectionPage } from './pages/MapSelectionPage';
+import { TesarPage } from './pages/TesarPage';
 
 import { GameWrapper2v2 } from './GameWrapper2v2';
 
@@ -47,6 +48,7 @@ function App() {
         <Route path="/troop-test" element={<TroopTestPage />} />
         <Route path="/test-arena-2v2" element={<TestArena2v2 />} />
         <Route path="/maps" element={<MapSelectionPage />} />
+        <Route path="/tesar" element={<TesarPage />} />
       </Routes>
     </Router>
   );

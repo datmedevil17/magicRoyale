@@ -13,7 +13,7 @@ export class TowerEntity extends Entity {
     private tileSize: number = 22;
 
     constructor(id: string, x: number, y: number, ownerId: string, isKing: boolean, radius: number, tileSize: number = 22) {
-        super(id, x, y, ownerId, EntityType.BUILDING);
+        super(id, x, y, ownerId, EntityType.TOWER);
         this.isKing = isKing;
         this.maxHealth = isKing ? 4000 : 2500;
         this.health = this.maxHealth;
