@@ -13,17 +13,17 @@ export type TargetType = typeof TargetType[keyof typeof TargetType];
 
 export interface TroopStats {
     health: number;
-    // Animation-Driven Stats
+    // Gameplay timing: speed = walk * movePerFrame, hitSpeed = attackFrames / fight * 1000.
+    // Animation playback uses the GIF frame timings instead (see AnimationTiming.ts).
     animSpeed: {
         walk: number; // FPS
         fight: number; // FPS
     };
     movePerFrame: number; // Pixels per walk frame
     attackFrames: number; // Total frames in attack cycle
-    impactFrame?: number; // Frame where damage should occur (default: 0)
     pixelScale?: number; // Visual scaling factor (default: 1.0)
     stopRange?: number;  // Distance to stop walking (defaults to range)
-    continuousAttack?: boolean; // If true, loop animation without pause based on hitSpeed
+    continuousAttack?: boolean; // If true, loop animation without pause; damage lands at attack start
     fightPixelScale?: number; // Optional scale override for fight animation
 
     range: number;       // pixels
@@ -72,7 +72,6 @@ export const TROOP_STATS: Record<string, TroopStats> = {
         animSpeed: { walk: 2, fight: 2 },
         movePerFrame: 10, // 10 * 3.5 = 35 speed
         attackFrames: 2,  // (23/15)*1000 = 1533ms
-        impactFrame: 1,   // Frame 1 of 2
         range: 40,
         sightRange: 180,
         damage: 253,
@@ -88,7 +87,6 @@ export const TROOP_STATS: Record<string, TroopStats> = {
         animSpeed: { walk: 3, fight: 2.5 },
         movePerFrame: 10,
         attackFrames: 2.5,   // 28 frames / 14 FPS = 2.0s hitSpeed (2 loops if 14 frames/loop)
-        impactFrame: 1.5,    // Damage at frame 10
         range: 35,
         sightRange: 160,
         damage: 500,
@@ -160,7 +158,8 @@ export const TROOP_STATS: Record<string, TroopStats> = {
         elixirCost: 5,
         radius: 30,
         spawnCount: 1,
-        pixelScale: 0.8
+        pixelScale: 0.8,
+        continuousAttack: true // Beam loops while locked on
     },
     'Arrows': {
         health: 1,

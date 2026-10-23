@@ -1,0 +1,1218 @@
+{
+  "Archer_fight-rage_opponent": {
+    "frameWidth": 65,
+    "frameHeight": 162,
+    "frameCount": 20,
+    "delays": [
+      180,
+      180,
+      0,
+      0,
+      60,
+      180,
+      180,
+      0,
+      0,
+      60,
+      180,
+      180,
+      0,
+      0,
+      60,
+      180,
+      180,
+      0,
+      0,
+      60
+    ]
+  },
+  "Archer_fight-rage_player": {
+    "frameWidth": 65,
+    "frameHeight": 162,
+    "frameCount": 30,
+    "delays": [
+      180,
+      180,
+      180,
+      0,
+      0,
+      60,
+      180,
+      180,
+      180,
+      0,
+      0,
+      60,
+      180,
+      180,
+      180,
+      0,
+      0,
+      60,
+      180,
+      180,
+      180,
+      0,
+      0,
+      60,
+      180,
+      180,
+      180,
+      0,
+      0,
+      60
+    ]
+  },
+  "Archer_fight_opponent": {
+    "frameWidth": 65,
+    "frameHeight": 162,
+    "frameCount": 20,
+    "delays": [
+      300,
+      300,
+      0,
+      0,
+      100,
+      300,
+      300,
+      0,
+      0,
+      100,
+      300,
+      300,
+      0,
+      0,
+      100,
+      300,
+      300,
+      0,
+      0,
+      100
+    ]
+  },
+  "Archer_fight_player": {
+    "frameWidth": 65,
+    "frameHeight": 162,
+    "frameCount": 30,
+    "delays": [
+      300,
+      300,
+      300,
+      0,
+      0,
+      100,
+      300,
+      300,
+      300,
+      0,
+      0,
+      100,
+      300,
+      300,
+      300,
+      0,
+      0,
+      100,
+      300,
+      300,
+      300,
+      0,
+      0,
+      100,
+      300,
+      300,
+      300,
+      0,
+      0,
+      100
+    ]
+  },
+  "Archer_walk-rage_opponent": {
+    "frameWidth": 62,
+    "frameHeight": 62,
+    "frameCount": 4,
+    "delays": [
+      180,
+      180,
+      180,
+      180
+    ]
+  },
+  "Archer_walk-rage_player": {
+    "frameWidth": 62,
+    "frameHeight": 62,
+    "frameCount": 2,
+    "delays": [
+      180,
+      180
+    ]
+  },
+  "Archer_walk_opponent": {
+    "frameWidth": 62,
+    "frameHeight": 62,
+    "frameCount": 4,
+    "delays": [
+      300,
+      300,
+      300,
+      300
+    ]
+  },
+  "Archer_walk_player": {
+    "frameWidth": 62,
+    "frameHeight": 62,
+    "frameCount": 2,
+    "delays": [
+      300,
+      300
+    ]
+  },
+  "Arrows_fight-rage_opponent": {
+    "frameWidth": 176,
+    "frameHeight": 176,
+    "frameCount": 4,
+    "delays": [
+      120,
+      120,
+      120,
+      120
+    ]
+  },
+  "Arrows_fight-rage_player": {
+    "frameWidth": 176,
+    "frameHeight": 176,
+    "frameCount": 4,
+    "delays": [
+      120,
+      120,
+      120,
+      120
+    ]
+  },
+  "Arrows_fight_opponent": {
+    "frameWidth": 176,
+    "frameHeight": 176,
+    "frameCount": 4,
+    "delays": [
+      200,
+      200,
+      200,
+      200
+    ]
+  },
+  "Arrows_fight_player": {
+    "frameWidth": 176,
+    "frameHeight": 176,
+    "frameCount": 4,
+    "delays": [
+      200,
+      200,
+      200,
+      200
+    ]
+  },
+  "BabyDragon_fight-rage_opponent": {
+    "frameWidth": 90,
+    "frameHeight": 134,
+    "frameCount": 7,
+    "delays": [
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90
+    ]
+  },
+  "BabyDragon_fight-rage_player": {
+    "frameWidth": 90,
+    "frameHeight": 134,
+    "frameCount": 7,
+    "delays": [
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90
+    ]
+  },
+  "BabyDragon_fight_opponent": {
+    "frameWidth": 90,
+    "frameHeight": 134,
+    "frameCount": 7,
+    "delays": [
+      150,
+      150,
+      150,
+      150,
+      150,
+      150,
+      150
+    ]
+  },
+  "BabyDragon_fight_player": {
+    "frameWidth": 90,
+    "frameHeight": 134,
+    "frameCount": 7,
+    "delays": [
+      150,
+      150,
+      150,
+      150,
+      150,
+      150,
+      150
+    ]
+  },
+  "BabyDragon_walk-rage_opponent": {
+    "frameWidth": 88,
+    "frameHeight": 80,
+    "frameCount": 4,
+    "delays": [
+      90,
+      90,
+      90,
+      90
+    ]
+  },
+  "BabyDragon_walk-rage_player": {
+    "frameWidth": 82,
+    "frameHeight": 75,
+    "frameCount": 3,
+    "delays": [
+      90,
+      90,
+      90
+    ]
+  },
+  "BabyDragon_walk_opponent": {
+    "frameWidth": 88,
+    "frameHeight": 80,
+    "frameCount": 4,
+    "delays": [
+      150,
+      150,
+      150,
+      150
+    ]
+  },
+  "BabyDragon_walk_player": {
+    "frameWidth": 82,
+    "frameHeight": 75,
+    "frameCount": 3,
+    "delays": [
+      150,
+      150,
+      150
+    ]
+  },
+  "Barbarian_fight-rage_opponent": {
+    "frameWidth": 120,
+    "frameHeight": 100,
+    "frameCount": 4,
+    "delays": [
+      120,
+      120,
+      120,
+      120
+    ]
+  },
+  "Barbarian_fight-rage_player": {
+    "frameWidth": 120,
+    "frameHeight": 100,
+    "frameCount": 4,
+    "delays": [
+      120,
+      120,
+      120,
+      120
+    ]
+  },
+  "Barbarian_fight_opponent": {
+    "frameWidth": 120,
+    "frameHeight": 100,
+    "frameCount": 4,
+    "delays": [
+      200,
+      200,
+      200,
+      200
+    ]
+  },
+  "Barbarian_fight_player": {
+    "frameWidth": 120,
+    "frameHeight": 100,
+    "frameCount": 4,
+    "delays": [
+      200,
+      200,
+      200,
+      200
+    ]
+  },
+  "Barbarian_walk-rage_opponent": {
+    "frameWidth": 115,
+    "frameHeight": 90,
+    "frameCount": 2,
+    "delays": [
+      210,
+      210
+    ]
+  },
+  "Barbarian_walk-rage_player": {
+    "frameWidth": 115,
+    "frameHeight": 90,
+    "frameCount": 7,
+    "delays": [
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90
+    ]
+  },
+  "Barbarian_walk_opponent": {
+    "frameWidth": 115,
+    "frameHeight": 90,
+    "frameCount": 2,
+    "delays": [
+      350,
+      350
+    ]
+  },
+  "Barbarian_walk_player": {
+    "frameWidth": 115,
+    "frameHeight": 90,
+    "frameCount": 7,
+    "delays": [
+      150,
+      150,
+      150,
+      150,
+      150,
+      150,
+      150
+    ]
+  },
+  "Cannon_fight-rage_opponent": {
+    "frameWidth": 66,
+    "frameHeight": 66,
+    "frameCount": 4,
+    "delays": [
+      600,
+      600,
+      600,
+      600
+    ]
+  },
+  "Cannon_fight-rage_player": {
+    "frameWidth": 66,
+    "frameHeight": 66,
+    "frameCount": 4,
+    "delays": [
+      600,
+      600,
+      600,
+      600
+    ]
+  },
+  "Cannon_fight_opponent": {
+    "frameWidth": 66,
+    "frameHeight": 66,
+    "frameCount": 4,
+    "delays": [
+      1000,
+      1000,
+      1000,
+      1000
+    ]
+  },
+  "Cannon_fight_player": {
+    "frameWidth": 66,
+    "frameHeight": 66,
+    "frameCount": 4,
+    "delays": [
+      1000,
+      1000,
+      1000,
+      1000
+    ]
+  },
+  "Cannon_walk-rage_opponent": {
+    "frameWidth": 66,
+    "frameHeight": 66,
+    "frameCount": 1,
+    "delays": [
+      0
+    ]
+  },
+  "Cannon_walk-rage_player": {
+    "frameWidth": 66,
+    "frameHeight": 66,
+    "frameCount": 1,
+    "delays": [
+      0
+    ]
+  },
+  "Cannon_walk_opponent": {
+    "frameWidth": 66,
+    "frameHeight": 66,
+    "frameCount": 1,
+    "delays": [
+      0
+    ]
+  },
+  "Cannon_walk_player": {
+    "frameWidth": 66,
+    "frameHeight": 66,
+    "frameCount": 1,
+    "delays": [
+      0
+    ]
+  },
+  "FireBall_fight-rage_opponent": {
+    "frameWidth": 154,
+    "frameHeight": 154,
+    "frameCount": 18,
+    "delays": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "FireBall_fight-rage_player": {
+    "frameWidth": 154,
+    "frameHeight": 154,
+    "frameCount": 18,
+    "delays": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "FireBall_fight_opponent": {
+    "frameWidth": 154,
+    "frameHeight": 154,
+    "frameCount": 18,
+    "delays": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "FireBall_fight_player": {
+    "frameWidth": 154,
+    "frameHeight": 154,
+    "frameCount": 18,
+    "delays": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "Giant_fight-rage_opponent": {
+    "frameWidth": 109,
+    "frameHeight": 109,
+    "frameCount": 3,
+    "delays": [
+      420,
+      420,
+      420
+    ]
+  },
+  "Giant_fight-rage_player": {
+    "frameWidth": 109,
+    "frameHeight": 109,
+    "frameCount": 3,
+    "delays": [
+      420,
+      420,
+      420
+    ]
+  },
+  "Giant_fight_opponent": {
+    "frameWidth": 109,
+    "frameHeight": 109,
+    "frameCount": 3,
+    "delays": [
+      700,
+      700,
+      700
+    ]
+  },
+  "Giant_fight_player": {
+    "frameWidth": 109,
+    "frameHeight": 109,
+    "frameCount": 3,
+    "delays": [
+      700,
+      700,
+      700
+    ]
+  },
+  "Giant_walk-rage_opponent": {
+    "frameWidth": 109,
+    "frameHeight": 109,
+    "frameCount": 2,
+    "delays": [
+      420,
+      420
+    ]
+  },
+  "Giant_walk-rage_player": {
+    "frameWidth": 109,
+    "frameHeight": 109,
+    "frameCount": 2,
+    "delays": [
+      420,
+      420
+    ]
+  },
+  "Giant_walk_opponent": {
+    "frameWidth": 109,
+    "frameHeight": 109,
+    "frameCount": 2,
+    "delays": [
+      700,
+      700
+    ]
+  },
+  "Giant_walk_player": {
+    "frameWidth": 109,
+    "frameHeight": 109,
+    "frameCount": 2,
+    "delays": [
+      700,
+      700
+    ]
+  },
+  "InfernoTower_fight-rage_opponent": {
+    "frameWidth": 264,
+    "frameHeight": 264,
+    "frameCount": 4,
+    "delays": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "InfernoTower_fight-rage_player": {
+    "frameWidth": 264,
+    "frameHeight": 264,
+    "frameCount": 4,
+    "delays": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "InfernoTower_fight_opponent": {
+    "frameWidth": 264,
+    "frameHeight": 264,
+    "frameCount": 4,
+    "delays": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "InfernoTower_fight_player": {
+    "frameWidth": 264,
+    "frameHeight": 264,
+    "frameCount": 4,
+    "delays": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "InfernoTower_walk-rage_opponent": {
+    "frameWidth": 78,
+    "frameHeight": 119,
+    "frameCount": 4,
+    "delays": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "InfernoTower_walk-rage_player": {
+    "frameWidth": 78,
+    "frameHeight": 119,
+    "frameCount": 4,
+    "delays": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "InfernoTower_walk_opponent": {
+    "frameWidth": 78,
+    "frameHeight": 119,
+    "frameCount": 4,
+    "delays": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "InfernoTower_walk_player": {
+    "frameWidth": 78,
+    "frameHeight": 119,
+    "frameCount": 4,
+    "delays": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "MiniPekka_fight-rage_opponent": {
+    "frameWidth": 66,
+    "frameHeight": 54,
+    "frameCount": 3,
+    "delays": [
+      90,
+      90,
+      90
+    ]
+  },
+  "MiniPekka_fight-rage_player": {
+    "frameWidth": 66,
+    "frameHeight": 54,
+    "frameCount": 3,
+    "delays": [
+      90,
+      90,
+      90
+    ]
+  },
+  "MiniPekka_fight_opponent": {
+    "frameWidth": 66,
+    "frameHeight": 54,
+    "frameCount": 3,
+    "delays": [
+      150,
+      150,
+      150
+    ]
+  },
+  "MiniPekka_fight_player": {
+    "frameWidth": 66,
+    "frameHeight": 54,
+    "frameCount": 3,
+    "delays": [
+      150,
+      150,
+      150
+    ]
+  },
+  "MiniPekka_walk-rage_opponent": {
+    "frameWidth": 62,
+    "frameHeight": 62,
+    "frameCount": 4,
+    "delays": [
+      90,
+      90,
+      90,
+      90
+    ]
+  },
+  "MiniPekka_walk-rage_player": {
+    "frameWidth": 62,
+    "frameHeight": 62,
+    "frameCount": 4,
+    "delays": [
+      90,
+      90,
+      90,
+      90
+    ]
+  },
+  "MiniPekka_walk_opponent": {
+    "frameWidth": 62,
+    "frameHeight": 62,
+    "frameCount": 4,
+    "delays": [
+      150,
+      150,
+      150,
+      150
+    ]
+  },
+  "MiniPekka_walk_player": {
+    "frameWidth": 62,
+    "frameHeight": 62,
+    "frameCount": 4,
+    "delays": [
+      150,
+      150,
+      150,
+      150
+    ]
+  },
+  "Rage_fight-rage_opponent": {
+    "frameWidth": 220,
+    "frameHeight": 220,
+    "frameCount": 8,
+    "delays": [
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100
+    ]
+  },
+  "Rage_fight-rage_player": {
+    "frameWidth": 220,
+    "frameHeight": 220,
+    "frameCount": 8,
+    "delays": [
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100
+    ]
+  },
+  "Rage_fight_opponent": {
+    "frameWidth": 220,
+    "frameHeight": 220,
+    "frameCount": 8,
+    "delays": [
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100
+    ]
+  },
+  "Rage_fight_player": {
+    "frameWidth": 220,
+    "frameHeight": 220,
+    "frameCount": 8,
+    "delays": [
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100
+    ]
+  },
+  "Shot_fight-rage_opponent": {
+    "frameWidth": 22,
+    "frameHeight": 66,
+    "frameCount": 7,
+    "delays": [
+      0,
+      0,
+      0,
+      60,
+      60,
+      60,
+      60
+    ]
+  },
+  "Shot_fight-rage_player": {
+    "frameWidth": 22,
+    "frameHeight": 66,
+    "frameCount": 7,
+    "delays": [
+      0,
+      0,
+      0,
+      60,
+      60,
+      60,
+      60
+    ]
+  },
+  "Shot_fight_opponent": {
+    "frameWidth": 22,
+    "frameHeight": 66,
+    "frameCount": 7,
+    "delays": [
+      0,
+      0,
+      0,
+      100,
+      100,
+      100,
+      100
+    ]
+  },
+  "Shot_fight_player": {
+    "frameWidth": 22,
+    "frameHeight": 66,
+    "frameCount": 7,
+    "delays": [
+      0,
+      0,
+      0,
+      100,
+      100,
+      100,
+      100
+    ]
+  },
+  "Tower_fight-rage_opponent": {
+    "frameWidth": 66,
+    "frameHeight": 176,
+    "frameCount": 14,
+    "delays": [
+      30,
+      30,
+      30,
+      300,
+      30,
+      30,
+      300,
+      30,
+      30,
+      30,
+      300,
+      30,
+      30,
+      300
+    ]
+  },
+  "Tower_fight-rage_player": {
+    "frameWidth": 66,
+    "frameHeight": 176,
+    "frameCount": 14,
+    "delays": [
+      30,
+      30,
+      30,
+      300,
+      30,
+      30,
+      300,
+      30,
+      30,
+      30,
+      300,
+      30,
+      30,
+      300
+    ]
+  },
+  "Tower_fight_opponent": {
+    "frameWidth": 66,
+    "frameHeight": 176,
+    "frameCount": 14,
+    "delays": [
+      50,
+      50,
+      50,
+      500,
+      50,
+      50,
+      500,
+      50,
+      50,
+      50,
+      500,
+      50,
+      50,
+      500
+    ]
+  },
+  "Tower_fight_player": {
+    "frameWidth": 66,
+    "frameHeight": 176,
+    "frameCount": 14,
+    "delays": [
+      50,
+      50,
+      50,
+      500,
+      50,
+      50,
+      500,
+      50,
+      50,
+      50,
+      500,
+      50,
+      50,
+      500
+    ]
+  },
+  "Valkyrie_fight-rage_opponent": {
+    "frameWidth": 132,
+    "frameHeight": 132,
+    "frameCount": 7,
+    "delays": [
+      90,
+      90,
+      90,
+      90,
+      30,
+      90,
+      90
+    ]
+  },
+  "Valkyrie_fight-rage_player": {
+    "frameWidth": 132,
+    "frameHeight": 132,
+    "frameCount": 6,
+    "delays": [
+      90,
+      90,
+      90,
+      90,
+      30,
+      90
+    ]
+  },
+  "Valkyrie_fight_opponent": {
+    "frameWidth": 132,
+    "frameHeight": 132,
+    "frameCount": 7,
+    "delays": [
+      150,
+      150,
+      150,
+      150,
+      50,
+      150,
+      150
+    ]
+  },
+  "Valkyrie_fight_player": {
+    "frameWidth": 132,
+    "frameHeight": 132,
+    "frameCount": 6,
+    "delays": [
+      150,
+      150,
+      150,
+      150,
+      50,
+      150
+    ]
+  },
+  "Valkyrie_walk-rage_opponent": {
+    "frameWidth": 46,
+    "frameHeight": 52,
+    "frameCount": 2,
+    "delays": [
+      180,
+      180
+    ]
+  },
+  "Valkyrie_walk-rage_player": {
+    "frameWidth": 46,
+    "frameHeight": 52,
+    "frameCount": 2,
+    "delays": [
+      180,
+      180
+    ]
+  },
+  "Valkyrie_walk_opponent": {
+    "frameWidth": 46,
+    "frameHeight": 52,
+    "frameCount": 2,
+    "delays": [
+      300,
+      300
+    ]
+  },
+  "Valkyrie_walk_player": {
+    "frameWidth": 46,
+    "frameHeight": 52,
+    "frameCount": 2,
+    "delays": [
+      300,
+      300
+    ]
+  },
+  "Wizard_fight-rage_opponent": {
+    "frameWidth": 43,
+    "frameHeight": 150,
+    "frameCount": 7,
+    "delays": [
+      60,
+      60,
+      60,
+      60,
+      0,
+      0,
+      60
+    ]
+  },
+  "Wizard_fight-rage_player": {
+    "frameWidth": 43,
+    "frameHeight": 150,
+    "frameCount": 9,
+    "delays": [
+      60,
+      60,
+      60,
+      0,
+      0,
+      0,
+      0,
+      0,
+      60
+    ]
+  },
+  "Wizard_fight_opponent": {
+    "frameWidth": 43,
+    "frameHeight": 150,
+    "frameCount": 7,
+    "delays": [
+      100,
+      100,
+      100,
+      100,
+      0,
+      0,
+      100
+    ]
+  },
+  "Wizard_fight_player": {
+    "frameWidth": 43,
+    "frameHeight": 150,
+    "frameCount": 9,
+    "delays": [
+      100,
+      100,
+      100,
+      0,
+      0,
+      0,
+      0,
+      0,
+      100
+    ]
+  },
+  "Wizard_walk-rage_opponent": {
+    "frameWidth": 43,
+    "frameHeight": 53,
+    "frameCount": 3,
+    "delays": [
+      120,
+      120,
+      120
+    ]
+  },
+  "Wizard_walk-rage_player": {
+    "frameWidth": 43,
+    "frameHeight": 53,
+    "frameCount": 4,
+    "delays": [
+      90,
+      90,
+      90,
+      90
+    ]
+  },
+  "Wizard_walk_opponent": {
+    "frameWidth": 43,
+    "frameHeight": 53,
+    "frameCount": 3,
+    "delays": [
+      200,
+      200,
+      200
+    ]
+  },
+  "Wizard_walk_player": {
+    "frameWidth": 43,
+    "frameHeight": 53,
+    "frameCount": 4,
+    "delays": [
+      150,
+      150,
+      150,
+      150
+    ]
+  }
+}

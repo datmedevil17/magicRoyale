@@ -16,7 +16,7 @@ import type { ArenaConfigInterface } from '../config/IArenaConfig';
 export class MainScene extends Scene {
     private gameManager!: GameManager;
     private selectedCardId: string | null = null;
-    private spriteMap: Map<string, Phaser.GameObjects.Sprite> = new Map();
+    private spriteMap: Map<string, Unit> = new Map();
     private towerSprites: Map<string, Tower> = new Map();
     private isTestMode: boolean = false;
     private mapType: string = 'classic';
@@ -32,12 +32,16 @@ export class MainScene extends Scene {
     private _onTestDeploy!: (data: { cardId: string, x: number, y: number, ownerId: 'player' | 'opponent' }) => void;
     private _onSyncUnits!: (data: any) => void;
     private gameEndEmitted: boolean = false;
+    private lastHudElixirStep: number = -1;
+    private lastHudCrownKey: string = '';
 
     constructor() { super('MainScene'); }
 
     init(data: { isTestMode?: boolean, mapType?: string }) {
         this.isTestMode = !!data.isTestMode;
         this.mapType = data.mapType || 'classic';
+        this.lastHudElixirStep = -1;
+        this.lastHudCrownKey = '';
 
         // Select the appropriate config
         switch (this.mapType) {
@@ -113,14 +117,14 @@ export class MainScene extends Scene {
         EventBus.on('server-tick', this._onServerTick);
 
         // ── EventBus: opponent deployed a troop ──────────────────────────────
-        this._onOpponentDeploy = (data: { cardId: string; x: number; y: number; ownerRole: string }) => {
+        this._onOpponentDeploy = (data: { cardId: string; x: number; y: number; ownerRole: string; entityId?: string }) => {
             if (!data.cardId) return;
 
             const mapWidth = this.arenaConfig.COLS * this.arenaConfig.TILE_SIZE;
             const mapHeight = this.arenaConfig.ROWS * this.arenaConfig.TILE_SIZE;
             const mirroredX = mapWidth - data.x;
             const mirroredY = mapHeight - data.y;
-            this.gameManager.deployCard(data.cardId, { x: mirroredX, y: mirroredY }, 'opponent');
+            this.gameManager.deployCard(data.cardId, { x: mirroredX, y: mirroredY }, 'opponent', false, data.entityId);
         };
         EventBus.on(EVENTS.NETWORK_OPPONENT_DEPLOY, this._onOpponentDeploy);
 
@@ -220,6 +224,11 @@ export class MainScene extends Scene {
             const [assetId, deckIdxStr] = (this.selectedCardId || "").split(':');
             const deckIdx = parseInt(deckIdxStr || '0');
 
+            if (!this.gameManager.isCardSupported(assetId)) {
+                showDebug(`${assetId} is not available yet`);
+                return;
+            }
+
             const entity = this.gameManager.deployCard(
                 assetId,
                 { x: worldPoint.x, y: worldPoint.y },
@@ -232,6 +241,7 @@ export class MainScene extends Scene {
                 EventBus.emit(EVENTS.DEPLOY_TROOP_BLOCKCHAIN, {
                     cardIdx: deckIdx,
                     cardId: assetId,
+                    entityId: entity.id,
                     x: Math.floor(worldPoint.x),
                     y: Math.floor(worldPoint.y),
                 });
@@ -247,14 +257,7 @@ export class MainScene extends Scene {
 
         if (!this.gameManager.gameEnded) {
             this.gameManager.update(_time, delta);
-            EventBus.emit(EVENTS.ELIXIR_UPDATE, this.gameManager.elixir);
-            EventBus.emit(EVENTS.CROWN_UPDATE, {
-                playerCrowns: this.gameManager.playerCrowns,
-                opponentCrowns: this.gameManager.opponentCrowns,
-                playerTowersDestroyed: this.gameManager.playerTowersDestroyed,
-                opponentTowersDestroyed: this.gameManager.opponentTowersDestroyed,
-                remainingTime: this.gameManager.getRemainingTime(),
-            });
+            this.emitHudUpdates();
         } else if (!this.gameEndEmitted) {
             this.gameEndEmitted = true;
             EventBus.emit(EVENTS.GAME_END, {
@@ -271,12 +274,12 @@ export class MainScene extends Scene {
         const activeIds = new Set(entities.map(e => e.id));
 
         for (const [id, sprite] of this.spriteMap) {
-            if (!activeIds.has(id)) { sprite.destroy(); this.spriteMap.delete(id); }
+            if (!activeIds.has(id)) { sprite.playDeath(); this.spriteMap.delete(id); }
         }
 
         for (const entity of entities) {
             if (entity instanceof Troop || entity instanceof Spell) {
-                let unit = this.spriteMap.get(entity.id) as Unit;
+                let unit = this.spriteMap.get(entity.id);
                 if (!unit) {
                     unit = new Unit(this, entity);
                     this.spriteMap.set(entity.id, unit);
@@ -286,11 +289,11 @@ export class MainScene extends Scene {
                 const towerSprite = this.towerSprites.get(entity.id);
                 if (towerSprite) {
                     towerSprite.setHealth(entity.health);
-                    towerSprite.setShooting(entity.isShooting, entity.ownerId, entity.isKing);
+                    towerSprite.showShot(entity.lastShot, entity.isKing);
 
                     if (entity.health <= 0 && !entity.destroyed) {
                         entity.destroyed = true;
-                        towerSprite.destroy();
+                        towerSprite.playDestroyed();
                         this.towerSprites.delete(entity.id);
 
                         const gameData = this.registry.get('data');
@@ -303,6 +306,37 @@ export class MainScene extends Scene {
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Push HUD state to React only when it visibly changes, instead of every frame:
+     * elixir in 0.1 steps, crowns on change, remaining time once per second.
+     */
+    private emitHudUpdates() {
+        const gm = this.gameManager;
+
+        const elixirStep = Math.floor(gm.elixir * 10);
+        if (elixirStep !== this.lastHudElixirStep) {
+            this.lastHudElixirStep = elixirStep;
+            EventBus.emit(EVENTS.ELIXIR_UPDATE, gm.elixir);
+        }
+
+        const remainingTime = gm.getRemainingTime();
+        const crownKey = [
+            gm.playerCrowns, gm.opponentCrowns,
+            gm.playerTowersDestroyed, gm.opponentTowersDestroyed,
+            Math.ceil(remainingTime / 1000),
+        ].join(',');
+        if (crownKey !== this.lastHudCrownKey) {
+            this.lastHudCrownKey = crownKey;
+            EventBus.emit(EVENTS.CROWN_UPDATE, {
+                playerCrowns: gm.playerCrowns,
+                opponentCrowns: gm.opponentCrowns,
+                playerTowersDestroyed: gm.playerTowersDestroyed,
+                opponentTowersDestroyed: gm.opponentTowersDestroyed,
+                remainingTime,
+            });
         }
     }
 

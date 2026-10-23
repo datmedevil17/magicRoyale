@@ -68,12 +68,12 @@ export const MapTestPage3 = () => {
                         playerCrowns={2}   // Hardcoded test values
                         opponentCrowns={1} // Hardcoded test values
                         timeLeft="3:00"
-                        playerKingImage={Map3Config.CROWN_IMAGES.PLAYER_KING}
-                        playerQueenImageLeft={Map3Config.CROWN_IMAGES.PLAYER_QUEEN_Left}
-                        playerQueenImageRight={Map3Config.CROWN_IMAGES.PLAYER_QUEEN_Right}
-                        opponentKingImage={Map3Config.CROWN_IMAGES.OPPONENT_KING}
-                        opponentQueenImageLeft={Map3Config.CROWN_IMAGES.OPPONENT_QUEEN_Left}
-                        opponentQueenImageRight={Map3Config.CROWN_IMAGES.OPPONENT_QUEEN_Right}
+                        playerKingImage={Map3Config.CROWN_IMAGES?.PLAYER_KING}
+                        playerQueenImageLeft={Map3Config.CROWN_IMAGES?.PLAYER_QUEEN_Left}
+                        playerQueenImageRight={Map3Config.CROWN_IMAGES?.PLAYER_QUEEN_Right}
+                        opponentKingImage={Map3Config.CROWN_IMAGES?.OPPONENT_KING}
+                        opponentQueenImageLeft={Map3Config.CROWN_IMAGES?.OPPONENT_QUEEN_Left}
+                        opponentQueenImageRight={Map3Config.CROWN_IMAGES?.OPPONENT_QUEEN_Right}
                     />
                 </div>
             </div>

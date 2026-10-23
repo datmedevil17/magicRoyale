@@ -11,7 +11,7 @@ import { ArenaConfig2v2 } from '../config/ArenaConfig2v2';
 
 export class MainScene2v2 extends Scene {
     private gameManager!: GameManager;
-    private spriteMap: Map<string, Phaser.GameObjects.Sprite> = new Map();
+    private spriteMap: Map<string, Unit> = new Map();
     private towerSprites: Map<string, Tower> = new Map();
     private isTestMode: boolean = false;
     private gameEndEmitted: boolean = false;
@@ -178,7 +178,7 @@ export class MainScene2v2 extends Scene {
         // Cleanup dead sprites
         for (const [id, sprite] of this.spriteMap) {
             if (!activeIds.has(id)) {
-                sprite.destroy();
+                sprite.playDeath();
                 this.spriteMap.delete(id);
             }
         }
@@ -192,11 +192,11 @@ export class MainScene2v2 extends Scene {
 
                     // MainScene style destruction
                     const isKing = entity.maxHealth > 3000;
-                    towerSprite.setShooting(entity.isShooting, entity.ownerId, isKing);
+                    towerSprite.showShot(entity.lastShot, isKing);
 
                     if (entity.health <= 0 && !entity.destroyed) {
                         entity.destroyed = true;
-                        towerSprite.destroy();
+                        towerSprite.playDestroyed();
                         this.towerSprites.delete(entity.id);
 
                         const gameData = this.registry.get('data');
@@ -209,7 +209,7 @@ export class MainScene2v2 extends Scene {
 
             // Troops
             if (entity instanceof Troop) {
-                let unit = this.spriteMap.get(entity.id) as Unit;
+                let unit = this.spriteMap.get(entity.id);
                 if (!unit) {
                     unit = new Unit(this, entity);
                     this.spriteMap.set(entity.id, unit);

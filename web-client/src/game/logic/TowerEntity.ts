@@ -1,16 +1,27 @@
 import { Entity, EntityType } from './Entity';
 
+// Projectile speed in px per ms; damage lands when the shot reaches its target
+const PROJECTILE_SPEED = 0.5;
+
+/** The most recent shot, for the renderer to draw a projectile. */
+export interface TowerShot {
+    time: number;
+    targetX: number;
+    targetY: number;
+    flightMs: number;
+}
+
 export class TowerEntity extends Entity {
     public range: number = 5.5; // Tiles
     public damage: number = 90;
     public hitSpeed: number = 0.8;
     public lastAttackTime: number = 0;
     public maxHealth: number;
-    public isShooting: boolean = false;
+    public lastShot: TowerShot | null = null;
     public destroyed: boolean = false;
     public isKing: boolean;
-    private shootingTimer: number = 0;
     private tileSize: number = 22;
+    private pendingHits: { target: Entity; time: number }[] = [];
 
     constructor(id: string, x: number, y: number, ownerId: string, isKing: boolean, radius: number, tileSize: number = 22) {
         super(id, x, y, ownerId, EntityType.TOWER);
@@ -22,9 +33,19 @@ export class TowerEntity extends Entity {
     }
 
     public update(time: number, _delta: number, targets: Entity[]): void {
-        // Reset shooting state if enough time passed (e.g. 500ms animation)
-        if (this.isShooting && time - this.shootingTimer > 500) {
-            this.isShooting = false;
+        // Destroyed towers stay in the entity list (for tiebreakers) but must not fire
+        if (this.health <= 0) {
+            this.pendingHits = [];
+            return;
+        }
+
+        // Land shots whose projectile has arrived
+        if (this.pendingHits.length > 0) {
+            this.pendingHits = this.pendingHits.filter(hit => {
+                if (time < hit.time) return true;
+                if (hit.target.health > 0) hit.target.takeDamage(this.damage);
+                return false;
+            });
         }
 
         // Cooldown check
@@ -36,7 +57,7 @@ export class TowerEntity extends Entity {
         const rangePx = this.range * this.tileSize;
 
         for (const target of targets) {
-            if (target.ownerId !== this.ownerId && target.health > 0) {
+            if (target.ownerId !== this.ownerId && target.health > 0 && target.type !== EntityType.SPELL) {
                 const dist = Math.hypot(target.x - this.x, target.y - this.y);
                 if (dist <= rangePx && dist < minDist) {
                     minDist = dist;
@@ -46,17 +67,10 @@ export class TowerEntity extends Entity {
         }
 
         if (closest) {
-            this.attack(closest);
-
-
             this.lastAttackTime = time;
-            this.isShooting = true;
-            this.shootingTimer = time;
+            const flightMs = minDist / PROJECTILE_SPEED;
+            this.pendingHits.push({ target: closest, time: time + flightMs });
+            this.lastShot = { time, targetX: closest.x, targetY: closest.y, flightMs };
         }
-    }
-
-    private attack(target: Entity) {
-        // Deal damage
-        target.takeDamage(this.damage);
     }
 }

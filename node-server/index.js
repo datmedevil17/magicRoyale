@@ -201,7 +201,7 @@ io.on('connection', (socket) => {
     });
 
     // ── Troop relay ───────────────────────────────────────────────────────────
-    // Shape: { cardIdx, cardId, x, y }
+    // Shape: { cardIdx, cardId, entityId, x, y }
     socket.on('deploy-troop', (data) => {
         const roomId = socket.roomId;
         if (!roomId) return;
@@ -209,6 +209,7 @@ io.on('connection', (socket) => {
         socket.to(roomId).emit('opponent-deploy-troop', {
             cardIdx: data.cardIdx,
             cardId: data.cardId,   // human-readable name e.g. 'Giant'
+            entityId: data.entityId, // shared id so host sync matches the same entity on both clients
             x: data.x,
             y: data.y,
             ownerRole: socket.role,

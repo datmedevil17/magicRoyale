@@ -14,7 +14,7 @@ import type { ArenaConfigInterface } from '../config/IArenaConfig';
 
 export class TesarScene extends Scene {
     private gameManager!: GameManager;
-    private spriteMap: Map<string, Phaser.GameObjects.Sprite> = new Map();
+    private spriteMap: Map<string, Unit> = new Map();
     private towerSprites: Map<string, Tower> = new Map();
     private currentConfig!: ArenaConfigInterface;
 
@@ -134,7 +134,7 @@ export class TesarScene extends Scene {
         // Cleanup dead sprites
         for (const [id, sprite] of this.spriteMap) {
             if (!activeIds.has(id)) {
-                sprite.destroy();
+                sprite.playDeath();
                 this.spriteMap.delete(id);
             }
         }
@@ -144,10 +144,10 @@ export class TesarScene extends Scene {
                 const towerSprite = this.towerSprites.get(entity.id);
                 if (towerSprite) {
                     towerSprite.setHealth(entity.health);
-                    towerSprite.setShooting(entity.isShooting, entity.ownerId, entity.isKing);
+                    towerSprite.showShot(entity.lastShot, entity.isKing);
                     if (entity.health <= 0 && !entity.destroyed) {
                         entity.destroyed = true;
-                        towerSprite.destroy();
+                        towerSprite.playDestroyed();
                         this.towerSprites.delete(entity.id);
                         this.gameManager.onTowerDestroyed(entity.isKing, entity.ownerId, true);
                     }
@@ -156,7 +156,7 @@ export class TesarScene extends Scene {
             }
 
             if (entity instanceof Troop) {
-                let unit = this.spriteMap.get(entity.id) as Unit;
+                let unit = this.spriteMap.get(entity.id);
                 if (!unit) {
                     unit = new Unit(this, entity);
                     this.spriteMap.set(entity.id, unit);

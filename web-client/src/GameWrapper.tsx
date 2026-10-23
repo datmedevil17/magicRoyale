@@ -156,6 +156,7 @@ export const GameWrapper = () => {
         const handleDeployBlockchain = async (data: {
             cardIdx: number;
             cardId: string;
+            entityId: string;
             x: number;
             y: number;
         }) => {
@@ -180,6 +181,7 @@ export const GameWrapper = () => {
             socketRef.current?.emit('deploy-troop', {
                 cardIdx: data.cardIdx,
                 cardId: data.cardId,
+                entityId: data.entityId,
                 x: data.x,
                 y: data.y,
             });
@@ -268,6 +270,8 @@ export const GameWrapper = () => {
 
             // Wait for user to manually click "End Game" on the victory screen
         };
+        EventBus.on(EVENTS.GAME_END, handleGameEnd);
+
         const handleElixirInsufficient = () => {
             toast.error('Not enough elixir!', { id: 'elixir-low' }); // id prevents toast spam
         };

@@ -22,17 +22,34 @@ export class MapBuilder {
     }
 
     private createGroundLayer() {
+        // Bake every tile into one texture: a single image to draw each frame
+        // instead of ROWS × COLS rectangle game objects
+        const tile = this.config.TILE_SIZE;
+        const customColors = new Map<string, number>();
+        for (const t of this.config.CUSTOM_TILES) {
+            const key = `${t.col},${t.row}`;
+            if (!customColors.has(key)) customColors.set(key, t.color); // first entry wins
+        }
+
+        const graphics = this.scene.make.graphics({}, false);
         for (let row = 0; row < this.config.ROWS; row++) {
             for (let col = 0; col < this.config.COLS; col++) {
-                const color = this.getTileColor(col, row);
-                this.drawTile(col, row, color);
+                graphics.fillStyle(this.getTileColor(col, row, customColors));
+                graphics.fillRect(col * tile, row * tile, tile, tile);
             }
         }
+
+        const textureKey = 'arena_ground';
+        if (this.scene.textures.exists(textureKey)) this.scene.textures.remove(textureKey);
+        graphics.generateTexture(textureKey, this.config.COLS * tile, this.config.ROWS * tile);
+        graphics.destroy();
+
+        this.scene.add.image(this.startX, this.startY, textureKey).setOrigin(0, 0);
     }
 
-    private getTileColor(col: number, row: number): number {
-        const custom = this.config.CUSTOM_TILES.find(t => t.col === col && t.row === row);
-        if (custom) return custom.color;
+    private getTileColor(col: number, row: number, customColors: Map<string, number>): number {
+        const custom = customColors.get(`${col},${row}`);
+        if (custom !== undefined) return custom;
 
         const riverStart = this.config.RIVER_ROW_START;
         const riverEnd = this.config.RIVER_ROW_END;
@@ -62,25 +79,13 @@ export class MapBuilder {
         });
     }
 
-    private drawTile(col: number, row: number, color: number) {
-        const x = this.startX + col * this.config.TILE_SIZE + this.config.TILE_SIZE / 2;
-        const y = this.startY + row * this.config.TILE_SIZE + this.config.TILE_SIZE / 2;
-
-        this.scene.add.rectangle(
-            x, y,
-            this.config.TILE_SIZE,
-            this.config.TILE_SIZE,
-            color
-        ).setStrokeStyle(0);
-    }
-
     private createRiverAndBridges() {
         [this.config.BRIDGE_LEFT_COL, this.config.BRIDGE_RIGHT_COL].forEach(col => {
             const bridgeX = this.startX + col * this.config.TILE_SIZE + this.config.TILE_SIZE / 2;
             const centerY = this.startY + ((this.config.RIVER_ROW_START + this.config.RIVER_ROW_END + 1) / 2) * this.config.TILE_SIZE;
 
             if (this.scene.textures.exists('bridge')) {
-                const bridge = this.scene.add.image(bridgeX, centerY, 'bridge');
+                this.scene.add.image(bridgeX, centerY, 'bridge');
                 // Standard bridge is horizontal in the sprite, but crosses a horizontal river vertically?
                 // In our case, the river is horizontal (middle rows), so bridge should be vertical.
                 // Original code had no rotation or set to 90.

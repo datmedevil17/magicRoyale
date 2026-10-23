@@ -1,5 +1,5 @@
 import { Troop, TroopState } from './Troop';
-import { Entity } from '../Entity';
+import { Entity, EntityType } from '../Entity';
 import type { ArenaLayout } from '../Interfaces';
 
 export class InfernoTower extends Troop {
@@ -7,49 +7,27 @@ export class InfernoTower extends Troop {
 
     constructor(id: string, x: number, y: number, ownerId: string) {
         super(id, x, y, ownerId, 'InfernoTower');
+        // Buildings are valid targets for building-only troops (e.g. Giant)
+        this.type = EntityType.BUILDING;
     }
 
-    update(_time: number, _delta: number, enemies: Entity[], _layout: ArenaLayout) {
-        // Inferno Tower is a building, it doesn't move. 
-        // It just searches for targets within range and attacks.
+    update(time: number, _delta: number, enemies: Entity[], _layout: ArenaLayout) {
+        // A building: never moves, only attacks enemies inside its attack range
+        this.resolveAttack(time);
 
-        if (this.target && (this.target.health <= 0 || !this.isInRange(this.target))) {
+        if (this.target && (!this.canTarget(this.target) || !this.isInRange(this.target))) {
             this.target = null;
-            this.state = TroopState.IDLE;
         }
-
         if (!this.target) {
-            let closest: Entity | null = null;
-            let minDistance = Infinity;
-
-            for (const enemy of enemies) {
-                if (enemy.ownerId === this.ownerId) continue;
-                if (!this.canSee(enemy)) continue;
-
-                const dist = this.getDistanceTo(enemy);
-                if (dist < minDistance) {
-                    minDistance = dist;
-                    closest = enemy;
-                }
-            }
-            this.target = closest;
+            this.target = this.findNearestTarget(enemies, e => this.isInRange(e));
         }
 
         if (this.target) {
             this.state = TroopState.FIGHT;
             this.faceTarget(this.target);
-            if (_time - this.lastAttackTime > this.hitSpeed) {
-                this.attack(this.target);
-                this.lastAttackTime = _time;
-            }
+            this.tryStartAttack(time, this.target);
         } else {
             this.state = TroopState.IDLE;
         }
-    }
-
-    private attack(target: Entity) {
-        // Inferno logic: damage increases over time? 
-        // For now, standard damage
-        target.takeDamage(this.damage);
     }
 }

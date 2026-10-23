@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { getTroopStats } from '../../config/TroopConfig';
+import { getAttackTiming } from '../../config/AnimationTiming';
 import { ArenaConfig } from '../../config/ArenaConfig';
 import { Entity, EntityType } from '../Entity';
 import type { ArenaLayout } from '../Interfaces';
@@ -23,13 +24,21 @@ export abstract class Troop extends Entity {
     public movementType: 'GROUND' | 'AIR' = 'GROUND';
     public pixelScale: number = 0.5;
     public stopRange: number = 0;
-    public impactFrame: number | undefined; // Added for sync logic
     public fightPixelScale: number | undefined;
+    public continuousAttack: boolean = false;
 
     public target: Entity | null = null;
     public lastAttackTime: number = 0;
+    /** Time the current attack started; the renderer restarts the attack animation when it changes. */
+    public attackStartTime: number = 0;
 
-    // Damage Scheduling
+    // Targeting behaviour (overridden per troop)
+    /** Keep the current target until it dies instead of re-picking the nearest each tick. */
+    protected stickyTarget: boolean = false;
+    /** Narrow which enemies may be targeted, e.g. buildings only. */
+    protected targetFilter?: (e: Entity) => boolean;
+
+    // Damage Scheduling: an attack starts, then damage lands at the animation's impact frame
     protected damageScheduled: boolean = false;
     protected damageTime: number = 0;
     protected pendingTarget: Entity | null = null;
@@ -57,13 +66,73 @@ export abstract class Troop extends Entity {
         this.movementType = stats.movementType;
         this.pixelScale = stats.pixelScale !== undefined ? stats.pixelScale : 0.5;
         this.stopRange = stats.stopRange;
-        this.impactFrame = stats.impactFrame;
         this.fightPixelScale = stats.fightPixelScale;
+        this.continuousAttack = !!stats.continuousAttack;
 
-        // Calculate impact delay
-        if (stats.impactFrame !== undefined && stats.animSpeed.fight > 0) {
-            this.impactDelay = (stats.impactFrame / stats.animSpeed.fight) * 1000;
+        // Damage lands where the attack animation hits (same timing the renderer plays).
+        // Continuous attackers loop their animation, so they hit immediately.
+        if (!this.continuousAttack) {
+            this.impactDelay = getAttackTiming(cardId, 'player', this.hitSpeed)?.impactAt ?? 0;
         }
+    }
+
+    /**
+     * Default behaviour: pick a target, walk to it, attack when in range, otherwise
+     * advance toward the enemy side. Buildings and special troops override this.
+     */
+    public update(time: number, delta: number, enemies: Entity[], layout: ArenaLayout): void {
+        this.resolveAttack(time);
+
+        if (this.target && !this.canTarget(this.target)) this.target = null;
+        if (!this.target || !this.stickyTarget) {
+            this.target = this.findNearestTarget(enemies, this.targetFilter);
+        }
+
+        // Committed to a swing: stay in place until the hit lands
+        if (this.damageScheduled) {
+            this.state = TroopState.FIGHT;
+            return;
+        }
+
+        if (!this.target) {
+            this.state = TroopState.WALK;
+            this.moveForward(delta, layout);
+        } else if (this.isInRange(this.target)) {
+            this.state = TroopState.FIGHT;
+            this.faceTarget(this.target);
+            this.tryStartAttack(time, this.target);
+        } else if (!this.shouldStopMoving(this.target)) {
+            this.state = TroopState.WALK;
+            this.moveTowards(this.target, delta, layout);
+        } else {
+            // Inside stop range but outside attack range (stopRange > range): wait
+            this.state = TroopState.IDLE;
+        }
+    }
+
+    /** Start an attack on `target` if off cooldown; damage lands `impactDelay` ms later. */
+    protected tryStartAttack(time: number, target: Entity) {
+        if (this.damageScheduled || time - this.lastAttackTime < this.hitSpeed) return;
+        this.lastAttackTime = time;
+        this.attackStartTime = time;
+        this.pendingTarget = target;
+        this.damageTime = time + this.impactDelay;
+        this.damageScheduled = true;
+    }
+
+    /** Apply a scheduled hit once its impact time is reached. Call at the start of every tick. */
+    protected resolveAttack(time: number) {
+        if (!this.damageScheduled || time < this.damageTime) return;
+        this.damageScheduled = false;
+        if (this.pendingTarget && this.pendingTarget.health > 0) {
+            this.dealDamage(this.pendingTarget);
+        }
+        this.pendingTarget = null;
+    }
+
+    /** Damage applied when an attack lands. Override for splash damage etc. */
+    protected dealDamage(target: Entity) {
+        target.takeDamage(this.damage);
     }
 
     public updateBase(layout: ArenaLayout) {
@@ -79,8 +148,6 @@ export abstract class Troop extends Entity {
         const rawStopRange = this.stopRange || this.range;
         this.currentStopRange = rawStopRange * scaleFactor;
     }
-
-    abstract update(time: number, delta: number, enemies: Entity[], layout: ArenaLayout): void;
 
     public getDistanceTo(target: Entity): number {
         return Phaser.Math.Distance.Between(this.x, this.y, target.x, target.y);
@@ -106,6 +173,33 @@ export abstract class Troop extends Entity {
         }
 
         return dist <= attackRange;
+    }
+
+    /** Whether this troop may attack `target` at all, ignoring distance. */
+    public canTarget(target: Entity): boolean {
+        if (target.ownerId === this.ownerId || target.health <= 0) return false;
+        if (target.type === EntityType.SPELL) return false;
+        if (this.attackType === 'GROUND' && target instanceof Troop && target.movementType === 'AIR') return false;
+        return true;
+    }
+
+    /** Nearest enemy within sight that this troop can attack, optionally narrowed by `filter`. */
+    public findNearestTarget(enemies: Entity[], filter?: (e: Entity) => boolean): Entity | null {
+        let nearest: Entity | null = null;
+        let minDist = Infinity;
+
+        for (const enemy of enemies) {
+            if (!this.canTarget(enemy)) continue;
+            if (filter && !filter(enemy)) continue;
+            if (!this.canSee(enemy)) continue;
+
+            const dist = this.getDistanceTo(enemy);
+            if (dist < minDist) {
+                minDist = dist;
+                nearest = enemy;
+            }
+        }
+        return nearest;
     }
 
     public canSee(target: Entity): boolean {

@@ -114,6 +114,13 @@ export const LoginPage: React.FC = () => {
                         </div>
                     )}
 
+                    {/* Keep wallet button visible so users can switch/disconnect wallets */}
+                    {connected && (
+                        <div className="wallet-button-container mt-6">
+                            <WalletMultiButton />
+                        </div>
+                    )}
+
                 </div>
             </div>
 

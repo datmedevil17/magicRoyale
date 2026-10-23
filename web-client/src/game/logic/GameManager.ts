@@ -15,6 +15,30 @@ import { TowerEntity } from './TowerEntity';
 import type { Point2D, ArenaLayout } from './Interfaces';
 import type { IUser } from './User';
 
+type EntityFactory = (id: string, x: number, y: number, ownerId: string) => Entity;
+
+// Card ID → entity id prefix + constructor. The prefix is embedded in entity ids so a
+// remote client can recreate the right entity from a host sync snapshot.
+const CARD_FACTORIES: Record<string, { prefix: string; create: EntityFactory }> = {
+    Archers: { prefix: 'archer', create: (id, x, y, o) => new Archer(id, x, y, o) },
+    Giant: { prefix: 'giant', create: (id, x, y, o) => new Giant(id, x, y, o) },
+    MiniPEKKA: { prefix: 'minipekka', create: (id, x, y, o) => new MiniPekka(id, x, y, o) },
+    Valkyrie: { prefix: 'valkyrie', create: (id, x, y, o) => new Valkyrie(id, x, y, o) },
+    Wizard: { prefix: 'wizard', create: (id, x, y, o) => new Wizard(id, x, y, o) },
+    BabyDragon: { prefix: 'babydragon', create: (id, x, y, o) => new BabyDragon(id, x, y, o) },
+    Barbarians: { prefix: 'barb', create: (id, x, y, o) => new Barbarian(id, x, y, o) },
+    InfernoTower: { prefix: 'inferno', create: (id, x, y, o) => new InfernoTower(id, x, y, o) },
+    Arrows: { prefix: 'arrows', create: (id, x, y, o) => new Spell(id, x, y, o, 'Arrows') },
+};
+
+const PREFIX_TO_CARD: Record<string, string> = Object.fromEntries(
+    Object.entries(CARD_FACTORIES).map(([cardId, f]) => [f.prefix, cardId])
+);
+
+// Snapshots arrive every 200ms; a troop missing from this many in a row is removed.
+// The grace period covers the round trip for a troop we deployed that the host hasn't seen yet.
+const SYNC_MISSES_BEFORE_REMOVAL = 5;
+
 export class GameManager {
     private entities: Entity[] = [];
     public elixir: number = 5;
@@ -42,6 +66,9 @@ export class GameManager {
     public isTestMode: boolean = false;
 
     public role: string = 'player1';
+
+    // Troop id → consecutive host snapshots it was missing from (non-host only)
+    private syncMisses: Map<string, number> = new Map();
 
     constructor(_user: IUser, isTestMode: boolean = false, role: string = 'player1') {
         // user param kept for compatibility/extension
@@ -138,11 +165,22 @@ export class GameManager {
         return this.entities;
     }
 
-    public deployCard(cardId: string, position: Point2D, ownerId: string, skipElixirCost: boolean = false): Entity | null {
-        let entity: Entity | null = null;
+    public isCardSupported(cardId: string): boolean {
+        return cardId in CARD_FACTORIES;
+    }
 
-        const stats = getTroopStats(cardId);
-        let cost = stats.elixirCost;
+    /**
+     * Spawn a card's entity. Pass `entityId` when mirroring a deploy from another
+     * client so both sides use the same id (required for host sync to match them up).
+     */
+    public deployCard(cardId: string, position: Point2D, ownerId: string, skipElixirCost: boolean = false, entityId?: string): Entity | null {
+        const factory = CARD_FACTORIES[cardId];
+        if (!factory) {
+            console.warn(`[GameManager] Card "${cardId}" has no implementation yet`);
+            return null;
+        }
+
+        const cost = getTroopStats(cardId).elixirCost;
 
         // Normalize ownerId
         ownerId = ownerId.toLowerCase();
@@ -152,39 +190,9 @@ export class GameManager {
             this.elixir -= cost;
         }
 
-        if (cardId === 'Archers') {
-            const id = `archer_${Date.now()}_${Math.random()}`;
-            entity = new Archer(id, position.x, position.y, ownerId);
-        } else if (cardId === 'Giant') {
-            const id = `giant_${Date.now()}_${Math.random()}`;
-            entity = new Giant(id, position.x, position.y, ownerId);
-        } else if (cardId === 'MiniPEKKA') {
-            const id = `minipekka_${Date.now()}_${Math.random()}`;
-            entity = new MiniPekka(id, position.x, position.y, ownerId);
-        } else if (cardId === 'Valkyrie') {
-            const id = `valkyrie_${Date.now()}_${Math.random()}`;
-            entity = new Valkyrie(id, position.x, position.y, ownerId);
-        } else if (cardId === 'Wizard') {
-            const id = `wizard_${Date.now()}_${Math.random()}`;
-            entity = new Wizard(id, position.x, position.y, ownerId);
-        } else if (cardId === 'BabyDragon') {
-            const id = `babydragon_${Date.now()}_${Math.random()}`;
-            entity = new BabyDragon(id, position.x, position.y, ownerId);
-        } else if (cardId === 'Barbarians') {
-            const id = `barb_${Date.now()}_${Math.random()}`;
-            entity = new Barbarian(id, position.x, position.y, ownerId);
-        } else if (cardId === 'InfernoTower') {
-            const id = `inferno_${Date.now()}_${Math.random()}`;
-            entity = new InfernoTower(id, position.x, position.y, ownerId);
-        } else if (cardId === 'Arrows') {
-            const id = `arrows_${Date.now()}_${Math.random()}`;
-            entity = new Spell(id, position.x, position.y, ownerId, 'Arrows');
-        }
-
-        if (entity) {
-            this.addEntity(entity);
-        }
-
+        const id = entityId ?? `${factory.prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+        const entity = factory.create(id, position.x, position.y, ownerId);
+        this.addEntity(entity);
         return entity;
     }
 
@@ -286,16 +294,9 @@ export class GameManager {
                 }
 
                 if (!entity && !isLocalHost) {
-                    const typePrefix = snap.id.split('_')[0];
-                    const cardIdMap: Record<string, string> = {
-                        'giant': 'Giant', 'archer': 'Archers', 'minipekka': 'MiniPEKKA',
-                        'valkyrie': 'Valkyrie', 'babydragon': 'BabyDragon', 'wizard': 'Wizard',
-                        'barb': 'Barbarians', 'inferno': 'InfernoTower'
-                    };
-                    const cardId = cardIdMap[typePrefix];
+                    const cardId = PREFIX_TO_CARD[snap.id.split('_')[0]];
                     if (cardId) {
-                        entity = this.deployCard(cardId, { x: finalX, y: finalY }, finalOwner, true) as Entity;
-                        if (entity) entity.id = snap.id;
+                        entity = this.deployCard(cardId, { x: finalX, y: finalY }, finalOwner, true, snap.id) ?? undefined;
                     }
                 }
 
@@ -313,6 +314,24 @@ export class GameManager {
                     }
                 }
             });
+
+            if (!isLocalHost) {
+                // The host is authoritative: drop troops it no longer has (died or never spawned there)
+                const snapIds = new Set<string>(snaps.map((s: any) => s.id));
+                this.entities = this.entities.filter(e => {
+                    if (!(e instanceof Troop) || snapIds.has(e.id)) {
+                        this.syncMisses.delete(e.id);
+                        return true;
+                    }
+                    const misses = (this.syncMisses.get(e.id) ?? 0) + 1;
+                    if (misses >= SYNC_MISSES_BEFORE_REMOVAL) {
+                        this.syncMisses.delete(e.id);
+                        return false;
+                    }
+                    this.syncMisses.set(e.id, misses);
+                    return true;
+                });
+            }
         }
 
         if (isLocalHost) {
