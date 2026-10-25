@@ -10,6 +10,8 @@ import { Valkyrie } from './troops/Valkyrie';
 import { Wizard } from './troops/Wizard';
 import { BabyDragon } from './troops/BabyDragon';
 import { InfernoTower } from './troops/InfernoTower';
+import { Cannon } from './troops/Cannon';
+import { Building } from './troops/Building';
 import { Spell } from './spells/Spell';
 import { TowerEntity } from './TowerEntity';
 import type { Point2D, ArenaLayout } from './Interfaces';
@@ -28,12 +30,20 @@ const CARD_FACTORIES: Record<string, { prefix: string; create: EntityFactory }> 
     BabyDragon: { prefix: 'babydragon', create: (id, x, y, o) => new BabyDragon(id, x, y, o) },
     Barbarians: { prefix: 'barb', create: (id, x, y, o) => new Barbarian(id, x, y, o) },
     InfernoTower: { prefix: 'inferno', create: (id, x, y, o) => new InfernoTower(id, x, y, o) },
+    Cannon: { prefix: 'cannon', create: (id, x, y, o) => new Cannon(id, x, y, o) },
     Arrows: { prefix: 'arrows', create: (id, x, y, o) => new Spell(id, x, y, o, 'Arrows') },
+    Fireball: { prefix: 'fireball', create: (id, x, y, o) => new Spell(id, x, y, o, 'Fireball') },
+    Rage: { prefix: 'rage', create: (id, x, y, o) => new Spell(id, x, y, o, 'Rage') },
 };
 
 const PREFIX_TO_CARD: Record<string, string> = Object.fromEntries(
     Object.entries(CARD_FACTORIES).map(([cardId, f]) => [f.prefix, cardId])
 );
+
+// Overlapping units are pushed apart by this fraction of the overlap per logic tick
+const SEPARATION_STRENGTH = 0.5;
+// Collision radius for units configured with radius 0
+const DEFAULT_UNIT_RADIUS = 14;
 
 // Snapshots arrive every 200ms; a troop missing from this many in a row is removed.
 // The grace period covers the round trip for a troop we deployed that the host hasn't seen yet.
@@ -146,7 +156,7 @@ export class GameManager {
         const aliveEntities = this.entities.filter(e => e.health > 0);
         for (const entity of this.entities) {
             if (entity instanceof Troop) {
-                entity.updateBase(this.layout);
+                entity.prepareTick(this.layout, time, aliveEntities);
                 entity.update(time, tickDelta, aliveEntities, this.layout);
             } else if (entity instanceof Spell) {
                 entity.update(time, tickDelta, aliveEntities, this.layout);
@@ -159,6 +169,60 @@ export class GameManager {
         this.entities = this.entities.filter(e =>
             e instanceof TowerEntity || e.health > 0
         );
+
+        this.separateUnits();
+    }
+
+    /**
+     * Push overlapping units apart so they don't stack on one spot. Units collide with
+     * others on the same layer (ground/air); ground units are also pushed out of
+     * towers and buildings, which never move.
+     */
+    private separateUnits() {
+        const radiusOf = (e: Entity) => e.radius || DEFAULT_UNIT_RADIUS;
+        const movers: Troop[] = [];
+        const obstacles: Entity[] = [];
+        for (const e of this.entities) {
+            if (e.health <= 0) continue;
+            if (e instanceof Building || e instanceof TowerEntity) obstacles.push(e);
+            else if (e instanceof Troop) movers.push(e);
+        }
+
+        for (let i = 0; i < movers.length; i++) {
+            const a = movers[i];
+
+            for (let j = i + 1; j < movers.length; j++) {
+                const b = movers[j];
+                if (a.movementType !== b.movementType) continue;
+                const dx = b.x - a.x;
+                const dy = b.y - a.y;
+                const minDist = radiusOf(a) + radiusOf(b);
+                const distSq = dx * dx + dy * dy;
+                if (distSq >= minDist * minDist) continue;
+
+                const dist = Math.sqrt(distSq);
+                // Exactly overlapping (e.g. same deploy point): pick a direction from the ids
+                const nx = dist > 0.001 ? dx / dist : (a.id < b.id ? 1 : -1);
+                const ny = dist > 0.001 ? dy / dist : 0;
+                const push = (minDist - dist) * SEPARATION_STRENGTH / 2;
+                a.x -= nx * push; a.y -= ny * push;
+                b.x += nx * push; b.y += ny * push;
+            }
+
+            if (a.movementType !== 'GROUND') continue;
+            for (const o of obstacles) {
+                const dx = a.x - o.x;
+                const dy = a.y - o.y;
+                const minDist = radiusOf(a) + o.radius;
+                const distSq = dx * dx + dy * dy;
+                if (distSq >= minDist * minDist || distSq < 0.000001) continue;
+
+                const dist = Math.sqrt(distSq);
+                const push = (minDist - dist) * SEPARATION_STRENGTH;
+                a.x += dx / dist * push;
+                a.y += dy / dist * push;
+            }
+        }
     }
 
     public getEntities(): Entity[] {

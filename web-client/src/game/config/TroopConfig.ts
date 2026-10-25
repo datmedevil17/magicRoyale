@@ -34,6 +34,12 @@ export interface TroopStats {
     elixirCost: number;
     radius: number;      // collision radius
     spawnCount: number;  // How many units spawn
+
+    splashRadius?: number;       // Area damage radius in pixels (hits every enemy inside)
+    splashAroundSelf?: boolean;  // Splash centred on the attacker (Valkyrie) instead of the target
+    lifetime?: number;           // Buildings: ms until fully decayed (loses health steadily)
+    spellEffect?: 'damage' | 'rage'; // Marks the card as a spell; `range` is its radius
+    spellDuration?: number;      // Lingering spells: ms the zone stays active
 }
 
 export const TROOP_STATS: Record<string, TroopStats> = {
@@ -112,7 +118,9 @@ export const TROOP_STATS: Record<string, TroopStats> = {
         radius: 20,
         spawnCount: 1,
         pixelScale: 0.7, // Default
-        continuousAttack: true // Loop without pause
+        continuousAttack: true, // Loop without pause
+        splashRadius: 45,       // Spin hits everything around her
+        splashAroundSelf: true
     },
     'Wizard': {
         health: 755,
@@ -129,6 +137,7 @@ export const TROOP_STATS: Record<string, TroopStats> = {
         spawnCount: 1,
         pixelScale: 0.7, // Normal walk size
         // stopRange: 25    // Walk slightly closer than attack range
+        splashRadius: 30
     },
     'BabyDragon': {
         health: 1152,
@@ -143,23 +152,41 @@ export const TROOP_STATS: Record<string, TroopStats> = {
         elixirCost: 4,
         radius: 0,
         spawnCount: 1,
-        pixelScale: 0.7
+        pixelScale: 0.7,
+        splashRadius: 30
     },
     'InfernoTower': {
         health: 1400,
         animSpeed: { walk: 1, fight: 5 },
         movePerFrame: 0, // Building
-        attackFrames: 5,
+        attackFrames: 2, // 400ms ticks
         range: 150,
-        sightRange: 300,
-        damage: 50, // Ramping damage usually, but base 50
+        sightRange: 150, // Buildings only lock on inside attack range
+        damage: 20, // Per tick at stage 1; ramps ×3 then ×8 the longer it holds a target
         attackType: TargetType.BOTH,
         movementType: TroopType.GROUND,
         elixirCost: 5,
         radius: 30,
         spawnCount: 1,
         pixelScale: 0.8,
-        continuousAttack: true // Beam loops while locked on
+        continuousAttack: true, // Beam loops while locked on
+        lifetime: 40000
+    },
+    'Cannon': {
+        health: 900,
+        animSpeed: { walk: 1, fight: 1 },
+        movePerFrame: 0, // Building
+        attackFrames: 0.9, // 900ms hitSpeed
+        range: 120,
+        sightRange: 120,
+        damage: 160,
+        attackType: TargetType.GROUND,
+        movementType: TroopType.GROUND,
+        elixirCost: 3,
+        radius: 25,
+        spawnCount: 1,
+        pixelScale: 0.8,
+        lifetime: 30000
     },
     'Arrows': {
         health: 1,
@@ -167,16 +194,49 @@ export const TROOP_STATS: Record<string, TroopStats> = {
         movePerFrame: 0,
         attackFrames: 10, // Total frames in Arrows_fight_player.gif
         range: 100, // AOE radius
+        spellEffect: 'damage',
         sightRange: 0,
         damage: 300,
         attackType: TargetType.BOTH,
         movementType: TroopType.AIR,
         elixirCost: 3,
         radius: 0,
-        spawnCount: 1,
-        pixelScale: 1.5 // Visual size for the AOE
+        spawnCount: 1
+    },
+    'Fireball': {
+        health: 1,
+        animSpeed: { walk: 1, fight: 10 },
+        movePerFrame: 0,
+        attackFrames: 10,
+        range: 55, // AOE radius (~2.5 tiles): smaller than Arrows, much harder hitting
+        spellEffect: 'damage',
+        sightRange: 0,
+        damage: 570,
+        attackType: TargetType.BOTH,
+        movementType: TroopType.AIR,
+        elixirCost: 4,
+        radius: 0,
+        spawnCount: 1
+    },
+    'Rage': {
+        health: 1,
+        animSpeed: { walk: 1, fight: 10 },
+        movePerFrame: 0,
+        attackFrames: 10,
+        range: 110, // Zone radius (5 tiles)
+        spellEffect: 'rage',
+        spellDuration: 6000,
+        sightRange: 0,
+        damage: 0,
+        attackType: TargetType.BOTH,
+        movementType: TroopType.AIR,
+        elixirCost: 2,
+        radius: 0,
+        spawnCount: 1
     }
 };
+
+export const isSpellCard = (cardId: string) => !!TROOP_STATS[cardId]?.spellEffect;
 
 // Return a derived object that includes computed speed/hitSpeed
 export interface DerivedTroopStats extends TroopStats {

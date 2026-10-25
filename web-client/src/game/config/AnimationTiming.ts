@@ -13,7 +13,10 @@ export const CONFIG_TO_SPRITE: Record<string, string> = {
     'BabyDragon': 'BabyDragon',
     'Barbarians': 'Barbarian',
     'InfernoTower': 'InfernoTower',
+    'Cannon': 'Cannon',
     'Arrows': 'Arrows',
+    'Fireball': 'FireBall',
+    'Rage': 'Rage',
 };
 
 // GIF frames with a 0ms delay are shown briefly instead of skipped
@@ -24,11 +27,17 @@ const SKIP_FRAMES: Partial<Record<SpriteName, number[]>> = {
     BabyDragon_fight_player: [0], // first frame is a differently coloured dragon
 };
 
+// Sheet frame where the hit lands, when it isn't the last frame of the cycle
+const IMPACT_FRAMES: Partial<Record<SpriteName, number>> = {
+    FireBall_fight_player: 4, // explosion; later frames are lingering smoke
+    FireBall_fight_opponent: 4,
+};
+
 export interface AnimTiming {
     frames: number[];    // sheet frame indices, in play order
     durations: number[]; // ms per frame
     total: number;       // ms for one cycle
-    impactAt: number;    // ms into the cycle where the hit lands (start of the last frame)
+    impactAt: number;    // ms into the cycle where the hit lands (default: start of the last frame)
 }
 
 export const spriteFor = (configName: string, action: 'walk' | 'fight', owner: 'player' | 'opponent') =>
@@ -74,7 +83,11 @@ export function getAnimTiming(sprite: SpriteName, options: { singleCycle?: boole
         total = options.fitTo;
     }
 
-    const impactAt = total - durations[durations.length - 1];
+    const impactFrame = IMPACT_FRAMES[sprite];
+    const impactIndex = impactFrame !== undefined ? frames.indexOf(impactFrame) : -1;
+    const impactAt = impactIndex >= 0
+        ? durations.slice(0, impactIndex).reduce((a, b) => a + b, 0)
+        : total - durations[durations.length - 1];
     return { frames, durations, total, impactAt };
 }
 

@@ -13,6 +13,16 @@ export const TroopState = {
 
 export type TroopState = typeof TroopState[keyof typeof TroopState];
 
+/** Rage spell: movement and attack speed multiplier for troops inside the zone. */
+export const RAGE_BOOST = 1.35;
+
+/** Where and how long the current attack takes to land (for renderers drawing projectiles). */
+export interface AttackInfo {
+    targetX: number;
+    targetY: number;
+    impactDelay: number;
+}
+
 export abstract class Troop extends Entity {
     public state: TroopState = TroopState.WALK;
     public abstract name: string; // e.g. 'Archer'
@@ -31,12 +41,25 @@ export abstract class Troop extends Entity {
     public lastAttackTime: number = 0;
     /** Time the current attack started; the renderer restarts the attack animation when it changes. */
     public attackStartTime: number = 0;
+    public lastAttack: AttackInfo | null = null;
+    /** Raged while the logic clock is before this time (refreshed by Rage zones every tick). */
+    public rageUntil: number = 0;
+
+    protected splashRadius: number = 0;
+    protected splashAroundSelf: boolean = false;
+
+    // Per-tick context, set by prepareTick() before update()
+    protected now: number = 0;
+    protected world: Entity[] = [];
+    protected scaleFactor: number = 1;
 
     // Targeting behaviour (overridden per troop)
     /** Keep the current target until it dies instead of re-picking the nearest each tick. */
     protected stickyTarget: boolean = false;
     /** Narrow which enemies may be targeted, e.g. buildings only. */
     protected targetFilter?: (e: Entity) => boolean;
+    /** px per ms. When set, damage lands after the projectile's flight instead of at the animation impact. */
+    protected projectileSpeed?: number;
 
     // Damage Scheduling: an attack starts, then damage lands at the animation's impact frame
     protected damageScheduled: boolean = false;
@@ -68,6 +91,8 @@ export abstract class Troop extends Entity {
         this.stopRange = stats.stopRange;
         this.fightPixelScale = stats.fightPixelScale;
         this.continuousAttack = !!stats.continuousAttack;
+        this.splashRadius = stats.splashRadius ?? 0;
+        this.splashAroundSelf = !!stats.splashAroundSelf;
 
         // Damage lands where the attack animation hits (same timing the renderer plays).
         // Continuous attackers loop their animation, so they hit immediately.
@@ -110,13 +135,24 @@ export abstract class Troop extends Entity {
         }
     }
 
+    public get isRaged(): boolean {
+        return this.now < this.rageUntil;
+    }
+
+    protected get rageFactor(): number {
+        return this.isRaged ? RAGE_BOOST : 1;
+    }
+
     /** Start an attack on `target` if off cooldown; damage lands `impactDelay` ms later. */
     protected tryStartAttack(time: number, target: Entity) {
-        if (this.damageScheduled || time - this.lastAttackTime < this.hitSpeed) return;
+        if (this.damageScheduled || time - this.lastAttackTime < this.hitSpeed / this.rageFactor) return;
+        const baseDelay = this.projectileSpeed ? this.getDistanceTo(target) / this.projectileSpeed : this.impactDelay;
+        const impactDelay = baseDelay / this.rageFactor;
         this.lastAttackTime = time;
         this.attackStartTime = time;
+        this.lastAttack = { targetX: target.x, targetY: target.y, impactDelay };
         this.pendingTarget = target;
-        this.damageTime = time + this.impactDelay;
+        this.damageTime = time + impactDelay;
         this.damageScheduled = true;
     }
 
@@ -130,14 +166,32 @@ export abstract class Troop extends Entity {
         this.pendingTarget = null;
     }
 
-    /** Damage applied when an attack lands. Override for splash damage etc. */
-    protected dealDamage(target: Entity) {
-        target.takeDamage(this.damage);
+    /** Damage applied when an attack lands: the target alone, or every enemy in the splash area. */
+    protected dealDamage(target: Entity, amount: number = this.damage) {
+        if (!this.splashRadius) {
+            target.takeDamage(amount);
+            return;
+        }
+
+        const center = this.splashAroundSelf ? this : target;
+        const radius = this.splashRadius * this.scaleFactor;
+        for (const e of this.world) {
+            if (e !== target && !this.canTarget(e)) continue;
+            const dist = Phaser.Math.Distance.Between(center.x, center.y, e.x, e.y);
+            if (e === target || dist <= radius + e.radius) {
+                e.takeDamage(amount);
+            }
+        }
     }
 
-    public updateBase(layout: ArenaLayout) {
+    /** Per-tick context: logic clock, every live entity (for splash), and map scale. Call before update(). */
+    public prepareTick(layout: ArenaLayout, time: number, world: Entity[]) {
+        this.now = time;
+        this.world = world;
+
         // Use ArenaConfig.TILE_SIZE as reference
         const scaleFactor = layout.tileSize / ArenaConfig.TILE_SIZE;
+        this.scaleFactor = scaleFactor;
         this.currentRange = this.range * scaleFactor;
 
         // Sight Range: Scale it similarly
@@ -292,7 +346,7 @@ export abstract class Troop extends Entity {
         // Scale speed to match map size
         // If map is 2x larger (tileSize 44 vs 22), we need 2x speed to cover same relative distance in same time.
         const scaleFactor = layout.tileSize / ArenaConfig.TILE_SIZE;
-        const adjustedSpeed = this.speed * scaleFactor;
+        const adjustedSpeed = this.speed * scaleFactor * this.rageFactor;
 
         const velocityX = Math.cos(angle) * adjustedSpeed * (delta / 1000); // Scale by delta (ms)
         const velocityY = Math.sin(angle) * adjustedSpeed * (delta / 1000);

@@ -1,33 +1,42 @@
-import { Troop, TroopState } from './Troop';
-import { Entity, EntityType } from '../Entity';
-import type { ArenaLayout } from '../Interfaces';
+import { Building } from './Building';
+import { Entity } from '../Entity';
 
-export class InfernoTower extends Troop {
+// Damage multiplier by how long the beam has held the same target
+const RAMP = [
+    { after: 0, multiplier: 1 },
+    { after: 2000, multiplier: 3 },
+    { after: 4000, multiplier: 8 },
+];
+
+export class InfernoTower extends Building {
     public name = 'InfernoTower';
+    private lockedTarget: Entity | null = null;
+    private lockedSince: number = 0;
 
     constructor(id: string, x: number, y: number, ownerId: string) {
         super(id, x, y, ownerId, 'InfernoTower');
-        // Buildings are valid targets for building-only troops (e.g. Giant)
-        this.type = EntityType.BUILDING;
     }
 
-    update(time: number, _delta: number, enemies: Entity[], _layout: ArenaLayout) {
-        // A building: never moves, only attacks enemies inside its attack range
-        this.resolveAttack(time);
+    update(time: number, delta: number, enemies: Entity[]) {
+        super.update(time, delta, enemies);
 
-        if (this.target && (!this.canTarget(this.target) || !this.isInRange(this.target))) {
-            this.target = null;
+        // Switching targets resets the ramp
+        if (this.target !== this.lockedTarget) {
+            this.lockedTarget = this.target;
+            this.lockedSince = time;
         }
-        if (!this.target) {
-            this.target = this.findNearestTarget(enemies, e => this.isInRange(e));
-        }
+    }
 
-        if (this.target) {
-            this.state = TroopState.FIGHT;
-            this.faceTarget(this.target);
-            this.tryStartAttack(time, this.target);
-        } else {
-            this.state = TroopState.IDLE;
-        }
+    /** Current ramp stage (0-based), for the renderer. */
+    public get rampStage(): number {
+        if (!this.lockedTarget) return 0;
+        const held = this.now - this.lockedSince;
+        let stage = 0;
+        RAMP.forEach((s, i) => { if (held >= s.after) stage = i; });
+        return stage;
+    }
+
+    protected dealDamage(target: Entity) {
+        super.dealDamage(target, this.damage * RAMP[this.rampStage].multiplier);
     }
 }

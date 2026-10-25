@@ -70,15 +70,18 @@ export const TestArena: React.FC = () => {
         };
     }, [selectedCardId, spawnOwner]);
 
+    // Show the deploy-zone overlay for the selected card (it shows the blue side's zones)
+    useEffect(() => {
+        EventBus.emit(EVENTS.CARD_SELECTED, spawnOwner === 'player' ? selectedCardId : null);
+    }, [selectedCardId, spawnOwner]);
+
     // Drag and Drop Handlers
     const onDragStart = (e: React.DragEvent, cardId: string) => {
         e.dataTransfer.setData("cardId", cardId);
         setSelectedCardId(cardId);
     };
 
-    const testCards = Object.values(CARD_DATA).filter(card =>
-        ['Giant', 'Valkyrie', 'MiniPEKKA', 'BabyDragon', 'Archers', 'Arrows'].includes(card.id)
-    );
+    const testCards = Object.values(CARD_DATA);
 
     return (
         <div className="w-screen h-screen bg-[#111] flex overflow-hidden font-sans">

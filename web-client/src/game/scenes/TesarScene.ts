@@ -7,9 +7,7 @@ import { MapBuilder } from './MapBuilder';
 import { Tower } from '../entities/Tower';
 import { TowerEntity } from '../logic/TowerEntity';
 import { Unit } from '../entities/Unit';
-import { ArenaConfig } from '../config/ArenaConfig';
-import { Map2Config } from '../config/Map2Config';
-import { Map3Config } from '../config/Map3Config';
+import { getArenaConfig } from '../config/Maps';
 import type { ArenaConfigInterface } from '../config/IArenaConfig';
 
 export class TesarScene extends Scene {
@@ -38,13 +36,7 @@ export class TesarScene extends Scene {
         const registryData = this.registry.get('data') || {};
         const mapType = data?.mapType || registryData.mapType || 'classic';
 
-        if (mapType === 'solana') {
-            this.currentConfig = Map2Config;
-        } else if (mapType === 'magicblock') {
-            this.currentConfig = Map3Config;
-        } else {
-            this.currentConfig = ArenaConfig;
-        }
+        this.currentConfig = getArenaConfig(mapType);
     }
 
     preload() {

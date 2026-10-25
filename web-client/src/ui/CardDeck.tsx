@@ -40,8 +40,9 @@ export const CardDeck: React.FC<CardDeckProps> = ({ cards }) => {
         return [...initialHand, ...remainingDeck];
     });
 
-    // Track next card position in deck pool (always the card after the initial hand)
-    const [nextCardIndex, setNextCardIndex] = useState(4);
+    // Cards waiting to be drawn, in order. A played card goes to the back (Clash Royale cycle),
+    // so the hand never holds the same deck slot twice.
+    const [queue, setQueue] = useState<CardItem[]>(() => deck.slice(4));
 
     // visible card slots (indices 0-3 from pool)
     const [cardSlots, setCardSlots] = useState<CardItem[]>(() => {
@@ -57,19 +58,17 @@ export const CardDeck: React.FC<CardDeckProps> = ({ cards }) => {
             // Find which slot has the played card by name:deckIndex or id:deckIndex
             const slotIndex = cardSlots.findIndex(card => `${card.id}:${card.deckIndex}` === slotId);
 
-            if (slotIndex !== -1) {
+            if (slotIndex !== -1 && queue.length > 0) {
+                const [nextCard, ...rest] = queue;
                 const newSlots = [...cardSlots];
-
-                // Safety check for nextCardIndex
-                const safeInx = nextCardIndex % deck.length;
-                newSlots[slotIndex] = deck[safeInx];
+                newSlots[slotIndex] = nextCard;
                 setCardSlots(newSlots);
+                setQueue([...rest, cardSlots[slotIndex]]);
 
-                // Advance the cycle
-                const newNextIndex = (safeInx + 1) % deck.length;
-                setNextCardIndex(newNextIndex);
-
+                // The played card left the hand: clear the selection in the game too,
+                // otherwise the next tap would deploy it again
                 setSelectedSlotId(null);
+                EventBus.emit(EVENTS.CARD_SELECTED, null);
             }
         };
 
@@ -77,7 +76,7 @@ export const CardDeck: React.FC<CardDeckProps> = ({ cards }) => {
         return () => {
             EventBus.off(EVENTS.CARD_PLAYED, handleCardPlayed);
         };
-    }, [cardSlots, nextCardIndex, deck]);
+    }, [cardSlots, queue]);
 
     const handleCardClick = (card: CardItem) => {
         const slotId = `${card.id}:${card.deckIndex}`;
@@ -147,7 +146,7 @@ export const CardDeck: React.FC<CardDeckProps> = ({ cards }) => {
             <div style={{
                 width: '40px',
                 height: '60px',
-                backgroundImage: deck[nextCardIndex % deck.length] ? `url(${deck[nextCardIndex % deck.length].icon})` : 'none',
+                backgroundImage: queue[0] ? `url(${queue[0].icon})` : 'none',
                 backgroundSize: 'contain',
                 backgroundRepeat: 'no-repeat',
                 backgroundPosition: 'center',
@@ -192,7 +191,7 @@ export const CardDeck: React.FC<CardDeckProps> = ({ cards }) => {
                     fontWeight: 'bold',
                     border: '1px solid black'
                 }}>
-                    {deck[nextCardIndex % deck.length]?.cost || 0}
+                    {queue[0]?.cost || 0}
                 </div>
             </div>
         </div>

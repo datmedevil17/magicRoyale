@@ -9,9 +9,13 @@ import { TowerEntity } from '../logic/TowerEntity';
 import { Spell } from '../logic/spells/Spell';
 import { Unit } from '../entities/Unit';
 import { ArenaConfig } from '../config/ArenaConfig';
-import { Map2Config } from '../config/Map2Config';
-import { Map3Config } from '../config/Map3Config';
+import { getArenaConfig } from '../config/Maps';
 import type { ArenaConfigInterface } from '../config/IArenaConfig';
+import { isSpellCard } from '../config/TroopConfig';
+import { getDeployZones, getMapBounds, isInZones, type LanesDown } from '../logic/DeployZones';
+
+const NO_DEPLOY_COLOR = 0xff3030;
+const NO_DEPLOY_ALPHA = 0.22;
 
 export class MainScene extends Scene {
     private gameManager!: GameManager;
@@ -34,6 +38,7 @@ export class MainScene extends Scene {
     private gameEndEmitted: boolean = false;
     private lastHudElixirStep: number = -1;
     private lastHudCrownKey: string = '';
+    private deployOverlay: Phaser.GameObjects.Graphics | null = null;
 
     constructor() { super('MainScene'); }
 
@@ -42,20 +47,9 @@ export class MainScene extends Scene {
         this.mapType = data.mapType || 'classic';
         this.lastHudElixirStep = -1;
         this.lastHudCrownKey = '';
+        this.deployOverlay = null;
 
-        // Select the appropriate config
-        switch (this.mapType) {
-            case 'solana':
-            case 'map2':
-                this.arenaConfig = Map2Config;
-                break;
-            case 'magicblock':
-            case 'map3':
-                this.arenaConfig = Map3Config;
-                break;
-            default:
-                this.arenaConfig = ArenaConfig;
-        }
+        this.arenaConfig = getArenaConfig(this.mapType);
 
         this.gameManager = new GameManager({
             username: 'Player1',
@@ -98,7 +92,10 @@ export class MainScene extends Scene {
         });
 
         // ── EventBus: card selected ─────────────────────────────────────────
-        this._onCardSelected = (cardId: string | null) => { this.selectedCardId = cardId; };
+        this._onCardSelected = (cardId: string | null) => {
+            this.selectedCardId = cardId;
+            this.drawDeployOverlay();
+        };
         EventBus.on(EVENTS.CARD_SELECTED, this._onCardSelected);
 
         // ── EventBus: battle started (from Network or test mode) ─────────────
@@ -185,6 +182,10 @@ export class MainScene extends Scene {
 
         // ── EventBus: test deploy (from TestArena devtools) ──────────────────
         this._onTestDeploy = (data) => {
+            if (!this.canDeployAt(data.cardId, data.x, data.y, data.ownerId)) {
+                showDebug(`Can't deploy there (${data.ownerId === 'player' ? 'blue' : 'red'} side only)`);
+                return;
+            }
             this.gameManager.deployCard(data.cardId, { x: data.x, y: data.y }, data.ownerId);
         };
         EventBus.on(EVENTS.TEST_DEPLOY, this._onTestDeploy);
@@ -226,6 +227,11 @@ export class MainScene extends Scene {
 
             if (!this.gameManager.isCardSupported(assetId)) {
                 showDebug(`${assetId} is not available yet`);
+                return;
+            }
+
+            if (!this.canDeployAt(assetId, worldPoint.x, worldPoint.y, 'player')) {
+                showDebug("Can't deploy there");
                 return;
             }
 
@@ -300,10 +306,56 @@ export class MainScene extends Scene {
                         const isHost = gameData?.role === 'player1';
                         this.gameManager.onTowerDestroyed(entity.isKing, entity.ownerId, isHost);
 
+                        // A fallen princess tower opens a pocket on that lane
+                        this.drawDeployOverlay();
+
                         EventBus.emit(EVENTS.TOWER_DESTROYED, {
                             towerId: entity.id, isKing: entity.isKing, ownerId: entity.ownerId,
                         });
                     }
+                }
+            }
+        }
+    }
+
+    /** Enemy princess towers of `side` that are destroyed, by lane as drawn on screen. */
+    private getLanesDown(side: 'player' | 'opponent'): LanesDown {
+        const midX = this.arenaConfig.COLS * this.arenaConfig.TILE_SIZE / 2;
+        const lanes: LanesDown = { left: false, right: false };
+        for (const e of this.gameManager.getEntities()) {
+            if (e instanceof TowerEntity && !e.isKing && e.ownerId !== side && e.health <= 0) {
+                if (e.x < midX) lanes.left = true;
+                else lanes.right = true;
+            }
+        }
+        return lanes;
+    }
+
+    /** Spells can land anywhere on the map; troops and buildings only in `side`'s deploy zones. */
+    private canDeployAt(cardId: string, x: number, y: number, side: 'player' | 'opponent'): boolean {
+        const zones = isSpellCard(cardId)
+            ? [getMapBounds(this.arenaConfig)]
+            : getDeployZones(this.arenaConfig, side, this.getLanesDown(side));
+        return isInZones(zones, x, y);
+    }
+
+    /** While a troop/building card is selected, shade the playable tiles where it can't be placed. */
+    private drawDeployOverlay() {
+        if (!this.deployOverlay) this.deployOverlay = this.add.graphics().setDepth(2); // above ground, below units
+        const g = this.deployOverlay;
+        g.clear();
+
+        const cardId = this.selectedCardId?.split(':')[0];
+        if (!cardId || isSpellCard(cardId)) return;
+
+        const c = this.arenaConfig;
+        const t = c.TILE_SIZE;
+        const zones = getDeployZones(c, 'player', this.getLanesDown('player'));
+        g.fillStyle(NO_DEPLOY_COLOR, NO_DEPLOY_ALPHA);
+        for (let row = c.MARGIN_Y; row < c.ROWS - c.MARGIN_Y; row++) {
+            for (let col = c.MARGIN_X; col < c.COLS - c.MARGIN_X; col++) {
+                if (!isInZones(zones, col * t + t / 2, row * t + t / 2)) {
+                    g.fillRect(col * t, row * t, t, t);
                 }
             }
         }
@@ -364,22 +416,31 @@ export class MainScene extends Scene {
         let finalY = y;
         let finalOwner = ownerId;
         let finalTexture = texture;
+        let finalScale = pixelScale;
 
         if (!isHost) {
             finalX = mapWidth - x;
             finalY = mapHeight - y;
             finalOwner = ownerId === 'player' ? 'opponent' : 'player';
 
-            if (finalTexture.includes('blue')) {
-                finalTexture = finalTexture.replace('blue', 'red');
-            } else if (finalTexture.includes('red')) {
-                finalTexture = finalTexture.replace('red', 'blue');
+            // The mirrored tower should look like the one the config draws at that screen
+            // position: other colour, and left/right art swapped since x is mirrored.
+            // Its scale comes from that config entry too (textures differ in source size).
+            const mirroredTexture = texture
+                .replace(/blue|red/, c => (c === 'blue' ? 'red' : 'blue'))
+                .replace(/_left$|_right$/, side => (side === '_left' ? '_right' : '_left'));
+            const counterpart = this.arenaConfig.TOWERS.find(t => t.texture === mirroredTexture);
+            if (counterpart) {
+                finalTexture = mirroredTexture;
+                finalScale = counterpart.pixelScale;
+            } else {
+                finalTexture = texture.replace(/blue|red/, c => (c === 'blue' ? 'red' : 'blue'));
             }
         }
 
         const maxHealth = isKing ? this.arenaConfig.KING_TOWER_HP : this.arenaConfig.PRINCESS_TOWER_HP;
         const towerSprite = new Tower(this, finalX, finalY, finalTexture, maxHealth);
-        towerSprite.setScale(pixelScale);
+        towerSprite.setScale(finalScale);
         this.towerSprites.set(id, towerSprite);
 
         const radius = isKing ? 33 : 22;

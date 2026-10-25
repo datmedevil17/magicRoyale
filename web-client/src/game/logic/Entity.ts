@@ -17,6 +17,8 @@ export abstract class Entity {
     public maxHealth: number = 100;
     public radius: number = 20; // Default hitbox radius
     public rotation: number = 0; // Rotation in radians
+    /** Incremented on every hit, so renderers can flash on hits (but not on decay). */
+    public hitCount: number = 0;
 
 
     constructor(id: string, x: number, y: number, ownerId: string, type: EntityType) {
@@ -28,6 +30,7 @@ export abstract class Entity {
     }
 
     takeDamage(amount: number) {
+        this.hitCount++;
         this.health -= amount;
         if (this.health < 0) this.health = 0;
     }

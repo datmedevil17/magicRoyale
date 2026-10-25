@@ -1,22 +1,36 @@
 import Phaser from 'phaser';
 import { Entity } from '../logic/Entity';
-import { Troop } from '../logic/troops/Troop';
+import { RAGE_BOOST, Troop } from '../logic/troops/Troop';
+import { Building } from '../logic/troops/Building';
+import { Cannon } from '../logic/troops/Cannon';
+import { InfernoTower } from '../logic/troops/InfernoTower';
 import { Spell } from '../logic/spells/Spell';
+import { fireProjectile } from './Projectiles';
 
 const HIT_FLASH_MS = 80;
 const SPAWN_MS = 200;
 const DEATH_MS = 250;
 const PLAYER_COLOR = 0x64ccff;
 const OPPONENT_COLOR = 0xf04043;
+const RAGE_TINT = 0xff77ff;
+const ZONE_DEPTH = 1; // lingering spell zones: above the ground, below every unit
+// Inferno beam width/colour per ramp stage
+const BEAM_STYLE = [
+    { width: 2, color: 0xffb347 },
+    { width: 4, color: 0xff7a1a },
+    { width: 6, color: 0xff2a00 },
+];
 
 export class Unit extends Phaser.GameObjects.Sprite {
     private healthBar: Phaser.GameObjects.Graphics | null = null;
     private barOffset: number = 0;
     private baseScale: number;
     private lastAttackStart: number = -1;
-    private lastHealth: number;
+    private lastHitCount: number;
     private lastBar = { x: NaN, y: NaN, health: NaN };
     private flashTimer: Phaser.Time.TimerEvent | null = null;
+    private raged: boolean = false;
+    private beam: Phaser.GameObjects.Graphics | null = null;
     private readonly owner: 'player' | 'opponent';
     private readonly isSpell: boolean;
     private readonly unitName: string; // card/config name, e.g. 'Archers' (Sprite already has `name`)
@@ -29,7 +43,7 @@ export class Unit extends Phaser.GameObjects.Sprite {
 
         this.owner = entity.ownerId.includes('player') ? 'player' : 'opponent';
         this.unitName = (entity as Troop | Spell).name;
-        this.lastHealth = entity.health;
+        this.lastHitCount = entity.hitCount;
         this.isSpell = entity instanceof Spell;
 
         if (entity instanceof Spell) {
@@ -62,21 +76,34 @@ export class Unit extends Phaser.GameObjects.Sprite {
 
     public updateVisuals(entity: Entity) {
         this.setPosition(entity.x, entity.y);
-        this.setDepth(entity.y); // Fix Z-ordering/flickering
+        // Fix Z-ordering/flickering; zones (Rage) lie flat under units
+        this.setDepth(entity instanceof Spell && entity.isZone ? ZONE_DEPTH : entity.y);
 
-        // Player units face UP (-PI/2) in assets, Opponent units face DOWN (PI/2).
-        // To rotate them correctly, we compensate for their default facing.
-        const offset = this.owner === 'player' ? Math.PI / 2 : -Math.PI / 2;
-        this.setRotation(entity.rotation + offset);
+        if (entity instanceof Cannon) {
+            // Drawn in 3/4 view with a frame per facing, so it never rotates
+            this.updateCannon(entity);
+        } else {
+            if (!(entity instanceof Building)) {
+                // Player units face UP (-PI/2) in assets, Opponent units face DOWN (PI/2).
+                // To rotate them correctly, we compensate for their default facing.
+                const offset = this.owner === 'player' ? Math.PI / 2 : -Math.PI / 2;
+                this.setRotation(entity.rotation + offset);
+            }
 
-        if (entity instanceof Spell) {
-            this.playAnim(`${this.unitName}_fight_${this.owner}`);
-        } else if (entity instanceof Troop) {
-            this.updateTroopAnim(entity);
+            if (entity instanceof Spell) {
+                this.playAnim(`${this.unitName}_fight_${this.owner}`);
+            } else if (entity instanceof Troop) {
+                this.updateTroopAnim(entity);
+            }
         }
 
-        if (entity.health < this.lastHealth) this.flash();
-        this.lastHealth = entity.health;
+        if (entity instanceof Troop) {
+            this.updateRage(entity);
+            if (entity instanceof InfernoTower) this.updateBeam(entity);
+        }
+
+        if (entity.hitCount !== this.lastHitCount) this.flash();
+        this.lastHitCount = entity.hitCount;
 
         this.updateHealthBar(entity);
     }
@@ -102,6 +129,66 @@ export class Unit extends Phaser.GameObjects.Sprite {
             // Idle: stand still instead of walking in place
             this.showFrame(walkKey);
         }
+    }
+
+    /**
+     * Cannon: idle uses the walk sprite; while fighting, pick the fight-sheet frame that
+     * faces the target (0 = left, 2 = down-left, 3 = down-right, 0 mirrored = right) and
+     * fire a cannonball on each new attack.
+     */
+    private updateCannon(cannon: Cannon) {
+        const fightKey = `${this.unitName}_fight_${this.owner}`;
+        if (cannon.state !== 'fight' || !cannon.target || !this.scene.textures.exists(fightKey)) {
+            this.setFlipX(false);
+            this.showFrame(`${this.unitName}_walk_${this.owner}`);
+            return;
+        }
+
+        const dx = cannon.target.x - cannon.x;
+        const dy = cannon.target.y - cannon.y;
+        const frame = dy > 0 ? (dx < 0 ? 2 : 3) : 0;
+        this.anims.stop();
+        this.setTexture(fightKey, frame);
+        this.setFlipX(dy <= 0 && dx > 0);
+
+        if (cannon.attackStartTime !== this.lastAttackStart && cannon.lastAttack) {
+            this.lastAttackStart = cannon.attackStartTime;
+            const { targetX, targetY, impactDelay } = cannon.lastAttack;
+            fireProjectile(this.scene, this.x, this.y, targetX, targetY, impactDelay, 'ball');
+            // Recoil
+            this.scene.tweens.add({
+                targets: this,
+                scale: this.baseScale * 0.9,
+                duration: 60,
+                yoyo: true,
+            });
+        }
+    }
+
+    /** Raged troops play their animations faster and glow purple. */
+    private updateRage(troop: Troop) {
+        if (troop.isRaged === this.raged) return;
+        this.raged = troop.isRaged;
+        this.anims.timeScale = this.raged ? RAGE_BOOST : 1;
+        if (!this.flashTimer) this.applyBaseTint();
+    }
+
+    private applyBaseTint() {
+        if (this.raged) this.setTint(RAGE_TINT);
+        else this.clearTint();
+    }
+
+    /** Inferno beam to its target, thicker and redder as the damage ramps up. */
+    private updateBeam(inferno: InfernoTower) {
+        if (!this.beam) this.beam = this.scene.add.graphics().setDepth(4500);
+        this.beam.clear();
+        const target = inferno.target;
+        if (inferno.state !== 'fight' || !target) return;
+
+        const style = BEAM_STYLE[inferno.rampStage];
+        this.beam.lineStyle(style.width, style.color, 0.9);
+        // From the tower's top (the attack sheet is larger than the tower, so use the walk-sprite height)
+        this.beam.lineBetween(this.x, this.y - this.barOffset * 0.75, target.x, target.y);
     }
 
     /** Play `key` unless it's already the current animation (or always, with `restart`). */
@@ -162,8 +249,8 @@ export class Unit extends Phaser.GameObjects.Sprite {
         this.setTintFill(0xffffff);
         this.flashTimer?.remove();
         this.flashTimer = this.scene.time.delayedCall(HIT_FLASH_MS, () => {
-            this.clearTint();
             this.flashTimer = null;
+            this.applyBaseTint();
         });
     }
 
@@ -197,6 +284,8 @@ export class Unit extends Phaser.GameObjects.Sprite {
     public playDeath() {
         this.healthBar?.destroy();
         this.healthBar = null;
+        this.beam?.destroy();
+        this.beam = null;
         this.flashTimer?.remove();
 
         if (this.isSpell) {
@@ -218,6 +307,7 @@ export class Unit extends Phaser.GameObjects.Sprite {
 
     public destroy(fromScene?: boolean) {
         this.healthBar?.destroy();
+        this.beam?.destroy();
         this.flashTimer?.remove();
         super.destroy(fromScene);
     }

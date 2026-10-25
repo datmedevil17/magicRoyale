@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import type { TowerShot } from '../logic/TowerEntity';
+import { fireProjectile } from './Projectiles';
 
 export class Tower extends Phaser.GameObjects.Sprite {
     private healthBar: Phaser.GameObjects.Graphics;
@@ -43,47 +44,10 @@ export class Tower extends Phaser.GameObjects.Sprite {
     public showShot(shot: TowerShot | null, isKing: boolean) {
         if (!shot || shot.time === this.lastShotTime) return;
         this.lastShotTime = shot.time;
-        this.fireProjectile(shot.targetX, shot.targetY, shot.flightMs, isKing);
+        // From the top of the tower: arrows for princess towers, a cannonball for the king
+        fireProjectile(this.scene, this.x, this.y - this.displayHeight * 0.25, shot.targetX, shot.targetY,
+            shot.flightMs, isKing ? 'ball' : 'arrow');
     }
-
-    /**
-     * Draw a shot flying from the top of the tower to the target: an arrow for princess
-     * towers, a cannonball for the king. `flightMs` matches when the logic applies damage.
-     */
-    private fireProjectile(targetX: number, targetY: number, flightMs: number, isKing: boolean) {
-        Tower.ensureProjectileTextures(this.scene);
-
-        const startX = this.x;
-        const startY = this.y - this.displayHeight * 0.25;
-        const projectile = this.scene.add.image(startX, startY, isKing ? 'proj_ball' : 'proj_arrow')
-            .setDepth(4000)
-            .setRotation(Phaser.Math.Angle.Between(startX, startY, targetX, targetY));
-
-        this.scene.tweens.add({
-            targets: projectile,
-            x: targetX,
-            y: targetY,
-            duration: flightMs,
-            onComplete: () => projectile.destroy(),
-        });
-    }
-
-    private static ensureProjectileTextures(scene: Phaser.Scene) {
-        if (scene.textures.exists('proj_arrow')) return;
-
-        const g = scene.make.graphics({}, false);
-        // Arrow pointing right (rotation 0): shaft + head
-        g.fillStyle(0x8b5a2b).fillRect(0, 2, 12, 2);
-        g.fillStyle(0xdddddd).fillTriangle(12, 0, 16, 3, 12, 6);
-        g.generateTexture('proj_arrow', 16, 6);
-        g.clear();
-        // Cannonball
-        g.fillStyle(0x222222).fillCircle(5, 5, 5);
-        g.fillStyle(0x666666).fillCircle(3.5, 3.5, 1.5);
-        g.generateTexture('proj_ball', 10, 10);
-        g.destroy();
-    }
-
 
     public updateHealthBar() {
         this.healthBar.clear();

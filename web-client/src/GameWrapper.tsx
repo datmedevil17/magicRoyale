@@ -30,6 +30,7 @@ export const GameWrapper = () => {
         gameId: string;
         role: string;
         opponentWallet: string;
+        mapType?: string;
     } | null;
 
     const gameIdBn = gameData?.gameId ? new BN(gameData.gameId) : null;
@@ -143,6 +144,7 @@ export const GameWrapper = () => {
                 walletPublicKey: wallet.publicKey?.toBase58(),
                 gameId: gameData?.gameId,
                 role: gameData?.role,
+                mapType: gameData?.mapType,
                 isBattleActive: isBattleActive,
             });
             gameRef.current = game;

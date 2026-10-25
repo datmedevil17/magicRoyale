@@ -5,6 +5,7 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { BN } from '@coral-xyz/anchor';
 import { toast, Toaster } from 'react-hot-toast';
 import { useGameProgram } from '../hooks/use-game-program';
+import { getSelectedMap } from '../game/config/Maps';
 
 const SERVER_URL = 'http://localhost:3000';
 
@@ -44,6 +45,7 @@ export const WaitingScreen: React.FC = () => {
             gameId: string;       // u64 as decimal string
             role: 'player1' | 'player2';
             opponentWallet: string;
+            mapType?: string;     // arena chosen by the room creator
         }) => {
             console.log('[WaitingScreen] Received game-start:', data);
             const gameIdBn = new BN(data.gameId);
@@ -69,6 +71,7 @@ export const WaitingScreen: React.FC = () => {
                             gameId: data.gameId,
                             role: data.role,
                             opponentWallet: data.opponentWallet,
+                            mapType: data.mapType,
                         },
                     });
                 }, 800);
@@ -108,7 +111,7 @@ export const WaitingScreen: React.FC = () => {
             await p;
 
             // Only AFTER successful on-chain creation do we open the server room
-            socket.emit('create-room', { gameId: randomId });
+            socket.emit('create-room', { gameId: randomId, mapType: getSelectedMap() });
             setStatus('Waiting for opponent to join...');
         } catch (err: any) {
             setStatus(`Error: ${err.message}`);

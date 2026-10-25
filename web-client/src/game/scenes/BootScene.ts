@@ -1,6 +1,6 @@
 import { Scene } from 'phaser';
 
-import { getTroopStats } from '../config/TroopConfig';
+import { getTroopStats, isSpellCard } from '../config/TroopConfig';
 import { CONFIG_TO_SPRITE, getAnimTiming, getAttackTiming, type SpriteName } from '../config/AnimationTiming';
 import { createSpriteAnim, loadSpriteSheet } from '../utils/SpriteAnims';
 
@@ -14,7 +14,7 @@ const UNIT_SHEETS = Object.entries(CONFIG_TO_SPRITE).flatMap(([configName, sprit
         sprite: `${spriteName}_${action}_${owner}` as SpriteName,
         key: `${configName}_${action}_${owner}`,
     })))
-).filter(sheet => !(sheet.configName === 'Arrows' && sheet.action === 'walk')); // spells only have a fight sheet
+).filter(sheet => !(isSpellCard(sheet.configName) && sheet.action === 'walk')); // spells only have a fight sheet
 
 export class BootScene extends Scene {
     constructor() {
@@ -112,9 +112,12 @@ export class BootScene extends Scene {
 
             if (action === 'walk') {
                 createSpriteAnim(this, key, getAnimTiming(sprite), -1);
-            } else if (configName === 'Arrows' || stats.continuousAttack) {
-                // Spells play once; continuous attackers loop their whole GIF at native speed
-                createSpriteAnim(this, key, getAnimTiming(sprite), configName === 'Arrows' ? 0 : -1);
+            } else if (isSpellCard(configName)) {
+                // Instant spells play once; lingering zones (Rage) loop for their duration
+                createSpriteAnim(this, key, getAnimTiming(sprite), stats.spellDuration ? -1 : 0);
+            } else if (stats.continuousAttack) {
+                // Continuous attackers loop their whole GIF at native speed
+                createSpriteAnim(this, key, getAnimTiming(sprite), -1);
             } else {
                 // One attack cycle, played once per attack (Unit restarts it on each new attack)
                 createSpriteAnim(this, key, getAttackTiming(configName, owner, stats.hitSpeed)!, 0);
