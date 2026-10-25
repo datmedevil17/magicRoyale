@@ -1,5 +1,6 @@
 import { Scene } from 'phaser';
 import type { ArenaConfigInterface } from '../config/IArenaConfig';
+import { ThemedArena } from './ThemedArena';
 
 export class MapBuilder {
     private scene: Scene;
@@ -15,8 +16,12 @@ export class MapBuilder {
     }
 
     public build() {
-        this.createGroundLayer();
-        this.createRiverAndBridges();
+        if (this.config.THEME) {
+            new ThemedArena(this.scene, this.startX, this.startY, this.config, this.config.THEME).build();
+        } else {
+            this.createGroundLayer();
+            this.createRiverAndBridges();
+        }
         this.createDecorations();
         this.createProps();
     }
@@ -122,6 +127,9 @@ export class MapBuilder {
             }
 
             wall.setDepth(1);
+            if (this.config.THEME?.fenceTint !== undefined) {
+                wall.setTint(this.config.THEME.fenceTint);
+            }
         } else {
             const w = (vertical || rotate === 1) ? 6 : this.config.TILE_SIZE;
             const h = (vertical || rotate === 1) ? this.config.TILE_SIZE : 6;
@@ -143,6 +151,9 @@ export class MapBuilder {
                 }
                 if (prop.scale) {
                     sprite.setScale(prop.scale);
+                }
+                if (prop.alpha !== undefined) {
+                    sprite.setAlpha(prop.alpha);
                 }
             } else {
                 this.scene.add.circle(x, y, 10, 0x00FF00).setDepth(1);

@@ -169,7 +169,17 @@ export const Map2Config: ArenaConfigInterface = {
         }
     ],
 
-    // Custom Tile Coloring
+    // Solana brand: purple #9945FF, green #14F195 on deep navy
+    THEME: {
+        floor: [0x110a22, 0x150d2a],
+        vignette: 0x000000,
+        lane: { color: 0x14f195, glow: 0x14f195, width: 7 },
+        pad: { fill: 0x1c1238, border: 0x9945ff },
+        river: { edge: 0x4c1d95, middle: 0x9945ff, bank: 0x14f195, shimmer: 0xe9d5ff },
+        bridge: { deck: 0x231842, stripe: 0x9945ff, rail: 0x14f195 },
+    },
+
+    // Custom Tile Coloring (themed maps draw these as lanes)
     CUSTOM_TILES: [
         ...colorTiles([
             { col: 6, row: 20 },
@@ -255,8 +265,8 @@ export const Map2Config: ArenaConfigInterface = {
         { col: 18.2, row: 20.2, texture: 'solana_stone3', scale: 0.12 },
         { col: 4.7, row: 16.2, texture: 'solana_stone3', scale: 0.12 },
         { col: 4.7, row: 20.2, texture: 'solana_stone3', scale: 0.12 },
-        { col: 11.5, row: 25, texture: 'm2_logo', scale: 0.2, rotate: 0 },
-        { col: 11.5, row: 12, texture: 'm2_logo', scale: 0.2, rotate: 2 },
+        { col: 11.5, row: 25, texture: 'm2_logo', scale: 0.14, rotate: 0, alpha: 0.3 },
+        { col: 11.5, row: 12, texture: 'm2_logo', scale: 0.14, rotate: 2, alpha: 0.3 },
     ],
 
     getPixelCoords(col: number, row: number) {

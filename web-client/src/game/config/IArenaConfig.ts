@@ -12,6 +12,20 @@ export interface TowerConfig {
     gridHeight: number;
 }
 
+/**
+ * Visual theme drawn by MapBuilder instead of the flat tile colours: floor, glowing lanes
+ * along CUSTOM_TILES, tower pads, a gradient river with shimmer, and themed bridges.
+ */
+export interface ArenaTheme {
+    floor: [number, number];               // subtle two-tone checker
+    vignette: number;                      // edge darkening colour
+    lane: { color: number; glow: number; width: number };
+    pad: { fill: number; border: number };
+    river: { edge: number; middle: number; bank: number; shimmer: number };
+    bridge: { deck: number; stripe: number; rail: number };
+    fenceTint?: number;                    // recolour shared fence art to match the theme
+}
+
 export interface ArenaConfigInterface {
     TILE_SIZE: number;
     ROWS: number;
@@ -46,7 +60,8 @@ export interface ArenaConfigInterface {
     TOWERS: readonly TowerConfig[] | TowerConfig[];
     CUSTOM_TILES: { col: number, row: number, color: number }[];
     CUSTOM_FENCES: { col: number, row: number, rotate?: number, texture?: string, scale?: number, scaleX?: number, scaleY?: number }[];
-    PROPS: { col: number, row: number, texture: string, rotate?: number, scale?: number }[];
+    PROPS: { col: number, row: number, texture: string, rotate?: number, scale?: number, alpha?: number }[];
+    THEME?: ArenaTheme;
     resolveGrid: (playableX: number, playableY: number, perspective?: 'player' | 'opponent') => { x: number, y: number, col: number, row: number };
     getPixelCoords: (col: number, row: number) => { x: number, y: number };
 }

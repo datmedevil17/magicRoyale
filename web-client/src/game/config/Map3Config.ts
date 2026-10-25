@@ -169,7 +169,18 @@ export const Map3Config: ArenaConfigInterface = {
         }
     ],
 
-    // Custom Tile Coloring
+    // MagicBlock: dark slate with teal glow and soft white lanes
+    THEME: {
+        floor: [0x0b1a1d, 0x0e2125],
+        vignette: 0x000000,
+        lane: { color: 0xd9f7f3, glow: 0x2dd4bf, width: 6 },
+        pad: { fill: 0x10292b, border: 0x2dd4bf },
+        river: { edge: 0x0e5a6b, middle: 0x22d3ee, bank: 0x99f6e4, shimmer: 0xffffff },
+        bridge: { deck: 0x1e293b, stripe: 0x2dd4bf, rail: 0xe2e8f0 },
+        fenceTint: 0x9ff5e6, // walls are shared with the Solana map; pull them toward teal
+    },
+
+    // Custom Tile Coloring (themed maps draw these as lanes)
     CUSTOM_TILES: [
         ...colorTiles([
             { col: 6, row: 20 },
@@ -255,8 +266,8 @@ export const Map3Config: ArenaConfigInterface = {
         { col: 18.2, row: 20.2, texture: 'm3_magic_stone2', scale: 0.12 },
         { col: 4.7, row: 16.2, texture: 'm3_magic_stone2', scale: 0.12 },
         { col: 4.7, row: 20.2, texture: 'm3_magic_stone2', scale: 0.12 },
-        { col: 11.5, row: 25, texture: 'm3_logo', scale: 0.4, rotate: 0 },
-        { col: 11.5, row: 12, texture: 'm3_logo', scale: 0.4, rotate: 0 },
+        { col: 11.5, row: 25, texture: 'm3_logo', scale: 0.36, rotate: 0, alpha: 0.3 },
+        { col: 11.5, row: 12, texture: 'm3_logo', scale: 0.36, rotate: 0, alpha: 0.3 },
     ],
 
     getPixelCoords(col: number, row: number) {

@@ -19,6 +19,13 @@ export class Tower extends Phaser.GameObjects.Sprite {
         this.updateHealthBar();
     }
 
+    /** Scenes scale towers after construction; keep the health bar above the scaled sprite. */
+    public setScale(x?: number, y?: number) {
+        super.setScale(x, y);
+        if (this.healthBar) this.updateHealthBar();
+        return this;
+    }
+
     public setHealth(amount: number) {
         const health = Math.max(0, amount);
         if (health === this.currentHealth) return; // called every frame; only redraw on change
@@ -55,7 +62,7 @@ export class Tower extends Phaser.GameObjects.Sprite {
         const width = 60;
         const height = 8;
         const x = this.x - width / 2;
-        const y = this.y - this.height / 2 - 15; // Above the tower
+        const y = this.y - this.displayHeight / 2 - 12; // Above the tower (displayHeight includes scale)
 
         // Background
         this.healthBar.fillStyle(0x000000);
