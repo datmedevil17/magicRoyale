@@ -1,26 +1,38 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { io, Socket } from 'socket.io-client';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { BN } from '@coral-xyz/anchor';
 import { toast, Toaster } from 'react-hot-toast';
 import { useGameProgram } from '../hooks/use-game-program';
 import { getSelectedMap } from '../game/config/Maps';
+import { SERVER_URL } from '../config/server';
 
-const SERVER_URL = 'http://localhost:3000';
 
 type ViewState = 'select' | 'create' | 'join';
 
+// How long a 2v2 joiner waits for the server to acknowledge its on-chain join before moving on
+const CHAIN_JOINED_ACK_MS = 3000;
+
 export const WaitingScreen: React.FC = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const wallet = useWallet();
-    const { createGame, joinGame } = useGameProgram();
+    const { createGame, joinGame, createGame2v2, joinGame2v2 } = useGameProgram();
+    const is2v2 = (location.state as { mode?: string } | null)?.mode === '2v2';
+
+    // The socket handlers below are registered once; read the latest program calls through refs
+    const joinGameRef = useRef(joinGame);
+    const joinGame2v2Ref = useRef(joinGame2v2);
+    joinGameRef.current = joinGame;
+    joinGame2v2Ref.current = joinGame2v2;
 
     const [view, setView] = useState<ViewState>('select');
     const [status, setStatus] = useState('');
     const [socket, setSocket] = useState<Socket | null>(null);
     const [createdGameId, setCreatedGameId] = useState<string>('');
     const [joinInput, setJoinInput] = useState<string>('');
+    const [lobbyCount, setLobbyCount] = useState(1); // 2v2: players in the lobby
 
     // Connect socket on mount
     useEffect(() => {
@@ -40,20 +52,54 @@ export const WaitingScreen: React.FC = () => {
 
         // Remove room-created listener since frontend generates the ID now
 
-        // Server sends { gameId, role, opponentWallet } when both are in the room
+        newSocket.on('lobby-update', (data: { players: number }) => setLobbyCount(data.players));
+
+        // Server sends game-start once the room is full (2 players, or 4 for 2v2)
         newSocket.on('game-start', async (data: {
             gameId: string;       // u64 as decimal string
-            role: 'player1' | 'player2';
-            opponentWallet: string;
+            role: 'player1' | 'player2' | 'player3' | 'player4';
+            opponentWallet?: string;
             mapType?: string;     // arena chosen by the room creator
+            mode?: '2v2';
         }) => {
             console.log('[WaitingScreen] Received game-start:', data);
             const gameIdBn = new BN(data.gameId);
 
+            if (data.mode === '2v2') {
+                try {
+                    if (data.role !== 'player1') { // player1 already called createGame2v2
+                        setStatus('Joining 2v2 game on-chain...');
+                        const p = joinGame2v2Ref.current(gameIdBn);
+                        toast.promise(p, {
+                            loading: 'Joining 2v2 game on-chain...',
+                            success: 'Joined game!',
+                            error: (e) => `Failed: ${e.message}`,
+                        });
+                        await p;
+                        // player1 can only start once every joiner is in the battle account
+                        await new Promise<void>(resolve => {
+                            const fallback = setTimeout(resolve, CHAIN_JOINED_ACK_MS);
+                            newSocket.emit('chain-joined', { gameId: data.gameId }, () => {
+                                clearTimeout(fallback);
+                                resolve();
+                            });
+                        });
+                    }
+
+                    setStatus('All players found! Starting...');
+                    newSocket.disconnect(); // GameWrapper2v2 opens its own socket
+                    navigate('/game2v2', { state: { gameId: data.gameId, role: data.role } });
+                } catch (err: any) {
+                    setStatus(`Error: ${err.message}`);
+                    setView('select');
+                }
+                return;
+            }
+
             try {
                 if (data.role === 'player2') { // Player 1 already called createGame
                     setStatus('Joining game on-chain...');
-                    const p = joinGame(gameIdBn);
+                    const p = joinGameRef.current(gameIdBn);
                     toast.promise(p, {
                         loading: 'Joining game on-chain...',
                         success: 'Joined game!',
@@ -102,17 +148,23 @@ export const WaitingScreen: React.FC = () => {
 
         try {
             const gameIdBn = new BN(randomId);
-            const p = createGame(gameIdBn);
+            const p = is2v2 ? createGame2v2(gameIdBn) : createGame(gameIdBn);
             toast.promise(p, {
                 loading: 'Creating game on-chain...',
-                success: 'Game created! Waiting for opponent...',
+                success: is2v2 ? 'Game created! Waiting for players...' : 'Game created! Waiting for opponent...',
                 error: (e) => `Failed: ${e.message}`,
             });
             await p;
 
             // Only AFTER successful on-chain creation do we open the server room
-            socket.emit('create-room', { gameId: randomId, mapType: getSelectedMap() });
-            setStatus('Waiting for opponent to join...');
+            if (is2v2) {
+                setLobbyCount(1);
+                socket.emit('create-room', { gameId: randomId, mode: '2v2' });
+                setStatus('Share the ID with 3 friends: waiting for players...');
+            } else {
+                socket.emit('create-room', { gameId: randomId, mapType: getSelectedMap() });
+                setStatus('Waiting for opponent to join...');
+            }
         } catch (err: any) {
             setStatus(`Error: ${err.message}`);
             setView('select');
@@ -127,6 +179,7 @@ export const WaitingScreen: React.FC = () => {
         if (!socket || !joinInput.trim()) return;
         setStatus('Requesting to join room...');
         socket.emit('join-room', { gameId: joinInput.trim() });
+        if (is2v2) setStatus('Joined lobby: waiting for players...');
     };
 
     return (
@@ -150,7 +203,7 @@ export const WaitingScreen: React.FC = () => {
                             <h2 className="text-xl text-[#fbce47] animate-pulse">{status}</h2>
                         ) : (
                             <>
-                                <h2 className="text-2xl font-bold text-[#64cbff] mb-6 drop-shadow-md">Battle Setup</h2>
+                                <h2 className="text-2xl font-bold text-[#64cbff] mb-6 drop-shadow-md">{is2v2 ? '2v2 Battle Setup' : 'Battle Setup'}</h2>
                                 <button
                                     onClick={handleCreateClick}
                                     className="w-full py-3 bg-[#00d048] hover:bg-[#00e050] text-white font-bold rounded-lg shadow-lg border-b-4 border-green-800 active:translate-y-1 active:border-b-0 transition-all text-xl"
@@ -184,6 +237,9 @@ export const WaitingScreen: React.FC = () => {
                                 <div className="w-12 h-12 border-4 border-[#fbce47] border-t-transparent rounded-full animate-spin my-4" />
                             )}
                             <p className="text-sm text-[#fbce47]/80 mt-2 min-h-[20px]">{status}</p>
+                            {is2v2 && createdGameId && (
+                                <p className="text-lg font-bold text-white">Players: {lobbyCount}/4</p>
+                            )}
 
                             <button
                                 onClick={() => navigate('/menu')}
@@ -198,6 +254,7 @@ export const WaitingScreen: React.FC = () => {
                             <p className="text-xs text-gray-300 mb-2">Enter the 6-digit Game ID</p>
 
                             {status && <p className="text-sm text-[#fbce47] animate-pulse">{status}</p>}
+                            {is2v2 && status && <p className="text-lg font-bold text-white">Players: {lobbyCount}/4</p>}
 
                             <input
                                 type="text"

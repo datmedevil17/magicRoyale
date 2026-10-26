@@ -22,11 +22,18 @@ const RESIZE = {
     'solanamap/stone1.png': 256,
     'solanamap/stone2.png': 256,
     'solanamap/wall1solana.png': 384, // drawn with setDisplaySize, no scale change needed
+    'solanamap/tower_archer_blue2.png': 256,
+    'solanamap/tower_king_blue.png': 256,
+    'solanamap/stone3.png': 256,
+    'solanamap/logo.png': 256,
     'magicblock/tower_archer_blue.png': 256,
     'magicblock/tower_archer_red.png': 256,
     'magicblock/tower_archer_red2.png': 256,
     'magicblock/tower_king_blue.png': 256,
     'magicblock/tower_king_red.png': 256,
+    'magicblock/tower_archer_blue2.png': 256,
+    'magicblock/stone1.png': 256,
+    'magicblock/stone2.png': 256,
     'assets/wall_solana.png': 384, // drawn with setDisplaySize, no scale change needed
 };
 

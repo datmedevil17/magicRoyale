@@ -11,11 +11,12 @@ import {
     getAssociatedTokenAddressSync,
 } from "@solana/spl-token";
 import { MINT_CONFIG } from "../game/config/MintConfig";
+import { SERVER_URL } from "../config/server";
 
 // Ephemeral Rollup endpoints - configurable via environment
 const ER_ENDPOINT = "https://devnet.magicblock.app";
 const ER_WS_ENDPOINT = "wss://devnet.magicblock.app";
-const API_URL = "http://localhost:3000";
+const API_URL = SERVER_URL;
 
 const DELEGATION_PROGRAM_ID = new PublicKey(
     "DELeGGvXpWV2fqJUhqcF5ZSYMS4JTLjteaAMARRSaeSh"

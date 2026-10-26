@@ -3,8 +3,61 @@ import { Scene } from 'phaser';
 import { getTroopStats, isSpellCard } from '../config/TroopConfig';
 import { CONFIG_TO_SPRITE, getAnimTiming, getAttackTiming, type SpriteName } from '../config/AnimationTiming';
 import { createSpriteAnim, loadSpriteSheet } from '../utils/SpriteAnims';
+import { getArenaConfig } from '../config/Maps';
+import { ArenaConfig2v2 } from '../config/ArenaConfig2v2';
+import type { ArenaConfigInterface } from '../config/IArenaConfig';
 
 const OWNERS = ['player', 'opponent'] as const;
+
+// Every map-art image, by texture key. BootScene loads only the ones the current arena references.
+const MAP_IMAGES: Record<string, string> = {
+    // Classic arena
+    tower_archer_blue: 'assets/tower_archer_blue.png',
+    tower_archer_red: 'assets/tower_archer_red.png',
+    tower_king_blue: 'assets/tower_king_blue.png',
+    tower_king_red: 'assets/tower_king_red.png',
+    bridge: 'assets/bridge.png',
+    ...Object.fromEntries([1, 2, 3, 4].flatMap(i => [
+        [`wall${i}`, `assets/wall${i}.png`],
+        [`stone${i}`, `assets/stone${i}.png`],
+        [`tree${i}`, `assets/tree${i}.png`],
+    ])),
+    ...Object.fromEntries([1, 2, 3, 4, 5].map(i => [`trees${i}`, `assets/trees${i}.png`])),
+
+    // Solana arena
+    m2_tower_archer_blue_right: 'solanamap/tower_archer_blue.png',
+    m2_tower_archer_blue_left: 'solanamap/tower_archer_blue2.png',
+    m2_tower_archer_red_right: 'solanamap/tower_archer_red.png',
+    m2_tower_archer_red_left: 'solanamap/tower_archer_red2.png',
+    m2_tower_king_blue: 'solanamap/tower_king_blue.png',
+    m2_tower_king_red: 'solanamap/tower_king_red.png',
+    m2_logo: 'solanamap/logo.png',
+    m2_solana_wall1: 'solanamap/wall1solana.png',
+    solana_wall1: 'solanamap/wall1solana.png',
+    ...Object.fromEntries([1, 2, 3].map(i => [`solana_stone${i}`, `solanamap/stone${i}.png`])),
+
+    // Magicblock arena
+    m3_tower_archer_blue_right: 'magicblock/tower_archer_blue.png',
+    m3_tower_archer_blue_left: 'magicblock/tower_archer_blue2.png',
+    m3_tower_archer_red_right: 'magicblock/tower_archer_red.png',
+    m3_tower_archer_red_left: 'magicblock/tower_archer_red2.png',
+    m3_tower_king_blue: 'magicblock/tower_king_blue.png',
+    m3_tower_king_red: 'magicblock/tower_king_red.png',
+    m3_logo: 'magicblock/logo.png',
+    m3_magic_stone1: 'magicblock/stone1.png',
+    m3_magic_stone2: 'magicblock/stone2.png',
+    ...Object.fromEntries([1, 2].map(i => [`magic_stone${i}`, `magicblock/stone${i}.png`])),
+};
+
+/** Texture keys an arena draws: towers (both colours), walls, props, and the bridge on unthemed maps. */
+function arenaTextures(arena: ArenaConfigInterface): Set<string> {
+    const keys = new Set<string>();
+    arena.TOWERS.forEach(t => keys.add(t.texture));
+    arena.CUSTOM_FENCES?.forEach(f => keys.add(f.texture || 'wall1'));
+    arena.PROPS?.forEach(p => keys.add(p.texture));
+    if (!arena.THEME) keys.add('bridge');
+    return keys;
+}
 
 // Every unit's walk + fight animation for both owners. Phaser cache key (texture and
 // animation) is `${configName}_${action}_${owner}`, e.g. 'Archers_walk_player'.
@@ -39,68 +92,15 @@ export class BootScene extends Scene {
         this.load.image('ValkyrieCard', 'ValkyrieCard.png');
         this.load.image('WizardCard', 'WizardCard.png');
 
-        // Map 1 (Base Map) Towers - Load from assets/
-        this.load.image('tower_archer_blue', 'tower_archer_blue.png');
-        this.load.image('tower_archer_red', 'tower_archer_red.png');
-        this.load.image('tower_king_blue', 'tower_king_blue.png');
-        this.load.image('tower_king_red', 'tower_king_red.png');
-        this.load.image('logo', 'arena_logo.png');
-
-        // Map 2 (Solana Map) Towers - Load from solanamap/
-        this.load.image('m2_tower_archer_blue_right', '../solanamap/tower_archer_blue.png');
-        this.load.image('m2_tower_archer_blue_left', '../solanamap/tower_archer_blue2.png');
-        this.load.image('m2_tower_archer_red_right', '../solanamap/tower_archer_red.png');
-        this.load.image('m2_tower_archer_red_left', '../solanamap/tower_archer_red2.png');
-        this.load.image('m2_tower_king_blue', '../solanamap/tower_king_blue.png');
-        this.load.image('m2_tower_king_red', '../solanamap/tower_king_red.png');
-        this.load.image('m2_logo', '../solanamap/logo.png');
-        this.load.image('m2_solana_wall1', '../solanamap/wall1solana.png');
-
-        // Map 3 (Magicblock Map) Towers - Load from magicblock/
-        this.load.image('m3_tower_archer_blue_right', '../magicblock/tower_archer_blue.png');
-        this.load.image('m3_tower_archer_blue_left', '../magicblock/tower_archer_blue2.png');
-        this.load.image('m3_tower_archer_red_right', '../magicblock/tower_archer_red.png');
-        this.load.image('m3_tower_archer_red_left', '../magicblock/tower_archer_red2.png');
-        this.load.image('m3_tower_king_blue', '../magicblock/tower_king_blue.png');
-        this.load.image('m3_tower_king_red', '../magicblock/tower_king_red.png');
-        this.load.image('m3_logo', '../magicblock/logo.png');
-        this.load.image('m3_magic_stone1', '../magicblock/stone1.png');
-        this.load.image('m3_magic_stone2', '../magicblock/stone2.png');
-
-        // Arena Assets
-        this.load.image('bridge', 'bridge.png');
-        this.load.image('side_river', 'side_river.png');
-        this.load.image('middle_river', 'middle_river.png');
-
-        // Misc UI/Map Assets
-        this.load.image('score_place1', 'score_place1.png');
-        this.load.image('score_place2', 'score_place2.png');
-        this.load.image('level_place', 'level_place.png');
-        this.load.image('time_place', 'time_place.png');
-        this.load.image('cup_icon', 'cup_icon.png');
-
-        // Load indexed assets
-        for (let i = 1; i <= 4; i++) {
-            this.load.image(`wall${i}`, `wall${i}.png`);
-            this.load.image(`stone${i}`, `stone${i}.png`);
-            this.load.image(`tree${i}`, `tree${i}.png`);
+        // Map art: only the images the selected arena uses
+        const data = this.registry.get('data') || {};
+        const arena = data.mode === '2v2' ? ArenaConfig2v2 : getArenaConfig(data.mapType);
+        this.load.setPath('');
+        for (const key of arenaTextures(arena)) {
+            if (MAP_IMAGES[key]) this.load.image(key, MAP_IMAGES[key]);
         }
-        for (let i = 1; i <= 5; i++) {
-            this.load.image(`trees${i}`, `trees${i}.png`);
-        }
-
-        // Load solanamap custom props
-        for (let i = 1; i <= 3; i++) {
-            this.load.image(`solana_stone${i}`, `../solanamap/stone${i}.png`);
-        }
-        for (let i = 1; i <= 2; i++) {
-            this.load.image(`magic_stone${i}`, `../magicblock/stone${i}.png`);
-        }
-        // this.load.image('solana_logo', '../solanamap/logo.png');
-        this.load.image('solana_wall1', '../solanamap/wall1solana.png');
 
         // Unit animations (sprite sheets generated by `npm run assets`)
-        this.load.setPath('');
         for (const { key, sprite } of UNIT_SHEETS) {
             loadSpriteSheet(this, key, sprite);
         }

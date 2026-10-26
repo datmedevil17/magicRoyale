@@ -42,6 +42,9 @@ export abstract class Troop extends Entity {
     /** Time the current attack started; the renderer restarts the attack animation when it changes. */
     public attackStartTime: number = 0;
     public lastAttack: AttackInfo | null = null;
+    /** Non-host: offset to the host's position still to be blended in (see GameManager.applySyncCorrection). */
+    public syncErrorX: number = 0;
+    public syncErrorY: number = 0;
     /** Raged while the logic clock is before this time (refreshed by Rage zones every tick). */
     public rageUntil: number = 0;
 

@@ -40,6 +40,26 @@ export function getDeployZones(config: ArenaConfigInterface, side: 'player' | 'o
 export const isInZones = (zones: Rect[], x: number, y: number) =>
     zones.some(z => x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h);
 
+/**
+ * Footprints (world px) of the towers in `standingIds`: the same whole-tile area as the
+ * tower's sand patch / pad. Troops and buildings can't be placed there. `mirrored` rotates
+ * them 180° for clients whose view is the host's turned around.
+ */
+export function getTowerFootprints(config: ArenaConfigInterface, standingIds: Set<string>, mirrored: boolean): Rect[] {
+    const t = config.TILE_SIZE;
+    const mapW = config.COLS * t;
+    const mapH = config.ROWS * t;
+    return config.TOWERS
+        .filter(tower => standingIds.has(tower.id))
+        .map(tower => {
+            const w = tower.gridWidth * t;
+            const h = tower.gridHeight * t;
+            const x = (tower.gridCol - tower.gridWidth / 2) * t + t / 2;
+            const y = (tower.gridRow - tower.gridHeight / 2) * t + t / 2;
+            return mirrored ? { x: mapW - x - w, y: mapH - y - h, w, h } : { x, y, w, h };
+        });
+}
+
 /** Whole map, for spells. */
 export const getMapBounds = (config: ArenaConfigInterface): Rect =>
     ({ x: 0, y: 0, w: config.COLS * config.TILE_SIZE, h: config.ROWS * config.TILE_SIZE });

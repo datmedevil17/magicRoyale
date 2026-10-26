@@ -6,8 +6,8 @@ import { ClanBrowser } from '../components/clan/ClanBrowser';
 import { CreateClanForm } from '../components/clan/CreateClanForm';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { io, Socket } from 'socket.io-client';
+import { SERVER_URL } from '../config/server';
 
-const SERVER_URL = 'http://localhost:3000';
 
 export const ClanPage: React.FC = () => {
     const { fetchUserClan, leaveClan, fetchClanMembers } = useGameProgram();

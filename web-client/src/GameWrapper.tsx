@@ -14,8 +14,8 @@ import { EventBus, EVENTS } from './game/EventBus';
 import { useGameProgram } from './hooks/use-game-program';
 import { CARD_DATA, type CardData } from './game/config/CardConfig';
 import { TransactionDrawer, type GameTransaction } from './ui/TransactionDrawer';
+import { SERVER_URL } from './config/server';
 
-const SERVER_URL = 'http://localhost:3000';
 
 export const GameWrapper = () => {
     const gameRef = useRef<Phaser.Game | null>(null);

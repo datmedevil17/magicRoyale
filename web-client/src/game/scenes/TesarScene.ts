@@ -44,6 +44,11 @@ export class TesarScene extends Scene {
     }
 
     create() {
+        // Phaser doesn't call shutdown() by name; hook it so EventBus listeners don't
+        // outlive this scene (a destroyed game only fires 'destroy')
+        this.events.once('shutdown', this.shutdown, this);
+        this.events.once('destroy', this.shutdown, this);
+
         // ── Map Setup ──
         const mapWidth = this.currentConfig.COLS * this.currentConfig.TILE_SIZE;
         const mapHeight = this.currentConfig.ROWS * this.currentConfig.TILE_SIZE;

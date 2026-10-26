@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Toaster, toast } from 'react-hot-toast';
-import Phaser from 'phaser';
-import { BootScene } from '../game/scenes/BootScene';
-import { MainScene2v2 } from '../game/scenes/MainScene2v2';
+import StartGame from '../game/PhaserGame';
 import { ElixirBar } from '../ui/ElixirBar';
 import { GameHUD } from '../ui/GameHUD';
 import { EventBus, EVENTS } from '../game/EventBus';
@@ -15,22 +13,7 @@ export const TestArena2v2: React.FC = () => {
     const [isBattleActive, setIsBattleActive] = useState(false);
 
     useEffect(() => {
-        const config: Phaser.Types.Core.GameConfig = {
-            type: Phaser.AUTO,
-            width: 480,
-            height: 800,
-            parent: 'game-container',
-            backgroundColor: '#000000',
-            scene: [BootScene, MainScene2v2], // Explicitly use our new 2v2 scene
-            scale: {
-                mode: Phaser.Scale.FIT,
-                autoCenter: Phaser.Scale.CENTER_BOTH
-            }
-        };
-
-        const game = new Phaser.Game(config);
-        game.registry.set('data', { isTestMode: true, nextScene: 'MainScene2v2' });
-        gameRef.current = game;
+        gameRef.current = StartGame('game-container', { isTestMode: true, mode: '2v2' });
 
         EventBus.once('scene-ready', () => {
             EventBus.emit(EVENTS.BATTLE_STARTED, {
@@ -56,7 +39,8 @@ export const TestArena2v2: React.FC = () => {
                 cardId: selectedCardId,
                 x: pointer.worldX,
                 y: pointer.worldY,
-                ownerId: spawnOwner
+                // The scene only knows teams: player1/player2 are blue ('player'), opponent1/2 red
+                ownerId: spawnOwner.startsWith('player') ? 'player' : 'opponent'
             });
 
             toast.success(`Deployed ${selectedCardId} for ${spawnOwner.toUpperCase()}`);
@@ -66,6 +50,11 @@ export const TestArena2v2: React.FC = () => {
         return () => {
             EventBus.off('map-pointer-down', onMapPointerDown);
         };
+    }, [selectedCardId, spawnOwner]);
+
+    // Show the deploy-zone overlay for the selected card (it shows the blue team's zones)
+    useEffect(() => {
+        EventBus.emit(EVENTS.CARD_SELECTED, spawnOwner.startsWith('player') ? selectedCardId : null);
     }, [selectedCardId, spawnOwner]);
 
     const testCards = Object.values(CARD_DATA).slice(0, 12);

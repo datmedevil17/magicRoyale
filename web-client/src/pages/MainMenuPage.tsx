@@ -108,7 +108,16 @@ export const MainMenuPage: React.FC = () => {
                             {profile ? 'Battle' : 'Loading...'}
                         </span>
                     </div>
-                    <div className="relative w-40 h-24 flex justify-center items-center cursor-pointer transition-transform active:scale-95 hover:brightness-110">
+                    <div
+                        className={`relative w-40 h-24 flex justify-center items-center transition-transform ${profile
+                                ? 'cursor-pointer active:scale-95 hover:brightness-110'
+                                : 'cursor-not-allowed grayscale opacity-70'
+                            }`}
+                        onClick={() => {
+                            if (profile) navigate('/waiting', { state: { mode: '2v2' } });
+                            else toast.error('Profile not found yet. Please wait...');
+                        }}
+                    >
                         <img src="/assets/button_blue.png" alt="2v2" className="absolute w-full h-full drop-shadow-xl" />
                         <span className="relative z-10 text-xl text-white drop-shadow-[2px_2px_0_rgba(0,0,0,0.5)]">2v2</span>
                     </div>

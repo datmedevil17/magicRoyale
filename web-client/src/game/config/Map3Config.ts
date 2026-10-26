@@ -106,7 +106,7 @@ export const Map3Config: ArenaConfigInterface = {
             owner: 'player',
             towerRow: 27.5,
             towerCol: 6,
-            pixelScale: 0.15,
+            pixelScale: 0.239,
             texture: 'm3_tower_archer_blue_left',
             gridRow: 28,
             gridCol: 6,
@@ -260,12 +260,12 @@ export const Map3Config: ArenaConfigInterface = {
 
     // Props
     PROPS: [
-        { col: 3.5, row: 1.5, texture: 'm3_magic_stone1', scale: 0.12, rotate: 0 },
-        { col: 19, row: 34, texture: 'm3_magic_stone1', scale: 0.12, rotate: 0 },
-        { col: 18.2, row: 16.2, texture: 'm3_magic_stone2', scale: 0.12 },
-        { col: 18.2, row: 20.2, texture: 'm3_magic_stone2', scale: 0.12 },
-        { col: 4.7, row: 16.2, texture: 'm3_magic_stone2', scale: 0.12 },
-        { col: 4.7, row: 20.2, texture: 'm3_magic_stone2', scale: 0.12 },
+        { col: 3.5, row: 1.5, texture: 'm3_magic_stone1', scale: 0.234, rotate: 0 },
+        { col: 19, row: 34, texture: 'm3_magic_stone1', scale: 0.234, rotate: 0 },
+        { col: 18.2, row: 16.2, texture: 'm3_magic_stone2', scale: 0.191 },
+        { col: 18.2, row: 20.2, texture: 'm3_magic_stone2', scale: 0.191 },
+        { col: 4.7, row: 16.2, texture: 'm3_magic_stone2', scale: 0.191 },
+        { col: 4.7, row: 20.2, texture: 'm3_magic_stone2', scale: 0.191 },
         { col: 11.5, row: 25, texture: 'm3_logo', scale: 0.36, rotate: 0, alpha: 0.3 },
         { col: 11.5, row: 12, texture: 'm3_logo', scale: 0.36, rotate: 0, alpha: 0.3 },
     ],

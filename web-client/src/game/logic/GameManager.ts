@@ -45,6 +45,11 @@ const SEPARATION_STRENGTH = 0.5;
 // Collision radius for units configured with radius 0
 const DEFAULT_UNIT_RADIUS = 14;
 
+// Non-host smoothing: fraction of the remaining offset to the host's position closed per logic tick.
+// Larger gaps (e.g. after lag) snap immediately.
+const SYNC_BLEND_PER_TICK = 0.25;
+const SYNC_SNAP_DISTANCE = 66; // 3 tiles
+
 // Snapshots arrive every 200ms; a troop missing from this many in a row is removed.
 // The grace period covers the round trip for a troop we deployed that the host hasn't seen yet.
 const SYNC_MISSES_BEFORE_REMOVAL = 5;
@@ -171,6 +176,24 @@ export class GameManager {
         );
 
         this.separateUnits();
+        this.applySyncCorrection();
+    }
+
+    /** Non-host: ease troops toward the host's last reported position instead of snapping. */
+    private applySyncCorrection() {
+        for (const e of this.entities) {
+            if (!(e instanceof Troop) || (e.syncErrorX === 0 && e.syncErrorY === 0)) continue;
+            const stepX = e.syncErrorX * SYNC_BLEND_PER_TICK;
+            const stepY = e.syncErrorY * SYNC_BLEND_PER_TICK;
+            e.x += stepX;
+            e.y += stepY;
+            e.syncErrorX -= stepX;
+            e.syncErrorY -= stepY;
+            if (Math.abs(e.syncErrorX) < 0.1 && Math.abs(e.syncErrorY) < 0.1) {
+                e.syncErrorX = 0;
+                e.syncErrorY = 0;
+            }
+        }
     }
 
     /**
@@ -323,41 +346,31 @@ export class GameManager {
     }
 
     /**
-     * Synchronize entity positions and health from the authoritative host (Player 1).
-     * Only applies to troops.
+     * Non-host clients: apply a snapshot from the authoritative host (player1). Entity owners
+     * in snapshots are 'player'/'opponent' from the host's view. `mirror` is true when this
+     * client is on the other team (its view is rotated 180° and owners are swapped); false for
+     * the host's 2v2 teammate, who shares the host's view.
      */
-    public syncFromHost(payload: any, isLocalHost: boolean = true) {
+    public syncFromHost(payload: any, mirror: boolean = true) {
         const { entities: snaps, playerCrowns, opponentCrowns, playerTowersDestroyed, opponentTowersDestroyed, gameEnded, winner, victoryReason } = payload;
         const mapWidth = ArenaConfig.COLS * ArenaConfig.TILE_SIZE;
         const mapHeight = ArenaConfig.ROWS * ArenaConfig.TILE_SIZE;
 
         if (snaps) {
+            const byId = new Map(this.entities.map(e => [e.id, e]));
             snaps.forEach((snap: any) => {
-                let entity = this.entities.find(e => e.id === snap.id);
+                let entity = byId.get(snap.id);
                 let finalX = snap.x;
                 let finalY = snap.y;
                 let finalOwner = snap.ownerId;
 
-                if (!isLocalHost) {
+                if (mirror) {
                     finalX = mapWidth - snap.x;
                     finalY = mapHeight - snap.y;
-
-                    // Perspective flip logic for 2v2
-                    // Team 0 (p1, p2) is Blue, Team 1 (p3, p4) is Red
-                    // If snap.ownerId is 'player1' or 'player2', it's Blue.
-                    // If snap.ownerId is 'player3' or 'player4', it's Red.
-                    // From p3/p4 perspective: Red is 'player', Blue is 'opponent'
-                    if (snap.ownerId === 'player1' || snap.ownerId === 'player2') {
-                        finalOwner = 'opponent';
-                    } else if (snap.ownerId === 'player3' || snap.ownerId === 'player4') {
-                        finalOwner = 'player';
-                    } else {
-                        // Fallback/Legacy 1v1
-                        finalOwner = snap.ownerId === 'player' ? 'opponent' : 'player';
-                    }
+                    finalOwner = snap.ownerId === 'player' ? 'opponent' : 'player';
                 }
 
-                if (!entity && !isLocalHost) {
+                if (!entity) {
                     const cardId = PREFIX_TO_CARD[snap.id.split('_')[0]];
                     if (cardId) {
                         entity = this.deployCard(cardId, { x: finalX, y: finalY }, finalOwner, true, snap.id) ?? undefined;
@@ -366,12 +379,22 @@ export class GameManager {
 
                 if (entity) {
                     if (entity instanceof Troop) {
-                        entity.x = finalX;
-                        entity.y = finalY;
+                        const dx = finalX - entity.x;
+                        const dy = finalY - entity.y;
+                        if (Math.hypot(dx, dy) > SYNC_SNAP_DISTANCE) {
+                            entity.x = finalX;
+                            entity.y = finalY;
+                            entity.syncErrorX = 0;
+                            entity.syncErrorY = 0;
+                        } else {
+                            // The latest snapshot defines the remaining error; blended in over the next ticks
+                            entity.syncErrorX = dx;
+                            entity.syncErrorY = dy;
+                        }
                         entity.health = snap.health;
                         entity.state = snap.state;
                         if (snap.targetId) {
-                            entity.target = this.entities.find(e => e.id === snap.targetId) || null;
+                            entity.target = byId.get(snap.targetId) ?? null;
                         }
                     } else if (entity instanceof TowerEntity) {
                         entity.health = snap.health;
@@ -379,26 +402,24 @@ export class GameManager {
                 }
             });
 
-            if (!isLocalHost) {
-                // The host is authoritative: drop troops it no longer has (died or never spawned there)
-                const snapIds = new Set<string>(snaps.map((s: any) => s.id));
-                this.entities = this.entities.filter(e => {
-                    if (!(e instanceof Troop) || snapIds.has(e.id)) {
-                        this.syncMisses.delete(e.id);
-                        return true;
-                    }
-                    const misses = (this.syncMisses.get(e.id) ?? 0) + 1;
-                    if (misses >= SYNC_MISSES_BEFORE_REMOVAL) {
-                        this.syncMisses.delete(e.id);
-                        return false;
-                    }
-                    this.syncMisses.set(e.id, misses);
+            // The host is authoritative: drop troops it no longer has (died or never spawned there)
+            const snapIds = new Set<string>(snaps.map((s: any) => s.id));
+            this.entities = this.entities.filter(e => {
+                if (!(e instanceof Troop) || snapIds.has(e.id)) {
+                    this.syncMisses.delete(e.id);
                     return true;
-                });
-            }
+                }
+                const misses = (this.syncMisses.get(e.id) ?? 0) + 1;
+                if (misses >= SYNC_MISSES_BEFORE_REMOVAL) {
+                    this.syncMisses.delete(e.id);
+                    return false;
+                }
+                this.syncMisses.set(e.id, misses);
+                return true;
+            });
         }
 
-        if (isLocalHost) {
+        if (!mirror) {
             if (playerCrowns !== undefined) this.playerCrowns = playerCrowns;
             if (opponentCrowns !== undefined) this.opponentCrowns = opponentCrowns;
             if (playerTowersDestroyed !== undefined) this.playerTowersDestroyed = playerTowersDestroyed;
@@ -412,7 +433,7 @@ export class GameManager {
 
         if (gameEnded !== undefined) this.gameEnded = gameEnded;
         if (winner !== undefined) {
-            if (isLocalHost) this.winner = winner;
+            if (!mirror) this.winner = winner;
             else {
                 if (winner === 'player') this.winner = 'opponent';
                 else if (winner === 'opponent') this.winner = 'player';

@@ -4,9 +4,7 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { Toaster, toast } from 'react-hot-toast';
 import { BN } from '@coral-xyz/anchor';
 import { io, Socket } from 'socket.io-client';
-import Phaser from 'phaser';
-import { BootScene } from './game/scenes/BootScene';
-import { MainScene2v2 } from './game/scenes/MainScene2v2';
+import StartGame from './game/PhaserGame';
 import { ElixirBar } from './ui/ElixirBar';
 import { CardDeck } from './ui/CardDeck';
 import { GameHUD } from './ui/GameHUD';
@@ -15,31 +13,35 @@ import { EventBus, EVENTS } from './game/EventBus';
 import { useGameProgram, getBattle2v2Pda } from './hooks/use-game-program';
 import { CARD_DATA, type CardData } from './game/config/CardConfig';
 import { TransactionDrawer, type GameTransaction } from './ui/TransactionDrawer';
+import { teamOf } from './game/logic/Teams';
+import { SERVER_URL } from './config/server';
 
-const SERVER_URL = 'http://localhost:3000';
+// Joiners (player2-4) must all be in the battle account on-chain before player1 delegates it
+const JOINERS = 3;
 
 export const GameWrapper2v2 = () => {
     const gameRef = useRef<Phaser.Game | null>(null);
     const socketRef = useRef<Socket | null>(null);
     const location = useLocation();
     const wallet = useWallet();
-    const { deployTroop2v2, delegateGame2v2, endGame2v2, erConnection, program, playerProfile } = useGameProgram();
+    const { deployTroop2v2, delegateGame2v2, erConnection, program, playerProfile } = useGameProgram();
 
     const gameData = location.state as {
         gameId: string;
-        role: string;
-        team: number;
+        role: 'player1' | 'player2' | 'player3' | 'player4';
     } | null;
 
     const gameIdBn = gameData?.gameId ? new BN(gameData.gameId) : null;
     const isPlayer1 = gameData?.role === 'player1';
+    const myTeam = teamOf(gameData?.role, '2v2');
 
     const [isBattleActive, setIsBattleActive] = useState(false);
     const [isDelegated, setIsDelegated] = useState(!isPlayer1);
     const [isDelegating, setIsDelegating] = useState(false);
+    const [chainJoined, setChainJoined] = useState(0);
     const [playerCrowns, setPlayerCrowns] = useState(0);
     const [opponentCrowns, setOpponentCrowns] = useState(0);
-    const [timeLeft, setTimeLeft] = useState('2v2 Ready');
+    const [timeLeft, setTimeLeft] = useState('3:00');
     const [gameEnded, setGameEnded] = useState(false);
     const [winner, setWinner] = useState<'player' | 'opponent' | 'draw'>('draw');
     const [playerName, setPlayerName] = useState('You');
@@ -49,6 +51,7 @@ export const GameWrapper2v2 = () => {
     const [transactionHistory, setTransactionHistory] = useState<GameTransaction[]>([]);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
+    // ── Socket setup ──────────────────────────────────────────────────────────
     useEffect(() => {
         if (!wallet.publicKey || !gameData) return;
 
@@ -58,11 +61,10 @@ export const GameWrapper2v2 = () => {
         socketRef.current = socket;
 
         socket.on('connect', () => {
-            socket.emit('rejoin-game-2v2', {
-                gameId: gameData.gameId,
-                role: gameData.role,
-            });
+            socket.emit('rejoin-game', { gameId: gameData.gameId, role: gameData.role });
         });
+
+        socket.on('lobby-status', (data: { chainJoined: number }) => setChainJoined(data.chainJoined));
 
         socket.on('tick', (data: { elapsed: number; remaining: number }) => {
             const minutes = Math.floor(data.remaining / 60000);
@@ -77,23 +79,29 @@ export const GameWrapper2v2 = () => {
             toast.success('2v2 Battle Started!', { duration: 4000 });
         });
 
-        socket.on('player-disconnected', (data: { role: string }) => {
-            toast(`${data.role} disconnected!`, { icon: '🏳️' });
+        // A player dropped: the match carries on with the rest (no forfeit in 2v2)
+        socket.on('opponent-disconnected', (data: { role: string }) => {
+            const who = teamOf(data.role, '2v2') === myTeam ? 'Your teammate' : 'An opponent';
+            toast(`${who} disconnected`, { icon: '🏳️' });
         });
 
-        socket.on('opponent-deploy-troop', (data: any) => {
+        socket.on('opponent-deploy-troop', (data: { cardId: string; ownerRole: string }) => {
             EventBus.emit(EVENTS.NETWORK_OPPONENT_DEPLOY, data);
             setTransactionHistory(prev => [...prev, {
-                id: `opp-${Date.now()}`,
+                id: `net-${Date.now()}-${Math.random()}`,
                 cardId: data.cardId,
-                ownerId: data.role.startsWith('player') ? 'teammate' : 'opponent',
+                ownerId: teamOf(data.ownerRole, '2v2') === myTeam ? 'teammate' : 'opponent',
                 status: 'success',
                 timestamp: Date.now()
             }]);
         });
 
-        socket.on('sync-units', (data: any) => {
+        socket.on('sync-units', (data: unknown) => {
             EventBus.emit('sync-units', data);
+        });
+
+        socket.on('game-timeout', () => {
+            EventBus.emit(EVENTS.GAME_END_TRIGGER);
         });
 
         if (gameRef.current) {
@@ -104,40 +112,27 @@ export const GameWrapper2v2 = () => {
             socket.disconnect();
             socketRef.current = null;
         };
-    }, [wallet.publicKey, gameData]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [wallet.publicKey]);
 
     const deployTroopRef = useRef(deployTroop2v2);
-    const endGameRef = useRef(endGame2v2);
     const pendingDeploysRef = useRef<Map<string, string>>(new Map());
-    const opponentPendingDeploysQueue = useRef<string[]>([]);
 
     useEffect(() => {
         deployTroopRef.current = deployTroop2v2;
-        endGameRef.current = endGame2v2;
-    }, [deployTroop2v2, endGame2v2]);
+    }, [deployTroop2v2]);
 
+    // ── Phaser game boot ──────────────────────────────────────────────────────
     useEffect(() => {
         const storedName = localStorage.getItem('username');
         if (storedName) setPlayerName(storedName);
 
         if (!gameRef.current) {
-            const config: Phaser.Types.Core.GameConfig = {
-                type: Phaser.AUTO,
-                width: 480,
-                height: 800,
-                parent: 'game-container',
-                backgroundColor: '#000000',
-                scene: [BootScene, MainScene2v2],
-                scale: {
-                    mode: Phaser.Scale.FIT,
-                    autoCenter: Phaser.Scale.CENTER_BOTH
-                }
-            };
-            const game = new Phaser.Game(config);
-            game.registry.set('data', {
-                isTestMode: false,
+            const game = StartGame('game-container', {
+                walletPublicKey: wallet.publicKey?.toBase58(),
+                gameId: gameData?.gameId,
                 role: gameData?.role,
-                gameId: gameData?.gameId
+                mode: '2v2',
             });
             gameRef.current = game;
 
@@ -146,9 +141,11 @@ export const GameWrapper2v2 = () => {
             }
         }
 
+        // ── On-chain troop submission + server relay ─────────────────────────
         const handleDeployBlockchain = async (data: {
             cardIdx: number;
             cardId: string;
+            entityId: string;
             x: number;
             y: number;
         }) => {
@@ -165,9 +162,11 @@ export const GameWrapper2v2 = () => {
 
             toast.loading(`Deploying ${data.cardId}...`, { id: tempId });
 
-            socketRef.current?.emit('deploy-troop-2v2', {
+            // Relay to the other three players right away; the chain write follows
+            socketRef.current?.emit('deploy-troop', {
                 cardIdx: data.cardIdx,
                 cardId: data.cardId,
+                entityId: data.entityId,
                 x: data.x,
                 y: data.y,
             });
@@ -190,46 +189,75 @@ export const GameWrapper2v2 = () => {
         };
         EventBus.on(EVENTS.DEPLOY_TROOP_BLOCKCHAIN, handleDeployBlockchain);
 
-        const handleCrownUpdate = (data: any) => {
+        const handleCrownUpdate = (data: {
+            playerCrowns: number;
+            opponentCrowns: number;
+            playerTowersDestroyed?: number;
+            opponentTowersDestroyed?: number;
+        }) => {
             setPlayerCrowns(data.playerCrowns);
             setOpponentCrowns(data.opponentCrowns);
-            setPlayerTowersDestroyed(data.playerTowersDestroyed);
-            setOpponentTowersDestroyed(data.opponentTowersDestroyed);
+            if (data.playerTowersDestroyed !== undefined) setPlayerTowersDestroyed(data.playerTowersDestroyed);
+            if (data.opponentTowersDestroyed !== undefined) setOpponentTowersDestroyed(data.opponentTowersDestroyed);
         };
         EventBus.on(EVENTS.CROWN_UPDATE, handleCrownUpdate);
 
-        const handleOpponentDeploy = (data: { cardId: string }) => {
-            opponentPendingDeploysQueue.current.push(data.cardId);
-            toast(`Deployment: ${data.cardId}`, { icon: '⚔️' });
+        const handleNetworkDeploy = (data: { cardId: string; ownerRole: string }) => {
+            const ally = teamOf(data.ownerRole, '2v2') === myTeam;
+            toast(`${ally ? 'Teammate' : 'Opponent'} deployed ${data.cardId}`, {
+                icon: ally ? '🤝' : '⚔️',
+                style: { borderBottom: `3px solid ${ally ? '#3b82f6' : '#ef4444'}` },
+            });
         };
-        EventBus.on(EVENTS.NETWORK_OPPONENT_DEPLOY, handleOpponentDeploy);
+        EventBus.on(EVENTS.NETWORK_OPPONENT_DEPLOY, handleNetworkDeploy);
 
-        const handleGameEnd = async (data: any) => {
+        const handleGameEnd = (data: {
+            winner: 'player' | 'opponent' | 'draw';
+            playerCrowns: number;
+            opponentCrowns: number;
+            playerTowersDestroyed: number;
+            opponentTowersDestroyed: number;
+            victoryReason: string;
+        }) => {
             setGameEnded(true);
             setWinner(data.winner);
-            setVictoryReason(data.victoryReason);
+            setPlayerCrowns(data.playerCrowns);
+            setOpponentCrowns(data.opponentCrowns);
+            setPlayerTowersDestroyed(data.playerTowersDestroyed ?? 0);
+            setOpponentTowersDestroyed(data.opponentTowersDestroyed ?? 0);
+            setVictoryReason(data.victoryReason ?? '');
         };
         EventBus.on(EVENTS.GAME_END, handleGameEnd);
+
+        const handleElixirInsufficient = () => {
+            toast.error('Not enough elixir!', { id: 'elixir-low' });
+        };
+        EventBus.on(EVENTS.ELIXIR_INSUFFICIENT, handleElixirInsufficient);
 
         return () => {
             EventBus.off(EVENTS.DEPLOY_TROOP_BLOCKCHAIN, handleDeployBlockchain);
             EventBus.off(EVENTS.CROWN_UPDATE, handleCrownUpdate);
-            EventBus.off(EVENTS.NETWORK_OPPONENT_DEPLOY, handleOpponentDeploy);
+            EventBus.off(EVENTS.NETWORK_OPPONENT_DEPLOY, handleNetworkDeploy);
             EventBus.off(EVENTS.GAME_END, handleGameEnd);
+            EventBus.off(EVENTS.ELIXIR_INSUFFICIENT, handleElixirInsufficient);
             if (gameRef.current) {
                 gameRef.current.destroy(true);
                 gameRef.current = null;
             }
         };
-    }, [gameData, wallet.publicKey, gameIdBn]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [gameData, wallet.publicKey]);
 
+    // ── Delegate → ER (player1 only, once everyone has joined on-chain) ──────
+    const allJoined = chainJoined >= JOINERS;
     const handleDelegate = async () => {
-        if (!gameIdBn || !isPlayer1) return;
+        if (!gameIdBn || !isPlayer1 || !allJoined) return;
         setIsDelegating(true);
         try {
             await delegateGame2v2(gameIdBn);
             toast.success('2v2 Delegation Successful!');
             setIsDelegated(true);
+            // Server starts the clock for all four players
             socketRef.current?.emit('delegated');
         } catch (err: any) {
             toast.error(`Delegation Failed: ${err.message}`);
@@ -238,6 +266,7 @@ export const GameWrapper2v2 = () => {
         }
     };
 
+    // ── ER WebSocket Logs ─────────────────────────────────────────────────────
     useEffect(() => {
         if (!erConnection || !program || !gameIdBn) return;
 
@@ -257,8 +286,10 @@ export const GameWrapper2v2 = () => {
         }, 'confirmed');
 
         return () => { erConnection.removeOnLogsListener(subscriptionId); };
-    }, [erConnection, program, gameIdBn]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [erConnection, program, gameData?.gameId]);
 
+    // ── Build Deck from On-Chain Data ────────────────────────────────────────
     const [currentDeck, setCurrentDeck] = useState<CardData[]>([]);
     useEffect(() => {
         if (!playerProfile) return;
@@ -279,13 +310,22 @@ export const GameWrapper2v2 = () => {
                         {isPlayer1 && !isDelegated ? (
                             <div className="bg-[#1a1a1a] p-8 rounded-2xl border border-white/10 flex flex-col items-center gap-6 shadow-2xl">
                                 <h2 className="text-2xl font-black text-blue-400 italic">2v2 BATTLE READY</h2>
-                                <button onClick={handleDelegate} disabled={isDelegating} className="px-8 py-4 bg-green-600 hover:bg-green-500 text-white font-black rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-50">
-                                    {isDelegating ? 'DELEGATING...' : 'START 2V2 BATTLE'}
+                                <p className="text-sm text-gray-400">
+                                    Players joined on-chain: {Math.min(chainJoined, JOINERS)}/{JOINERS}
+                                </p>
+                                <button
+                                    onClick={handleDelegate}
+                                    disabled={isDelegating || !allJoined}
+                                    className="px-8 py-4 bg-green-600 hover:bg-green-500 text-white font-black rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isDelegating ? 'DELEGATING...' : allJoined ? 'START 2V2 BATTLE' : 'WAITING FOR PLAYERS...'}
                                 </button>
                             </div>
                         ) : (
                             <div className="flex flex-col items-center gap-6">
-                                <h2 className="text-2xl font-black text-amber-400 animate-pulse tracking-tighter italic">WAITING FOR ALLIES...</h2>
+                                <h2 className="text-2xl font-black text-amber-400 animate-pulse tracking-tighter italic">
+                                    {isPlayer1 ? 'STARTING...' : 'WAITING FOR HOST...'}
+                                </h2>
                                 <div className="w-12 h-12 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" />
                             </div>
                         )}
@@ -342,7 +382,7 @@ export const GameWrapper2v2 = () => {
                         opponentTowersDestroyed={opponentTowersDestroyed}
                         victoryReason={victoryReason}
                         gameId={gameData?.gameId}
-                        role={gameData?.role as any}
+                        role={gameData?.role}
                         is2v2={true}
                     />
                 )}
