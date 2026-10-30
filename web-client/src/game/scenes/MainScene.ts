@@ -316,6 +316,7 @@ export class MainScene extends Scene {
                 if (towerSprite) {
                     towerSprite.setHealth(entity.health);
                     towerSprite.showShot(entity.lastShot, entity.isKing);
+                    towerSprite.setSleeping(!entity.active);
 
                     if (entity.health <= 0 && !entity.destroyed) {
                         entity.destroyed = true;
@@ -401,17 +402,18 @@ export class MainScene extends Scene {
     private emitHudUpdates() {
         const gm = this.gameManager;
 
-        const elixirStep = Math.floor(gm.elixir * 10);
+        // 0.1-elixir steps, plus refill-rate changes (double elixir) even when the bar is full
+        const elixirStep = Math.floor(gm.elixir * 10) * 10 + gm.elixirMultiplier;
         if (elixirStep !== this.lastHudElixirStep) {
             this.lastHudElixirStep = elixirStep;
-            EventBus.emit(EVENTS.ELIXIR_UPDATE, gm.elixir);
+            EventBus.emit(EVENTS.ELIXIR_UPDATE, gm.elixir, gm.elixirMultiplier);
         }
 
         const remainingTime = gm.getRemainingTime();
         const crownKey = [
             gm.playerCrowns, gm.opponentCrowns,
             gm.playerTowersDestroyed, gm.opponentTowersDestroyed,
-            Math.ceil(remainingTime / 1000),
+            Math.ceil(remainingTime / 1000), gm.phase,
         ].join(',');
         if (crownKey !== this.lastHudCrownKey) {
             this.lastHudCrownKey = crownKey;
@@ -421,6 +423,7 @@ export class MainScene extends Scene {
                 playerTowersDestroyed: gm.playerTowersDestroyed,
                 opponentTowersDestroyed: gm.opponentTowersDestroyed,
                 remainingTime,
+                phase: gm.phase,
             });
         }
     }
@@ -476,6 +479,8 @@ export class MainScene extends Scene {
 
         const radius = isKing ? 33 : 22;
         const towerEntity = new TowerEntity(id, finalX, finalY, finalOwner, isKing, radius);
+        // Same HP as the sprite's health bar (per-map config)
+        towerEntity.maxHealth = towerEntity.health = maxHealth;
         this.gameManager.addEntity(towerEntity);
         return towerEntity;
     }

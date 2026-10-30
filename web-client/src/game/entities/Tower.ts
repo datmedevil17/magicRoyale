@@ -7,6 +7,7 @@ export class Tower extends Phaser.GameObjects.Sprite {
     public maxHealth: number;
     public currentHealth: number;
     private lastShotTime: number = -1;
+    private sleepIcon: Phaser.GameObjects.Text | null = null;
 
     constructor(scene: Phaser.Scene, x: number, y: number, texture: string, maxHealth: number) {
         super(scene, x, y, texture);
@@ -33,9 +34,32 @@ export class Tower extends Phaser.GameObjects.Sprite {
         this.updateHealthBar();
     }
 
+    /** Show a floating "Zz" over a sleeping king tower. Call every frame; only changes on toggle. */
+    public setSleeping(sleeping: boolean) {
+        if (sleeping === !!this.sleepIcon) return;
+        if (!sleeping) {
+            this.sleepIcon?.destroy();
+            this.sleepIcon = null;
+            return;
+        }
+        this.sleepIcon = this.scene.add.text(this.x + this.displayWidth * 0.25, this.y - this.displayHeight * 0.35, 'Zz', {
+            fontSize: '14px', fontStyle: 'bold', color: '#ffffff', stroke: '#1e3a8a', strokeThickness: 3,
+        }).setOrigin(0.5).setDepth(101);
+        this.scene.tweens.add({
+            targets: this.sleepIcon,
+            y: this.sleepIcon.y - 6,
+            alpha: 0.5,
+            duration: 900,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.InOut',
+        });
+    }
+
     /** Tower destroyed: shake the camera and leave darkened rubble in place. */
     public playDestroyed() {
         this.healthBar.destroy();
+        this.setSleeping(false);
         this.scene.cameras.main.shake(250, 0.008);
         this.setTint(0x444444);
         this.scene.tweens.add({
@@ -82,6 +106,7 @@ export class Tower extends Phaser.GameObjects.Sprite {
 
     public destroy(fromScene?: boolean) {
         this.healthBar.destroy();
+        this.sleepIcon?.destroy();
         super.destroy(fromScene);
     }
 }

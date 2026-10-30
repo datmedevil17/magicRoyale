@@ -19,7 +19,9 @@ const io = new Server(server, {
 const disconnectTimers = new Map();
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const GAME_DURATION_MS = 3 * 60 * 1000 + 15000; // 3 minutes + 15s buffer
+// 3 min regulation + 1 min possible overtime + 15s buffer. Clients decide whether overtime
+// happens (tied crowns at 3:00); this is the hard stop.
+const GAME_DURATION_MS = 4 * 60 * 1000 + 15000;
 const TICK_INTERVAL_MS = 100;           // 10 ticks/sec
 
 // ─── State ────────────────────────────────────────────────────────────────────
@@ -95,6 +97,7 @@ function joinLobby2v2(game, socket) {
     game.lobbyStarted = true;
     game.players.forEach((player, i) => {
         player.role = `player${i + 1}`;
+        game.wallets[player.role] = player.walletPublicKey;
         io.to(player.id).emit('game-start', {
             gameId: game.gameId, role: player.role, mode: '2v2', roomId: game.roomId,
         });
@@ -138,6 +141,8 @@ io.on('connection', (socket) => {
             mode: mode === '2v2' ? '2v2' : '1v1',
             // 2v2 lobby: sockets in join order (roles are assigned from this order at start)
             players: [socket],
+            // role → wallet that joined in that slot; rejoins must come from the same wallet
+            wallets: { player1: socket.walletPublicKey },
             lobbyStarted: false,
             chainJoined: new Set(), // 2v2 roles that joined the battle account on-chain
         });
@@ -172,6 +177,7 @@ io.on('connection', (socket) => {
         socket.role = 'player2';
 
         game.player2 = socket;
+        game.wallets.player2 = socket.walletPublicKey;
 
         console.log(`🎮 Match: ${game.player1.walletPublicKey} vs ${socket.walletPublicKey} | game=${gameId}`);
 
@@ -204,6 +210,13 @@ io.on('connection', (socket) => {
         const game = activeGames.get(gameId);
         if (!game) {
             socket.emit('error', { message: `Game ${gameId} not found` });
+            return;
+        }
+
+        // Only the wallet that joined in this slot may take the role (e.g. not anyone claiming player1/host)
+        if (!game.wallets[role] || game.wallets[role] !== socket.walletPublicKey) {
+            console.warn(`🚫 Rejoin refused: ${socket.walletPublicKey} claimed ${role} in game ${gameId}`);
+            socket.emit('error', { message: 'You are not a player in this game' });
             return;
         }
 

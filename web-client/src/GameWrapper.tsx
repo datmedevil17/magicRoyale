@@ -15,6 +15,8 @@ import { useGameProgram } from './hooks/use-game-program';
 import { CARD_DATA, type CardData } from './game/config/CardConfig';
 import { TransactionDrawer, type GameTransaction } from './ui/TransactionDrawer';
 import { SERVER_URL } from './config/server';
+import { formatMatchTime, announcePhase } from './ui/matchClock';
+import type { MatchPhase } from './game/logic/GameManager';
 
 
 export const GameWrapper = () => {
@@ -70,10 +72,9 @@ export const GameWrapper = () => {
             });
         });
 
+        // Server clock keeps all clients' elapsed time in step; the HUD timer comes from the
+        // game (CROWN_UPDATE), which knows about overtime
         socket.on('tick', (data: { elapsed: number; remaining: number }) => {
-            const minutes = Math.floor(data.remaining / 60000);
-            const seconds = Math.floor((data.remaining % 60000) / 1000);
-            setTimeLeft(`${minutes}:${seconds.toString().padStart(2, '0')}`);
             EventBus.emit('server-tick', data);
         });
 
@@ -210,12 +211,18 @@ export const GameWrapper = () => {
         };
         EventBus.on(EVENTS.DEPLOY_TROOP_BLOCKCHAIN, handleDeployBlockchain);
 
+        let lastPhase: MatchPhase = 'regular';
         const handleCrownUpdate = (data: {
             playerCrowns: number;
             opponentCrowns: number;
             playerTowersDestroyed?: number;
             opponentTowersDestroyed?: number;
+            remainingTime: number;
+            phase: MatchPhase;
         }) => {
+            setTimeLeft(formatMatchTime(data.remainingTime, data.phase));
+            announcePhase(data.phase, lastPhase);
+            lastPhase = data.phase;
             setPlayerCrowns(data.playerCrowns);
             setOpponentCrowns(data.opponentCrowns);
             if (data.playerTowersDestroyed !== undefined) setPlayerTowersDestroyed(data.playerTowersDestroyed);

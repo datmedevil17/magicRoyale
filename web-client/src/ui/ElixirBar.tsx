@@ -3,10 +3,12 @@ import { EventBus, EVENTS } from '../game/EventBus';
 
 export const ElixirBar: React.FC = () => {
     const [elixir, setElixir] = useState(5);
+    const [multiplier, setMultiplier] = useState(1); // 2 during double elixir / overtime
 
     useEffect(() => {
-        const handleElixirUpdate = (newElixir: number) => {
+        const handleElixirUpdate = (newElixir: number, rate: number = 1) => {
             setElixir(newElixir);
+            setMultiplier(rate);
         };
 
         EventBus.on(EVENTS.ELIXIR_UPDATE, handleElixirUpdate);
@@ -70,6 +72,22 @@ export const ElixirBar: React.FC = () => {
             }}>
                 {displayElixir}/10
             </span>
+
+            {multiplier > 1 && (
+                <span style={{
+                    position: 'absolute',
+                    top: '50%',
+                    right: '10px',
+                    transform: 'translateY(-50%)',
+                    color: '#fbce47',
+                    fontSize: '0.95rem',
+                    fontWeight: 'bold',
+                    textShadow: '1px 1px 3px #000',
+                    zIndex: 10
+                }}>
+                    x{multiplier}
+                </span>
+            )}
 
             {/* Add keyframes animation */}
             <style>{`

@@ -20,16 +20,23 @@ export class TowerEntity extends Entity {
     public lastShot: TowerShot | null = null;
     public destroyed: boolean = false;
     public isKing: boolean;
+    /** King towers sleep until they take damage or one of their princess towers falls. */
+    public active: boolean;
     private tileSize: number = 22;
     private pendingHits: { target: Entity; time: number }[] = [];
 
     constructor(id: string, x: number, y: number, ownerId: string, isKing: boolean, radius: number, tileSize: number = 22) {
         super(id, x, y, ownerId, EntityType.TOWER);
         this.isKing = isKing;
+        this.active = !isKing;
         this.maxHealth = isKing ? 4000 : 2500;
         this.health = this.maxHealth;
         this.radius = radius;
         this.tileSize = tileSize;
+    }
+
+    public activate() {
+        this.active = true;
     }
 
     public update(time: number, _delta: number, targets: Entity[]): void {
@@ -38,6 +45,11 @@ export class TowerEntity extends Entity {
             this.pendingHits = [];
             return;
         }
+
+        // Any damage wakes a sleeping king. Checked via health (not takeDamage) so it also
+        // works on non-host clients, where health arrives in host snapshots.
+        if (!this.active && this.health < this.maxHealth) this.activate();
+        if (!this.active) return;
 
         // Land shots whose projectile has arrived
         if (this.pendingHits.length > 0) {

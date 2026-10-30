@@ -40,6 +40,14 @@ const PREFIX_TO_CARD: Record<string, string> = Object.fromEntries(
     Object.entries(CARD_FACTORIES).map(([cardId, f]) => [f.prefix, cardId])
 );
 
+// Match clock: regulation, then sudden-death overtime if crowns are tied
+const REGULATION_MS = 180000;
+const OVERTIME_MS = 60000;
+const DOUBLE_ELIXIR_FROM_MS = 120000; // last minute of regulation (and all of overtime)
+const ELIXIR_MS_PER_POINT = 1400;
+
+export type MatchPhase = 'regular' | 'double' | 'overtime';
+
 // Overlapping units are pushed apart by this fraction of the overlap per logic tick
 const SEPARATION_STRENGTH = 0.5;
 // Collision radius for units configured with radius 0
@@ -72,7 +80,8 @@ export class GameManager {
     public playerTowersDestroyed: number = 0;
     public opponentTowersDestroyed: number = 0;
     public victoryReason: string = '';
-    public matchDuration: number = 180000; // 3 minutes in ms
+    public matchDuration: number = REGULATION_MS; // extended by OVERTIME_MS when overtime starts
+    public inOvertime: boolean = false;
     public elapsedTime: number = 0;
     public gameEnded: boolean = false;
     public gameStarted: boolean = false;
@@ -111,10 +120,28 @@ export class GameManager {
             // console.log(`[GameManager] Syncing clock. Drift was ${drift}ms.`);
         }
         this.elapsedTime = serverElapsedMs;
+        this.checkMatchClock();
+    }
 
-        if (this.elapsedTime >= this.matchDuration && !this.gameEnded) {
-            this.endGame();
+    /** End the match when time runs out, or start overtime if crowns are tied at the end of regulation. */
+    private checkMatchClock() {
+        if (this.gameEnded || this.elapsedTime < this.matchDuration) return;
+
+        if (!this.inOvertime && this.playerCrowns === this.opponentCrowns) {
+            this.inOvertime = true;
+            this.matchDuration = REGULATION_MS + OVERTIME_MS;
+            return;
         }
+        this.endGame();
+    }
+
+    public get elixirMultiplier(): number {
+        return this.elapsedTime >= DOUBLE_ELIXIR_FROM_MS ? 2 : 1;
+    }
+
+    public get phase(): MatchPhase {
+        if (this.inOvertime) return 'overtime';
+        return this.elixirMultiplier > 1 ? 'double' : 'regular';
     }
 
     private logicAccumulator: number = 0;
@@ -138,19 +165,15 @@ export class GameManager {
     }
 
     private runLogicTick(time: number, tickDelta: number) {
+        this.checkMatchClock();
         if (this.gameEnded) return;
-
-        if (this.elapsedTime >= this.matchDuration) {
-            this.endGame();
-            return;
-        }
 
         // Update elixir
         if (this.isTestMode) {
             this.elixir = this.maxElixir;
         } else if (this.elixir < this.maxElixir) {
             // Elixir speed should be adjusted for the fixed tick
-            this.elixir += (tickDelta / 1400);
+            this.elixir += tickDelta * this.elixirMultiplier / ELIXIR_MS_PER_POINT;
             if (this.elixir > this.maxElixir) this.elixir = this.maxElixir;
         }
 
@@ -325,11 +348,21 @@ export class GameManager {
         this.playerCrowns = Math.min(3, this.playerCrowns);
         this.opponentCrowns = Math.min(3, this.opponentCrowns);
 
+        // Losing a princess tower wakes that side's king tower(s)
+        if (!isKing) {
+            for (const e of this.entities) {
+                if (e instanceof TowerEntity && e.isKing && e.ownerId === ownerId) e.activate();
+            }
+        }
+
         // ONLY immediate victory on king tower destruction or naturally reaching 3 crowns
         // Authority check: normally only host triggers end-game. 
         // EXCEPTION: anyone can trigger instant end-match locally for a King destruction to keep the UI snappy.
-        if (isKing || (isAuthority && (this.playerCrowns >= 3 || this.opponentCrowns >= 3))) {
-            this.victoryReason = isKing ? 'King Tower Destroyed!' : 'Three Crown Victory!';
+        // In overtime (sudden death) the first tower to fall decides the match.
+        if (isKing || this.inOvertime || (isAuthority && (this.playerCrowns >= 3 || this.opponentCrowns >= 3))) {
+            this.victoryReason = isKing ? 'King Tower Destroyed!'
+                : this.inOvertime ? 'Overtime: First Tower Destroyed!'
+                : 'Three Crown Victory!';
             this.endGame();
         }
     }

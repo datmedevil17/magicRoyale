@@ -142,6 +142,7 @@ export class TesarScene extends Scene {
                 if (towerSprite) {
                     towerSprite.setHealth(entity.health);
                     towerSprite.showShot(entity.lastShot, entity.isKing);
+                    towerSprite.setSleeping(!entity.active);
                     if (entity.health <= 0 && !entity.destroyed) {
                         entity.destroyed = true;
                         towerSprite.playDestroyed();
